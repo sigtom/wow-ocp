@@ -4,3 +4,5 @@ resources:
   - namespace.yaml
   - operatorgroup.yaml
   - subscription.yaml
+  - cloudflare-sealed-secret.yaml
+  - cluster-issuer.yaml
