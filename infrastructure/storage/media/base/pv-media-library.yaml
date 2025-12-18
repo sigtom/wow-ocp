@@ -6,7 +6,7 @@ metadata:
     type: static-nfs
 spec:
   capacity:
-    storage: 7000Gi
+    storage: 8000Gi
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
