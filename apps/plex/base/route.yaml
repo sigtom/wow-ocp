@@ -6,7 +6,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: cloudflare-prod
 spec:
-  host: plex.sigtom.io
+  host: plex.sigtom.dev
   to:
     kind: Service
     name: plex-service
