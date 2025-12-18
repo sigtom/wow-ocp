@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-operator
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: HEAD
+    path: infrastructure/operators/cert-manager/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-cert-manager-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
