@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: plex-route
+  namespace: media-stack
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+spec:
+  host: plex.sigtom.io
+  to:
+    kind: Service
+    name: plex-service
+  port:
+    targetPort: pms
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
