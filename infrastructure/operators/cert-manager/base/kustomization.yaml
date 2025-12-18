@@ -6,3 +6,4 @@ resources:
   - subscription.yaml
   - cloudflare-sealed-secret.yaml
   - cluster-issuer.yaml
+  - cluster-issuer-staging.yaml
