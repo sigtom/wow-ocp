@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: plex-service
   namespace: media-stack
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 172.16.130.40
 spec:
   selector:
     app: plex
@@ -10,4 +12,4 @@ spec:
     - name: pms
       port: 32400
       targetPort: 32400
-  type: ClusterIP
+  type: LoadBalancer
