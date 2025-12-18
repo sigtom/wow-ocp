@@ -13,9 +13,12 @@ spec:
       labels:
         app: plex
     spec:
+      serviceAccountName: plex
       containers:
       - name: plex
         image: lscr.io/linuxserver/plex:latest
+        securityContext:
+          runAsUser: 0
         env:
         - name: PUID
           value: "1000"
@@ -27,20 +30,19 @@ spec:
         - containerPort: 32400
           name: pms
         volumeMounts:
-        - name: plex-media
+        - name: plex-config
           mountPath: /config
-          subPath: config/plex
         - name: plex-media
           mountPath: /data
         livenessProbe:
           tcpSocket:
             port: 32400
-          initialDelaySeconds: 30
+          initialDelaySeconds: 40
           periodSeconds: 20
         readinessProbe:
           tcpSocket:
             port: 32400
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           periodSeconds: 10
         resources:
           requests:
@@ -50,6 +52,9 @@ spec:
             cpu: "2"
             memory: 4Gi
       volumes:
+      - name: plex-config
+        persistentVolumeClaim:
+          claimName: plex-config-pvc
       - name: plex-media
         persistentVolumeClaim:
           claimName: media-library-pvc
