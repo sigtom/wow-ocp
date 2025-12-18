@@ -44,6 +44,7 @@
 ---
 
 ## 📅 Next Steps
-- [ ] **Cert-Manager / Cloudflare**: Configure DNS-01 challenge for "Green Lock" SSL.
+- [x] **Cert-Manager**: Installed official Red Hat \`openshift-cert-manager-operator\` (v1.18.0) via GitOps.
+- [ ] **Cloudflare ClusterIssuer**: Configure DNS-01 challenge for "Green Lock" SSL.
 - [ ] **Media Apps**: Deploy Plex/Jellyfin/Arr-stack using the 11TB mount.
 - [ ] **Backup Verification**: Audit OADP/Velero labels on critical PVCs.
