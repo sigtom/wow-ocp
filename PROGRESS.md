@@ -26,18 +26,19 @@
 - `kubeseal` CLI installed locally.
 - Access to `pub-sealed-secrets.pem` (stored in the root of this repo).
 
-### 2. The Workflow
+### 2. The Workflow (With "Safety Net")
 1. **Generate Raw Secret (JSON)**:
+   Always use the `-raw.json` suffix (this is ignored by Git).
    ```bash
-   oc create secret generic my-secret --from-literal=key=value --dry-run=client -o json > raw.json
+   oc create secret generic my-secret --from-literal=key=value --dry-run=client -o json > my-secret-raw.json
    ```
 2. **Seal It**:
    ```bash
-   kubeseal --format=yaml --cert=pub-sealed-secrets.pem < raw.json > sealed-secret.yaml
+   kubeseal --format=yaml --cert=pub-sealed-secrets.pem < my-secret-raw.json > sealed-secret.yaml
    ```
-3. **Commit & Push**:
-   - Delete `raw.json` immediately.
-   - Move `sealed-secret.yaml` to your app's `base/` or `overlays/` folder.
+3. **Clean Up**:
+   - Delete `my-secret-raw.json` (though Git will ignore it if you forget).
+   - Move `sealed-secret.yaml` to your app's folder.
    - `git add` and `git push`.
 
 ---

@@ -2,3 +2,8 @@
 *.tmp
 .env
 bin/
+# Secret Protection
+*-raw.json
+*-raw.yaml
+secrets/
+tmp-secrets/
