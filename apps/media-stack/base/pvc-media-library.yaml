@@ -8,6 +8,6 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 11Ti
+      storage: 7.13Ti
   storageClassName: truenas-nfs
   volumeName: media-library-pv

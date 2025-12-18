@@ -6,11 +6,11 @@ metadata:
     type: static-nfs
 spec:
   capacity:
-    storage: 11Ti
+    storage: 7.13Ti
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: truenas-nfs
   nfs:
-    path: /mnt/tank/media # USER: Verify this path on TrueNAS
+    path: /mnt/tank/Media/docker-media
     server: 172.16.160.100
