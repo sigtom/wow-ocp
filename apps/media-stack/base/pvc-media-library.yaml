@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-library-pvc
+  namespace: media-stack
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 11Ti
+  storageClassName: truenas-nfs
+  volumeName: media-library-pv
