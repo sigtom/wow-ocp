@@ -25,3 +25,18 @@ spec:
               enabled: false
           port:
             - name: eno2
+      - name: eno2.160
+        description: Storage VLAN 160
+        type: vlan
+        state: up
+        vlan:
+          base-iface: eno2
+          id: 160
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: false
+          auto-gateway: false
+        ipv6:
+          enabled: false
