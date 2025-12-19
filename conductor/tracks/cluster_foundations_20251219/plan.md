@@ -26,17 +26,14 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Core Infrastructure Services' (Protocol in workflow.md) (5cd4bc8)
 
 ## Phase 3: Access & Security
-- [ ] Task: Auth - Configure HTPasswd Identity Provider
-    - Create `htpasswd` secret.
-    - Patch `OAuth` cluster resource to include HTPasswd IDP.
-- [ ] Task: Auth - Configure OIDC Identity Provider
+- [x] Task: Auth - Configure HTPasswd Identity Provider (75adc39)
+- [~] Task: Auth - Configure OIDC Identity Provider
     - Register application with OIDC provider (Google/GitHub/Dex).
     - Create Client Secret.
     - Patch `OAuth` cluster resource to include OIDC IDP.
     - Verify login flow.
-- [ ] Task: RBAC - Grant Cluster Admin
-    - Create `ClusterRoleBinding` to grant `cluster-admin` to the OIDC user.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Access & Security' (Protocol in workflow.md)
+- [x] Task: RBAC - Grant Cluster Admin (d03f41f)
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Access & Security' (Protocol in workflow.md)
 
 ## Phase 4: Node Optimization
 - [ ] Task: Tuning - Create KubeletConfig for System Reservation
