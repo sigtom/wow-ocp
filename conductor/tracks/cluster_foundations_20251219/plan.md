@@ -19,15 +19,11 @@
     - [x] Commit and Verify.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Networking & Connectivity' (Protocol in workflow.md) (8bfef40)
 
-## Phase 2: Core Infrastructure Services
+## Phase 2: Core Infrastructure Services [checkpoint: 5cd4bc8]
 - [x] Task: Monitoring - Enable User Workload Monitoring (dded13e)
-- [~] Task: Registry - Deploy Local Image Registry (9bba52f)
-    - Set `managementState: Managed` in `configs.imageregistry`.
-    - Configure PVC storage on `truenas-nfs`.
-    - Create ArgoCD Application.
-    - Verify Registry pod and Route.
+- [x] Task: Registry - Deploy Local Image Registry (9bba52f)
 - [x] Task: Etcd - Health Check & Performance Verification (29dba56)
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Core Infrastructure Services' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Core Infrastructure Services' (Protocol in workflow.md) (5cd4bc8)
 
 ## Phase 3: Access & Security
 - [ ] Task: Auth - Configure HTPasswd Identity Provider
