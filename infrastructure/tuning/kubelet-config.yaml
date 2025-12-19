@@ -1,0 +1,24 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: KubeletConfig
+metadata:
+  name: dynamic-node-tuning
+spec:
+  machineConfigPoolSelector:
+    matchExpressions:
+      - key: pools.operator.machineconfiguration.openshift.io/master
+        operator: Exists
+      - key: pools.operator.machineconfiguration.openshift.io/worker
+        operator: Exists
+  kubeletConfig:
+    systemReserved:
+      cpu: 1000m
+      memory: 2Gi
+    kubeReserved:
+      cpu: 1000m
+      memory: 2Gi
+    evictionHard:
+      memory.available: "500Mi"
+      nodefs.available: "10%"
+      nodefs.inodesFree: "5%"
+      imagefs.available: "15%"
+    maxPods: 250
