@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-registry
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: HEAD
+    path: infrastructure/registry
+  destination:
+    server: https://kubernetes.default.svc
+    # Config is cluster-scoped but namespace helps with PVC placement if not explicit.
+    # PVC is in openshift-image-registry, so Application will manage it.
+    namespace: openshift-image-registry
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
