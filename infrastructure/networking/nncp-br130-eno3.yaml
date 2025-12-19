@@ -4,12 +4,8 @@ metadata:
   name: br130-eno3-policy
 spec:
   nodeSelector:
-    matchExpressions:
-      - key: kubernetes.io/hostname
-        operator: In
-        values:
-          - wow-ocp-node2
-          - wow-ocp-node3
+    matchLabels:
+      kubernetes.io/hostname: wow-ocp-node2
   desiredState:
     interfaces:
       - name: br130
