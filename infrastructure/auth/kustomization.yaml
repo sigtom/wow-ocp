@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - htpasswd-sealed-secret.yaml
   - cluster-oauth.yaml
+  - admin-rbac.yaml
