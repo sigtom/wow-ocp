@@ -16,3 +16,5 @@ metadata:
 spec:
   ipAddressPools:
   - workload-pool
+  interfaces:
+  - br130
