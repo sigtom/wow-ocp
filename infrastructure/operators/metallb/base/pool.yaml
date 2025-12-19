@@ -18,3 +18,45 @@ spec:
   - workload-pool
   interfaces:
   - br130
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: vlan110-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.16.110.120-172.16.110.150
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: vlan110-adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - vlan110-pool
+  interfaces:
+  - br110
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: vlan120-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.16.120.120-172.16.120.150
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: vlan120-adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - vlan120-pool
+  interfaces:
+  - br120
