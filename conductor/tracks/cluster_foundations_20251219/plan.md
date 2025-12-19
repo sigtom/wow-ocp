@@ -20,18 +20,14 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Networking & Connectivity' (Protocol in workflow.md) (8bfef40)
 
 ## Phase 2: Core Infrastructure Services
-- [ ] Task: Monitoring - Enable User Workload Monitoring
-    - Create/Update `cluster-monitoring-config` ConfigMap in `openshift-monitoring`.
-    - Create `user-workload-monitoring-config` ConfigMap in `openshift-user-workload-monitoring`.
-    - Verify Prometheus and Alertmanager pods are running.
-- [ ] Task: Registry - Deploy Local Image Registry
-    - Configure the internal OpenShift registry to use persistent storage (TrueNAS NFS or PVC).
-    - Expose the registry via Route (if needed for external push) or internal Service.
-    - Verify `podman login` and `podman push` to the registry.
-- [ ] Task: Etcd - Health Check & Performance Verification
-    - Run `oc adm diagnostics` or similar checks for Etcd.
-    - Check disk I/O latency metrics for Etcd partition.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Core Infrastructure Services' (Protocol in workflow.md)
+- [x] Task: Monitoring - Enable User Workload Monitoring (dded13e)
+- [~] Task: Registry - Deploy Local Image Registry (9bba52f)
+    - Set `managementState: Managed` in `configs.imageregistry`.
+    - Configure PVC storage on `truenas-nfs`.
+    - Create ArgoCD Application.
+    - Verify Registry pod and Route.
+- [x] Task: Etcd - Health Check & Performance Verification (29dba56)
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Core Infrastructure Services' (Protocol in workflow.md)
 
 ## Phase 3: Access & Security
 - [ ] Task: Auth - Configure HTPasswd Identity Provider
