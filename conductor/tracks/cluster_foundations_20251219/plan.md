@@ -44,3 +44,11 @@
     - Check current `maxPods` setting.
     - Adjust if necessary via `KubeletConfig`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Node Optimization' (Protocol in workflow.md)
+
+## Phase 5: Day 2 Remediation & Fixes
+- [ ] Task: Monitoring - Fix PrometheusOperatorRejectedResources
+    - Investigate `bearerTokenFile` usage in MetalLB and GitOps ServiceMonitors.
+    - Patch `ServiceMonitor` resources to use `bearerTokenSecret` or adjust security context.
+    - Verify alerts are cleared.
+- [ ] Task: Monitoring - Configure Alertmanager Receivers
+    - Configure email or other receivers in `alertmanager-main`.
