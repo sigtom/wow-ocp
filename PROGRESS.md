@@ -45,6 +45,7 @@
 
 ## 📅 Next Steps
 - [x] **Cert-Manager**: Installed official Red Hat \`openshift-cert-manager-operator\` (v1.18.0) via GitOps.
+- [x] **Staging ClusterIssuer**: Configured \`cloudflare-staging\` for DNS-01 testing.
 - [ ] **Cloudflare ClusterIssuer**: Configure DNS-01 challenge for "Green Lock" SSL.
 - [ ] **Media Apps**: Deploy Plex/Jellyfin/Arr-stack using the 11TB mount.
 - [ ] **Backup Verification**: Audit OADP/Velero labels on critical PVCs.
