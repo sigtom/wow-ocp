@@ -7,6 +7,7 @@ spec:
     networking.wow/br130-eno3: "true"
   desiredState:
     interfaces:
+      # --- Workload VLAN 130 (Native) ---
       - name: br130
         description: Workload VLAN 130 Bridge
         type: linux-bridge
@@ -25,3 +26,57 @@ spec:
               enabled: false
           port:
             - name: eno3
+            
+      # --- VLAN 110 ---
+      - name: eno3.110
+        type: vlan
+        state: up
+        vlan:
+          base-iface: eno3
+          id: 110
+        ipv4: {enabled: false}
+        ipv6: {enabled: false}
+      - name: br110
+        description: VLAN 110 Bridge
+        type: linux-bridge
+        state: up
+        bridge:
+          options:
+            stp: {enabled: false}
+          port:
+            - name: eno3.110
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: false
+          auto-gateway: false
+        ipv6:
+          enabled: false
+
+      # --- VLAN 120 ---
+      - name: eno3.120
+        type: vlan
+        state: up
+        vlan:
+          base-iface: eno3
+          id: 120
+        ipv4: {enabled: false}
+        ipv6: {enabled: false}
+      - name: br120
+        description: VLAN 120 Bridge
+        type: linux-bridge
+        state: up
+        bridge:
+          options:
+            stp: {enabled: false}
+          port:
+            - name: eno3.120
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: false
+          auto-gateway: false
+        ipv6:
+          enabled: false

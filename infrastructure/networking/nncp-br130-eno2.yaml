@@ -7,6 +7,7 @@ spec:
     kubernetes.io/hostname: wow-ocp-node4
   desiredState:
     interfaces:
+      # --- Workload VLAN 130 (Native) ---
       - name: br130
         description: Workload VLAN 130 Bridge
         type: linux-bridge
@@ -25,6 +26,8 @@ spec:
               enabled: false
           port:
             - name: eno2
+
+      # --- Storage VLAN 160 (Direct Interface) ---
       - name: eno2.160
         description: Storage VLAN 160
         type: vlan
@@ -32,6 +35,60 @@ spec:
         vlan:
           base-iface: eno2
           id: 160
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: false
+          auto-gateway: false
+        ipv6:
+          enabled: false
+
+      # --- VLAN 110 ---
+      - name: eno2.110
+        type: vlan
+        state: up
+        vlan:
+          base-iface: eno2
+          id: 110
+        ipv4: {enabled: false}
+        ipv6: {enabled: false}
+      - name: br110
+        description: VLAN 110 Bridge
+        type: linux-bridge
+        state: up
+        bridge:
+          options:
+            stp: {enabled: false}
+          port:
+            - name: eno2.110
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: false
+          auto-gateway: false
+        ipv6:
+          enabled: false
+
+      # --- VLAN 120 ---
+      - name: eno2.120
+        type: vlan
+        state: up
+        vlan:
+          base-iface: eno2
+          id: 120
+        ipv4: {enabled: false}
+        ipv6: {enabled: false}
+      - name: br120
+        description: VLAN 120 Bridge
+        type: linux-bridge
+        state: up
+        bridge:
+          options:
+            stp: {enabled: false}
+          port:
+            - name: eno2.120
         ipv4:
           enabled: true
           dhcp: true
