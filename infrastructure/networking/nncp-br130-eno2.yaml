@@ -1,0 +1,28 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: br130-eno2-policy
+spec:
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: wow-ocp-node4
+  desiredState:
+    interfaces:
+      - name: br130
+        description: Workload VLAN 130 Bridge
+        type: linux-bridge
+        state: up
+        ipv4:
+          enabled: true
+          dhcp: true
+          auto-dns: false
+          auto-routes: true
+          auto-gateway: true
+        ipv6:
+          enabled: false
+        bridge:
+          options:
+            stp:
+              enabled: false
+          port:
+            - name: eno2

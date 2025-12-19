@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-networking
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: HEAD
+    path: infrastructure/networking
+  destination:
+    server: https://kubernetes.default.svc
+    # NNCPs are cluster-scoped, but we set a destination namespace for the Application resource itself implicitly or explicit default.
+    # NNCP resources are cluster-scoped so namespace technically doesn't matter for them, but default is safe.
+    namespace: default 
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
