@@ -1,13 +1,22 @@
 # Track Plan: Cluster Foundations & Operationalization
 
 ## Phase 1: Networking & Connectivity
-- [ ] Task: Networking - Verify Node Network Configuration
-    - Validate that VLAN 130 interface exists and is up on all nodes.
-    - Test ping connectivity between nodes on the 172.16.130.x subnet.
-- [ ] Task: MetalLB - Verify IPAddressPool and L2Advertisement
-    - Check `IPAddressPool` CR for correct range (172.16.130.x).
-    - Check `L2Advertisement` CR.
-    - Deploy a test `Service` with `type: LoadBalancer` and verify IP assignment and reachability.
+- [x] Task: Networking - Verify Node Network Configuration (ba87704)
+- [x] Task: Networking - Configure NodeNetworkConfigurationPolicies (fa7b140)
+    - [x] Define NNCP for Nodes 2 & 3 (eno3 -> br130).
+    - [x] Define NNCP for Node 4 (eno2 -> br130).
+    - [x] Commit to Git to trigger sync.
+    - [x] Verify `Available` status on cluster.
+    - [x] **NEW:** Configure VLAN 160 (Storage) on Node 4 (eno2.160).
+- [x] Task: MetalLB - Verify IPAddressPool and L2Advertisement (a48f627)
+- [ ] Task: Networking - Configure VLAN 110/120 Bridges
+    - Update NNCP for Nodes 2 & 3: Add `br110` (eno3.110) and `br120` (eno3.120).
+    - Update NNCP for Node 4: Add `br110` (eno2.110) and `br120` (eno2.120).
+    - Commit and Verify.
+- [ ] Task: MetalLB - Configure Pools for VLAN 110/120
+    - Update MetalLB `pool.yaml` with new pools.
+    - Update `L2Advertisement` to include `br110` and `br120`.
+    - Commit and Verify.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Networking & Connectivity' (Protocol in workflow.md)
 
 ## Phase 2: Core Infrastructure Services

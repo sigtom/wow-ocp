@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Cluster Foundations & Operationalization
+## [~] Track: Cluster Foundations & Operationalization
 *Link: [./conductor/tracks/cluster_foundations_20251219/](./conductor/tracks/cluster_foundations_20251219/)*
