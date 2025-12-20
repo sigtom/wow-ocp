@@ -36,8 +36,8 @@
 - [~] Task: Conductor - User Manual Verification 'Phase 3: Access & Security' (Protocol in workflow.md)
 
 ## Phase 4: Node Optimization
-- [~] Task: Tuning - Create KubeletConfig for System Reservation (PR #6)
-- [~] Task: Tuning - Verify Max Pods Limit (PR #6)
+- [x] Task: Tuning - Create KubeletConfig for System Reservation (PR #6, fix 65078a1)
+- [x] Task: Tuning - Verify Max Pods Limit (PR #6, fix 65078a1)
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Node Optimization' (Protocol in workflow.md)
 
 ## Phase 5: Day 2 Remediation & Fixes
