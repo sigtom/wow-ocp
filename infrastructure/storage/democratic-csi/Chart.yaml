@@ -1,0 +1,10 @@
+apiVersion: v2
+name: truenas-nfs-wrapper
+description: Wrapper chart for democratic-csi with local config
+type: application
+version: 1.0.0
+appVersion: 1.0.0
+dependencies:
+  - name: democratic-csi
+    version: 0.15.0
+    repository: https://democratic-csi.github.io/charts/

@@ -1,89 +1,90 @@
-controller:
+democratic-csi:
+  controller:
+    driver:
+      image:
+        registry: docker.io/democraticcsi/democratic-csi
+        tag: next
+      enabled: true
+      logLevel: info
+      securityContext:
+        allowPrivilegeEscalation: true
+        privileged: true
+        capabilities: { add: ["SYS_ADMIN"] }
+
+    externalAttacher:
+      enabled: true
+      image: { registry: registry.k8s.io/sig-storage/csi-attacher, tag: v4.4.0 }
+
+    externalProvisioner:
+      enabled: true
+      image: { registry: registry.k8s.io/sig-storage/csi-provisioner, tag: v3.6.0 }
+      args:
+        - '--v=5'
+        - '--leader-election'
+        - '--leader-election-namespace={{ .Release.Namespace }}'
+        - '--timeout=90s'
+        - '--worker-threads=10'
+        - '--extra-create-metadata'
+        - '--csi-address={{ .csiSocketAddress }}'
+
+    externalResizer:
+      enabled: true
+      image: { registry: registry.k8s.io/sig-storage/csi-resizer, tag: v1.9.0 }
+
+    externalSnapshotter:
+      enabled: true
+      image: { registry: registry.k8s.io/sig-storage/csi-snapshotter, tag: v8.2.1 }
+
+    externalHealthMonitorController:
+      enabled: false
+
+    rbac:
+      enabled: true
+      openshift:
+        privileged: true
+
+  csiDriver:
+    name: "truenas-nfs"
+    attachRequired: true
+    enabled: true
+    podInfoOnMount: true
+
   driver:
-    image:
-      registry: docker.io/democraticcsi/democratic-csi
-      tag: next
-    enabled: true
-    logLevel: info
-    securityContext:
-      allowPrivilegeEscalation: true
-      privileged: true
-      capabilities: { add: ["SYS_ADMIN"] }
+    image: { tag: next }
+    existingConfigSecret: truenas-nfs-driver-config
 
-  externalAttacher:
-    enabled: true
-    image: { registry: registry.k8s.io/sig-storage/csi-attacher, tag: v4.4.0 }
+  node:
+    driver:
+      image:
+        registry: docker.io/democraticcsi/democratic-csi
+        tag: next
+      enabled: true
+      logLevel: info
+      localtimeHostPath: false
 
-  externalProvisioner:
-    enabled: true
-    image: { registry: registry.k8s.io/sig-storage/csi-provisioner, tag: v3.6.0 }
-    args:
-      - '--v=5'
-      - '--leader-election'
-      - '--leader-election-namespace={{ .Release.Namespace }}'
-      - '--timeout=90s'
-      - '--worker-threads=10'
-      - '--extra-create-metadata'
-      - '--csi-address={{ .csiSocketAddress }}'
+    driverRegistrar:
+      enabled: true
+      image: { registry: registry.k8s.io/sig-storage/csi-node-driver-registrar, tag: v2.9.0 }
 
-  externalResizer:
-    enabled: true
-    image: { registry: registry.k8s.io/sig-storage/csi-resizer, tag: v1.9.0 }
+    kubeletHostPath: /var/lib/kubelet
+    
+    rbac:
+      enabled: true
+      openshift:
+        privileged: true
 
-  externalSnapshotter:
-    enabled: true
-    image: { registry: registry.k8s.io/sig-storage/csi-snapshotter, tag: v8.2.1 }
+  storageClasses:
+  - name: truenas-nfs
+    defaultClass: true
+    reclaimPolicy: Delete
+    volumeBindingMode: Immediate
+    allowVolumeExpansion: true
+    parameters:
+      fsType: nfs
+      detachedVolumesFromSnapshots: "false"
+      mountOptions:
+        - noatime
+        - nfsvers=4.2
+        - nolock
 
-  externalHealthMonitorController:
-    enabled: false
-
-  rbac:
-    enabled: true
-    openshift:
-      privileged: true
-
-csiDriver:
-  name: "truenas-nfs"
-  attachRequired: true
-  enabled: true
-  podInfoOnMount: true
-
-driver:
-  image: { tag: next }
-  existingConfigSecret: truenas-nfs-driver-config
-
-node:
-  driver:
-    image:
-      registry: docker.io/democraticcsi/democratic-csi
-      tag: next
-    enabled: true
-    logLevel: info
-    localtimeHostPath: false
-
-  driverRegistrar:
-    enabled: true
-    image: { registry: registry.k8s.io/sig-storage/csi-node-driver-registrar, tag: v2.9.0 }
-
-  kubeletHostPath: /var/lib/kubelet
-  
-  rbac:
-    enabled: true
-    openshift:
-      privileged: true
-
-storageClasses:
-- name: truenas-nfs
-  defaultClass: true
-  reclaimPolicy: Delete
-  volumeBindingMode: Immediate
-  allowVolumeExpansion: true
-  parameters:
-    fsType: nfs
-    detachedVolumesFromSnapshots: "false"
-    mountOptions:
-      - noatime
-      - nfsvers=4.2
-      - nolock
-
-volumeSnapshotClasses: []
+  volumeSnapshotClasses: []
