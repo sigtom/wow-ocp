@@ -7,13 +7,13 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
-  ttlSecondsAfterFinished: 500
+  ttlSecondsAfterFinished: 600
   template:
     spec:
       containers:
       - name: test
         image: alpine:latest
-        command: ["/bin/sh", "-c", "echo 'GitOps Verification $(date)' >> /mnt/media/gitops_verify.log && echo 'Sleeping for 500s...' && sleep 500"]
+        command: ["/bin/sh", "-c", "echo 'GitOps Verify $(date)' >> /mnt/media/gitops_verify.log && ls -l /mnt/media/gitops_verify.log && echo 'Verification Successful. Sleeping 60s...' && sleep 60"]
         volumeMounts:
         - mountPath: "/mnt/media"
           name: media
