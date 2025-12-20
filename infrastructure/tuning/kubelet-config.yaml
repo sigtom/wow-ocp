@@ -1,14 +1,11 @@
 apiVersion: machineconfiguration.openshift.io/v1
 kind: KubeletConfig
 metadata:
-  name: dynamic-node-tuning
+  name: dynamic-node-tuning-master
 spec:
   machineConfigPoolSelector:
-    matchExpressions:
-      - key: pools.operator.machineconfiguration.openshift.io/master
-        operator: Exists
-      - key: pools.operator.machineconfiguration.openshift.io/worker
-        operator: Exists
+    matchLabels:
+      pools.operator.machineconfiguration.openshift.io/master: ""
   kubeletConfig:
     systemReserved:
       cpu: 1000m
