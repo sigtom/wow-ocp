@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: storage-verification-job
+  namespace: default
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: test
+        image: alpine:latest
+        command: ["/bin/sh", "-c", "echo 'GitOps Hook Success' > /mnt/nfs/hook-test.txt && cat /mnt/nfs/hook-test.txt"]
+        volumeMounts:
+        - mountPath: "/mnt/nfs"
+          name: vol
+      volumes:
+      - name: vol
+        persistentVolumeClaim:
+          claimName: gitops-test-pvc
+      restartPolicy: Never
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitops-test-pvc
+  namespace: default
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  storageClassName: truenas-nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Mi

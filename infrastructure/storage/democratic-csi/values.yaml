@@ -52,7 +52,6 @@ democratic-csi:
   driver:
     image: { tag: next }
     existingConfigSecret: truenas-nfs-driver-config
-    # minimal config required for chart template logic
     config:
       driver: freenas-api-nfs
 
@@ -85,6 +84,8 @@ democratic-csi:
     parameters:
       fsType: nfs
       detachedVolumesFromSnapshots: "false"
+      # --- Naming Template ---
+      namingTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}-{{ parameters.[csi.storage.k8s.io/pvc/uuid] }}"
       mountOptions:
         - noatime
         - nfsvers=4.2
