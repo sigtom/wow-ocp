@@ -5,3 +5,4 @@ resources:
   - limitrange.yaml
   - networkpolicy.yaml
   - pvc-media-library.yaml
+  - verify-media-mount.yaml

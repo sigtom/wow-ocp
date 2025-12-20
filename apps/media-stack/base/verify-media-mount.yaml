@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: verify-media-mount
+  namespace: media-stack
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: test
+        image: alpine:latest
+        command: ["/bin/sh", "-c", "echo 'Media Mount Verified' > /mnt/media/verify.txt && ls -la /mnt/media"]
+        volumeMounts:
+        - mountPath: "/mnt/media"
+          name: media
+      volumes:
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+      restartPolicy: Never
