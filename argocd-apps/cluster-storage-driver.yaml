@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-storage-driver
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: HEAD
+    path: infrastructure/storage/democratic-csi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: democratic-csi
+  # Sync Policy removed for manual dry-run verification
+  # syncPolicy:
+  #   automated:
+  #     prune: true
+  #     selfHeal: true
+  #   syncOptions:
+  #     - CreateNamespace=true
+  #     - ServerSideApply=true

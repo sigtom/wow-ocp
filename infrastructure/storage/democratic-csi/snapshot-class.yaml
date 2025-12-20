@@ -1,0 +1,10 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: truenas-nfs-snap
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: truenas-nfs
+deletionPolicy: Delete
+parameters:
+  detachedSnapshots: "false"

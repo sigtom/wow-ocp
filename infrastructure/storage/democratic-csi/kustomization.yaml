@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - driver-config-sealed-secret.yaml
+  - snapshot-class.yaml
+  - storage-profile.yaml
+
+helmCharts:
+- name: democratic-csi
+  repo: https://democratic-csi.github.io/charts/
+  version: 0.15.0
+  releaseName: truenas-nfs
+  namespace: democratic-csi
+  valuesFile: values.yaml
