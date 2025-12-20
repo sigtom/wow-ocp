@@ -11,13 +11,19 @@
 - **Backup:** OADP (Velero) for critical PVCs
 
 ## Networking & Connectivity
-- **Load Balancing:** MetalLB (Layer 2) for the 172.16.130.x range
+- **Layer 2 Networking:** NMState (NodeNetworkConfigurationPolicy) for persistent bridge/VLAN configuration.
+- **Load Balancing:** MetalLB (Layer 2) for ranges 110.x, 120.x, 130.x.
 - **Ingress:** OpenShift Routes
 - **TLS/SSL:** Cert-Manager with Cloudflare DNS-01 ClusterIssuer
-- **Node Networking:** 10G storage (172.16.160.x) and workload (172.16.130.x) separation
+- **Node Networking:** 10G storage (VLAN 160) and workload (VLAN 130) separation.
 
 ## Operations & Security
 - **GitOps:** ArgoCD (App of Apps pattern)
 - **Configuration:** Kustomize (Base/Overlay pattern)
 - **Secrets:** Bitnami Sealed Secrets
-- **Security:** OpenShift Security Context Constraints (SCCs), NetworkPolicies
+- **Security:** OpenShift Security Context Constraints (SCCs), NetworkPolicies, HTPasswd IDP + RBAC.
+
+## Monitoring & Observability
+- **Cluster Monitoring:** Prometheus/Alertmanager (Default)
+- **User Workload:** Prometheus User Workload Monitoring (Enabled with PV storage)
+- **Registry:** OpenShift Image Registry (Managed with PV storage)

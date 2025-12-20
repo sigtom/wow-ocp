@@ -12,9 +12,17 @@ The project is a private OpenShift 4.20 Homelab running on Dell FC630 blades, de
 - **Infrastructure Consolidation:** Moving personal workloads and VMs from various platforms onto a unified, high-performance blade cluster.
 
 ## Key Features & Roadmap
-- **Storage & Media Management (75% Complete):** Integration with TrueNAS via CSI, managing the 11TB media library, and deploying the media stack (Plex/Jellyfin).
-- **GitOps & Automation (In Progress):** Managing all configurations via Kustomize and ArgoCD, implementing Sealed Secrets for security, and using Cert-Manager for TLS.
-- **Infrastructure & Networking (In Progress):** Hybrid workload management (Containers + VMs), Layer 2 load balancing with MetalLB, and optimizing networking across the Dell blade nodes.
+- **Storage & Media Management (Complete):** Integration with TrueNAS via CSI, managing the 11TB media library, and deploying the media stack (Plex/Jellyfin).
+- **GitOps & Automation (Complete):** Managing all configurations via Kustomize and ArgoCD, implementing Sealed Secrets for security, and using Cert-Manager for TLS.
+- **Infrastructure & Networking (Complete):** 
+    - Hybrid workload management (Containers + VMs).
+    - Advanced Layer 2 networking (VLANs 110, 120, 130, 160).
+    - MetalLB Load Balancing on dedicated bridges.
+    - Node Optimization (Kubelet Tuning) for compact cluster topology.
+- **Core Services (Complete):**
+    - User Workload Monitoring with persistent storage.
+    - Internal Image Registry with persistent storage.
+    - Authentication via HTPasswd and RBAC.
 
 ## Success Criteria
 - **Reliability ("Set it and forget it"):** The media stack runs reliably without manual intervention, and backups are automated.
