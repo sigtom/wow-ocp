@@ -121,3 +121,9 @@ System Instruction: When the user authorizes a new command pattern, append it to
 6.	kubectl get *
 7.	ls -la (Local file checks)
 8.	cat * (Reading local manifests)
+9.  gh *
+10. oc *
+
+9.  gh *
+10. oc *
+11. export KUBECONFIG=*

@@ -51,3 +51,4 @@
 - [ ] **Backup Verification**: Audit OADP/Velero labels on critical PVCs.
 
 - [2025-12-20]: Operationalized Homelab - Completed Networking (VLANs/MetalLB), Storage (GitOps/CSI), Monitoring (UWM/PVs), and Node Tuning.
+- [2025-12-20]: Alert Investigation - Investigating NFD and Storage rollout issues.
