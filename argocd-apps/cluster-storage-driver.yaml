@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/sigtom/wow-ocp.git
     targetRevision: HEAD
     path: infrastructure/storage/democratic-csi
+    helm:
+      releaseName: truenas-nfs
   destination:
     server: https://kubernetes.default.svc
     namespace: democratic-csi
