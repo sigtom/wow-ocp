@@ -14,11 +14,10 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: democratic-csi
-  # Sync Policy removed for manual dry-run verification
-  # syncPolicy:
-  #   automated:
-  #     prune: true
-  #     selfHeal: true
-  #   syncOptions:
-  #     - CreateNamespace=true
-  #     - ServerSideApply=true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
