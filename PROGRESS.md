@@ -49,3 +49,5 @@
 - [ ] **Cloudflare ClusterIssuer**: Configure DNS-01 challenge for "Green Lock" SSL.
 - [ ] **Media Apps**: Deploy Plex/Jellyfin/Arr-stack using the 11TB mount.
 - [ ] **Backup Verification**: Audit OADP/Velero labels on critical PVCs.
+
+- [2025-12-20]: Operationalized Homelab - Completed Networking (VLANs/MetalLB), Storage (GitOps/CSI), Monitoring (UWM/PVs), and Node Tuning.
