@@ -4,9 +4,9 @@ resources:
   - namespace.yaml
   - serviceaccounts.yaml
   - rbac.yaml
-  - secrets.yaml
   - sealed-secret-real-debrid-api.yaml
   - sealed-secret-torbox-api.yaml
+  - sealed-secret-rclone-config.yaml
   - limitrange.yaml
   - networkpolicy.yaml
   - pvc-media-library.yaml
