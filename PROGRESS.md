@@ -19,9 +19,27 @@
     - [x] **MetalLB**: Configured Layer 2 advertisements and address pools for all workload VLANs.
     - [x] **MetalLB Machine Pool**: Added Layer 2 pool (172.16.100.200-220) on br-ex.
 
-### 3. Hybrid Media Stack (In Progress)- [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
-- [x] **Zone 1 (Cloud Gateway)**: Deployed Zurg, Rclone, rdt-client, and Riven manifests via GitOps (PR #11).
+### 3. Hybrid Media Stack (In Progress)
+
+- [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
+
+- [x] **Zone 1 (Cloud Gateway)**: 
+
+    - [x] **Deployments**: Zurg (Public Image), Rclone (TorBox), rdt-client (RogerFar), Riven deployed.
+
+    - [x] **Fixes**: Solved FUSE mount conflicts (subpaths), Image Pull Auth (Global Secret), and Token Injection (Zurg).
+
+    - [x] **Connectivity**: Validated Zurg->RealDebrid and Rclone->Zurg mounts.
+
+- [x] **Zone 3 (The Player)**:
+
+    - [x] **Plex Architecture**: Refactored to Sidecar Pattern (Plex + Rclone-Zurg + Rclone-TorBox in one pod).
+
+    - [x] **Visibility**: Verified Plex can see cloud content via local FUSE mounts.
+
 - [x] **Secret Templates**: Established SealedSecret structure for Real-Debrid and TorBox APIs.
+
+
 
 ---
 
