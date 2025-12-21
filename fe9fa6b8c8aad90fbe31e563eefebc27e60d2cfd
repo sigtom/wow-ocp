@@ -1,0 +1,9 @@
+Task: Patch ServiceMonitors (MetalLB & GitOps)
+Summary: Patched ServiceMonitor resources for MetalLB and GitOps Operator to use bearerTokenSecret instead of bearerTokenFile. Created ServiceAccount token secrets to provide the tokens.
+Files:
+- infrastructure/operators/metallb/base/controller-monitor.yaml
+- infrastructure/operators/metallb/base/speaker-monitor.yaml
+- infrastructure/operators/metallb/base/token-secret.yaml
+- infrastructure/operators/openshift-gitops-operator/base/metrics-monitor.yaml
+- infrastructure/operators/openshift-gitops-operator/base/token-secret.yaml
+Why: OpenShift 4.20 / Prometheus Operator rejects ServiceMonitors using bearerTokenFile for security reasons. Switching to bearerTokenSecret resolves the PrometheusOperatorRejectedResources alert.
