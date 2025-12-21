@@ -9,15 +9,15 @@ spec:
   ingressClassName: openshift-default
   tls:
   - hosts:
-    - plex.apps.ossus.sigtomtech.com
-    - overseerr.apps.ossus.sigtomtech.com
-    - sonarr.apps.ossus.sigtomtech.com
-    - radarr.apps.ossus.sigtomtech.com
-    - sabnzbd.apps.ossus.sigtomtech.com
-    - bazarr.apps.ossus.sigtomtech.com
-    secretName: media-tls
+    - plex.sigtom.dev
+    - overseerr.sigtom.dev
+    - sonarr.sigtom.dev
+    - radarr.sigtom.dev
+    - sabnzbd.sigtom.dev
+    - bazarr.sigtom.dev
+    secretName: media-sigtom-tls
   rules:
-  - host: plex.apps.ossus.sigtomtech.com
+  - host: plex.sigtom.dev
     http:
       paths:
       - path: /
@@ -27,7 +27,7 @@ spec:
             name: plex-service
             port:
               number: 32400
-  - host: overseerr.apps.ossus.sigtomtech.com
+  - host: overseerr.sigtom.dev
     http:
       paths:
       - path: /
@@ -37,7 +37,7 @@ spec:
             name: overseerr
             port:
               number: 5055
-  - host: sonarr.apps.ossus.sigtomtech.com
+  - host: sonarr.sigtom.dev
     http:
       paths:
       - path: /
@@ -47,7 +47,7 @@ spec:
             name: sonarr
             port:
               number: 8989
-  - host: radarr.apps.ossus.sigtomtech.com
+  - host: radarr.sigtom.dev
     http:
       paths:
       - path: /
@@ -57,7 +57,7 @@ spec:
             name: radarr
             port:
               number: 7878
-  - host: sabnzbd.apps.ossus.sigtomtech.com
+  - host: sabnzbd.sigtom.dev
     http:
       paths:
       - path: /
@@ -67,7 +67,7 @@ spec:
             name: sabnzbd
             port:
               number: 8080
-  - host: bazarr.apps.ossus.sigtomtech.com
+  - host: bazarr.sigtom.dev
     http:
       paths:
       - path: /

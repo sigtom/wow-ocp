@@ -4,5 +4,4 @@ resources:
   - serviceaccount.yaml
   - pvc-config.yaml
   - service.yaml
-  - ingress.yaml
   - deployment.yaml
