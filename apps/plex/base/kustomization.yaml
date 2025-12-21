@@ -5,3 +5,4 @@ resources:
   - pvc-config.yaml
   - service.yaml
   - deployment.yaml
+  - nginx-config.yaml

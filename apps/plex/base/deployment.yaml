@@ -64,6 +64,23 @@ spec:
         - name: rclone-config
           mountPath: /config/rclone
           readOnly: true
+      # Sidecar: Nginx SSL
+      - name: nginx
+        image: docker.io/nginx:latest
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: 443
+          name: https
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: media-tls
+          mountPath: /etc/nginx/ssl
+          readOnly: true
       # Main: Plex
       - name: plex
         image: lscr.io/linuxserver/plex:latest
@@ -115,3 +132,9 @@ spec:
       - name: rclone-config
         secret:
           secretName: rclone-config
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: media-tls
+        secret:
+          secretName: media-sigtom-tls
