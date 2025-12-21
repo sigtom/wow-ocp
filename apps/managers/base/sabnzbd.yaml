@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sabnzbd
+  namespace: media-stack
+  labels:
+    app: sabnzbd
+    zone: zone2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sabnzbd
+  template:
+    metadata:
+      labels:
+        app: sabnzbd
+        zone: zone2
+    spec:
+      serviceAccountName: managers
+      containers:
+      - name: sabnzbd
+        image: lscr.io/linuxserver/sabnzbd:latest
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "Etc/UTC"
+        ports:
+        - containerPort: 8080
+          name: http
+        volumeMounts:
+        - name: media-storage
+          mountPath: /config
+          subPath: config/sabnzbd
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: HostToContainer
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 10
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sabnzbd
+  namespace: media-stack
+spec:
+  selector:
+    app: sabnzbd
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
