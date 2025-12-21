@@ -81,7 +81,7 @@
 - [ ] **OIDC Authentication**: Configure Google/GitHub identity provider (Issue #2).
 - [ ] **Monitoring Remediation**: Fix rejected ServiceMonitors and configure Alertmanager receivers (Issues #1, #5, #9).
 - [ ] **Storage Tuning**: Resolve LVM vg-manager rollout issues (Issue #10).
-- [ ] **Media Stack Phase 2**: Deploy Zone 2 Managers (Sonarr/Radarr) and integrate with Zone 1.
+- [x] **Media Stack Phase 2**: Deploy Zone 2 Managers (Sonarr/Radarr) and integrate with Zone 1. (COMPLETED)
 
 ---
 
