@@ -15,6 +15,13 @@
 - [x] **Namespace Scaffolding**: Created `media-stack` namespace with:
     - [x] **LimitRange**: Enforcing resource discipline (256Mi/1Gi RAM).
     - [x] **NetworkPolicy**: Defaulting to allow-same-namespace.
+- [x] **VLAN Bridges**: Configured br110, br120, br130 across all nodes via NMState (NodeNetworkConfigurationPolicy).
+- [x] **MetalLB**: Configured Layer 2 advertisements and address pools for all workload VLANs.
+
+### 3. Hybrid Media Stack (In Progress)
+- [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
+- [x] **Zone 1 (Cloud Gateway)**: Deployed Zurg, Rclone, rdt-client, and Riven manifests via GitOps (PR #11).
+- [x] **Secret Templates**: Established SealedSecret structure for Real-Debrid and TorBox APIs.
 
 ---
 
@@ -44,11 +51,15 @@
 ---
 
 ## 📅 Next Steps
-- [x] **Cert-Manager**: Installed official Red Hat \`openshift-cert-manager-operator\` (v1.18.0) via GitOps.
-- [x] **Staging ClusterIssuer**: Configured \`cloudflare-staging\` for DNS-01 testing.
-- [ ] **Cloudflare ClusterIssuer**: Configure DNS-01 challenge for "Green Lock" SSL.
-- [ ] **Media Apps**: Deploy Plex/Jellyfin/Arr-stack using the 11TB mount.
-- [ ] **Backup Verification**: Audit OADP/Velero labels on critical PVCs.
+- [ ] **OIDC Authentication**: Configure Google/GitHub identity provider (Issue #2).
+- [ ] **Monitoring Remediation**: Fix rejected ServiceMonitors and configure Alertmanager receivers (Issues #1, #5, #9).
+- [ ] **Storage Tuning**: Resolve LVM vg-manager rollout issues (Issue #10).
+- [ ] **Media Stack Phase 2**: Deploy Zone 2 Managers (Sonarr/Radarr) and integrate with Zone 1.
 
+---
+
+## 📝 Operational Notes
 - [2025-12-20]: Operationalized Homelab - Completed Networking (VLANs/MetalLB), Storage (GitOps/CSI), Monitoring (UWM/PVs), and Node Tuning.
 - [2025-12-20]: Alert Investigation - Investigating NFD and Storage rollout issues.
+- [2025-12-21]: Hybrid Media Stack - Deployed Zone 1 (Cloud Gateway) and configured security context constraints for FUSE.
+- [2025-12-21]: Design Pivot - Backtracking from `bootstrap_project_v1.sh` multi-agent design in favor of sequential Conductor-led batching.
