@@ -4,7 +4,7 @@ metadata:
   name: plex-service
   namespace: media-stack
   annotations:
-    metallb.universe.tf/loadBalancerIPs: 172.16.130.40
+    metallb.universe.tf/address-pool: machine-pool
 spec:
   selector:
     app: plex
