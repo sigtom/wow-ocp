@@ -97,8 +97,9 @@ spec:
         - containerPort: 32400
           name: pms
         volumeMounts:
-        - name: plex-config
+        - name: plex-media
           mountPath: /config
+          subPath: config/plex
         - name: plex-media
           mountPath: /mnt/media
           mountPropagation: HostToContainer
@@ -120,9 +121,6 @@ spec:
             cpu: "4"
             memory: 8Gi
       volumes:
-      - name: plex-config
-        persistentVolumeClaim:
-          claimName: plex-config-pvc
       - name: plex-media
         persistentVolumeClaim:
           claimName: media-library-pvc
