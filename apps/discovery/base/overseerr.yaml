@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overseerr
+  namespace: media-stack
+  labels:
+    app: overseerr
+    zone: zone4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: overseerr
+  template:
+    metadata:
+      labels:
+        app: overseerr
+        zone: zone4
+    spec:
+      serviceAccountName: discovery
+      containers:
+      - name: overseerr
+        image: sctx/overseerr:latest
+        env:
+        - name: LOG_LEVEL
+          value: "info"
+        - name: TZ
+          value: "Etc/UTC"
+        ports:
+        - containerPort: 5055
+          name: http
+        volumeMounts:
+        - name: media-storage
+          mountPath: /app/config
+          subPath: config/overseerr
+        readinessProbe:
+          tcpSocket:
+            port: 5055
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overseerr
+  namespace: media-stack
+spec:
+  selector:
+    app: overseerr
+  ports:
+    - protocol: TCP
+      port: 5055
+      targetPort: 5055
+  type: ClusterIP
