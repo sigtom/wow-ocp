@@ -27,7 +27,7 @@ spec:
           mountPath: /mnt/media
       containers:
       - name: zurg
-        image: ghcr.io/debridmediamanager/zurg:v0.9.3-hotfix.1
+        image: ghcr.io/debridmediamanager/zurg-testing:v0.9.3-final
         securityContext:
           privileged: true
         env:
@@ -72,7 +72,6 @@ spec:
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
-
       containers:
       - name: rclone
         image: docker.io/rclone/rclone:latest
@@ -122,7 +121,7 @@ spec:
       serviceAccountName: cloud-gateway
       containers:
       - name: rdt-client
-        image: docker.io/rogueosb/rdt-client:latest
+        image: docker.io/rogerfar/rdtclient:latest
         ports:
         - containerPort: 6500
           name: http
