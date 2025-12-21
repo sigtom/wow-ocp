@@ -30,6 +30,11 @@ spec:
         image: ghcr.io/debridmediamanager/zurg-testing:v0.9.3-final
         securityContext:
           privileged: true
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            sed -i "s/YOUR_RD_API_TOKEN/$REAL_DEBRID_TOKEN/g" /app/config.yml && \
+            ./zurg
         env:
         - name: REAL_DEBRID_TOKEN
           valueFrom:
@@ -172,6 +177,13 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      initContainers:
+      - name: init-dirs
+        image: docker.io/alpine:latest
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/riven-data"]
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
       containers:
       - name: riven
         image: ghcr.io/rivenmedia/riven:latest
@@ -192,6 +204,9 @@ spec:
         - name: media-storage
           mountPath: /mnt/media
           mountPropagation: Bidirectional
+        - name: media-storage
+          mountPath: /riven/data
+          subPath: riven-data
         ports:
         - containerPort: 8080
           name: http
