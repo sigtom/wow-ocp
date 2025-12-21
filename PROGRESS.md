@@ -28,6 +28,12 @@
     - [x] **Fixes**: Solved FUSE mount conflicts (subpaths), Image Pull Auth (Global Secret), and Token Injection (Zurg).
     - [x] **Connectivity**: Validated Zurg->RealDebrid (WebDAV) and Rclone->TorBox (WebDAV with Auth) mounts.
 
+- [x] **Zone 2 (The Managers)**:
+    - [x] **Deployments**: Sonarr, Radarr, SABnzbd, Bazarr deployed via GitOps.
+    - [x] **Architecture**: Implemented Sidecar Pattern for Sonarr/Radarr/Bazarr to access Cloud Mounts.
+    - [x] **Persistence**: Migrated configs to shared NFS PVC (`/mnt/media/config/...`).
+    - [x] **Structure**: Created `/stream`, `/archive`, `/downloads` on the 11TB Monster.
+
 - [x] **Zone 3 (The Player)**:
     - [x] **Plex Architecture**: Refactored to Sidecar Pattern (Plex + Rclone-Zurg + Rclone-TorBox in one pod).
     - [x] **Visibility**: Verified Plex can see cloud content via local FUSE mounts.
