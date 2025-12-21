@@ -24,18 +24,14 @@
 - [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
 
 - [x] **Zone 1 (Cloud Gateway)**: 
-
     - [x] **Deployments**: Zurg (Public Image), Rclone (TorBox), rdt-client (RogerFar), Riven deployed.
-
     - [x] **Fixes**: Solved FUSE mount conflicts (subpaths), Image Pull Auth (Global Secret), and Token Injection (Zurg).
-
-    - [x] **Connectivity**: Validated Zurg->RealDebrid and Rclone->Zurg mounts.
+    - [x] **Connectivity**: Validated Zurg->RealDebrid (WebDAV) and Rclone->TorBox (WebDAV with Auth) mounts.
 
 - [x] **Zone 3 (The Player)**:
-
     - [x] **Plex Architecture**: Refactored to Sidecar Pattern (Plex + Rclone-Zurg + Rclone-TorBox in one pod).
-
     - [x] **Visibility**: Verified Plex can see cloud content via local FUSE mounts.
+    - [x] **Network**: Configured Service on Machine Network (MetalLB) and updated NetworkPolicy.
 
 - [x] **Secret Templates**: Established SealedSecret structure for Real-Debrid and TorBox APIs.
 
