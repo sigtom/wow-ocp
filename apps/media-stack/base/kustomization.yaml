@@ -12,3 +12,4 @@ resources:
   - networkpolicy.yaml
   - pvc-media-library.yaml
   - zone1-deployments.yaml
+  - ingress.yaml

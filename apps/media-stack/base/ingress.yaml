@@ -1,0 +1,79 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: media-ingress
+  namespace: media-stack
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+spec:
+  ingressClassName: openshift-default
+  tls:
+  - hosts:
+    - plex.apps.ossus.sigtomtech.com
+    - overseerr.apps.ossus.sigtomtech.com
+    - sonarr.apps.ossus.sigtomtech.com
+    - radarr.apps.ossus.sigtomtech.com
+    - sabnzbd.apps.ossus.sigtomtech.com
+    - bazarr.apps.ossus.sigtomtech.com
+    secretName: media-tls
+  rules:
+  - host: plex.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: plex-service
+            port:
+              number: 32400
+  - host: overseerr.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: overseerr
+            port:
+              number: 5055
+  - host: sonarr.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarr
+            port:
+              number: 8989
+  - host: radarr.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr
+            port:
+              number: 7878
+  - host: sabnzbd.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sabnzbd
+            port:
+              number: 8080
+  - host: bazarr.apps.ossus.sigtomtech.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bazarr
+            port:
+              number: 6767
