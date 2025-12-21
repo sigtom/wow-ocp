@@ -5,3 +5,5 @@ resources:
   - operatorgroup.yaml
   - subscription.yaml
   - gitopsservice.yaml
+  - token-secret.yaml
+  - metrics-monitor.yaml

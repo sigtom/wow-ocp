@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: gitops-operator
+    olm.managed: "true"
+  name: openshift-gitops-operator-metrics-monitor
+  namespace: openshift-gitops-operator
+  ownerReferences:
+    - apiVersion: operators.coreos.com/v1alpha1
+      blockOwnerDeletion: false
+      controller: false
+      kind: ClusterServiceVersion
+      name: openshift-gitops-operator.v1.18.2
+      uid: fb0cef84-73e0-469a-9411-e2e2b4a78d06
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: gitops-monitor-token
+      key: token
+    interval: 30s      path: /metrics
+      port: metrics
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        serverName: openshift-gitops-operator-metrics-service.openshift-gitops-operator.svc
+  selector:
+    matchLabels:
+      control-plane: gitops-operator

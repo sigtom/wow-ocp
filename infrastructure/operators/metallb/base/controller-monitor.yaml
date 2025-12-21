@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: controller-certs-secret
+  labels:
+    app: metallb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v0.0.0
+    helm.sh/chart: metallb-0.0.0
+  name: controller-monitor
+  namespace: metallb-system
+  ownerReferences:
+    - apiVersion: metallb.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: MetalLB
+      name: metallb
+      uid: d38e7124-b274-4720-971f-dc2686f4a15d
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: metallb-monitor-token
+      key: token
+    honorLabels: true      port: metricshttps
+      scheme: https
+      tlsConfig:
+        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+        certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+        insecureSkipVerify: false
+        keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+        serverName: controller-monitor-service.metallb-system.svc
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - metallb-system
+  selector:
+    matchLabels:
+      name: controller-monitor-service
