@@ -122,6 +122,8 @@ spec:
       containers:
       - name: rdt-client
         image: docker.io/rogerfar/rdtclient:latest
+        securityContext:
+          privileged: true
         ports:
         - containerPort: 6500
           name: http
