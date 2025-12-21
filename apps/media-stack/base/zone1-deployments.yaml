@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zurg
+  namespace: media-stack
+  labels:
+    app: zurg
+    zone: zone1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zurg
+  template:
+    metadata:
+      labels:
+        app: zurg
+        zone: zone1
+    spec:
+      serviceAccountName: cloud-gateway
+      containers:
+      - name: zurg
+        image: zurg:latest
+        securityContext:
+          privileged: true
+        env:
+        - name: REAL_DEBRID_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: real-debrid-api
+              key: token
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rclone-torbox
+  namespace: media-stack
+  labels:
+    app: rclone-torbox
+    zone: zone1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rclone-torbox
+  template:
+    metadata:
+      labels:
+        app: rclone-torbox
+        zone: zone1
+    spec:
+      serviceAccountName: cloud-gateway
+      containers:
+      - name: rclone
+        image: rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - mount
+        - torbox:
+        - /mnt/media
+        - --config=/config/rclone/rclone.conf
+        - --allow-other
+        - --vfs-cache-mode=full
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-config
+          mountPath: /config/rclone
+          readOnly: true
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+      - name: rclone-config
+        secret:
+          secretName: rclone-config

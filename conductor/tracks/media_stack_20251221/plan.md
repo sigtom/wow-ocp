@@ -1,0 +1,26 @@
+# Track Plan: Hybrid Media Stack Deployment
+
+## Phase 1: Preparation & Security
+- [x] Task: Security - Configure SCCs and ServiceAccounts (79d5fc2)
+- [x] Task: Secrets - Create SealedSecrets for Cloud Providers (79d5fc2)
+- [ ] Task: Secrets - Create SealedSecrets for Indexers and *Arrs
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Preparation & Security' (Protocol in workflow.md)
+
+## Phase 2: Zone 1 - Connectivity & Cloud Gateway
+- [x] Task: Zone 1 - Deploy Zurg (Real-Debrid) (79d5fc2)
+- [x] Task: Zone 1 - Deploy Rclone (TorBox) (79d5fc2)
+- [ ] Task: Zone 1 - Deploy rdt-client and Riven
+- [ ] Task: Zone 1 - Verify Cloud Mounts and Symlinking
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Zone 1 - Connectivity' (Protocol in workflow.md)
+
+## Phase 3: Zone 2 - Management & Logic
+- [ ] Task: Zone 2 - Deploy Sonarr and Radarr
+- [ ] Task: Zone 2 - Deploy SABnzbd and Bazarr
+- [ ] Task: Zone 2 - Configure Root Folders (/stream and /archive)
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Zone 2 - Management' (Protocol in workflow.md)
+
+## Phase 4: Zone 3 & 4 - Player & Discovery
+- [ ] Task: Zone 3 - Update Plex Deployment with Sidecars
+- [ ] Task: Zone 4 - Deploy Overseerr
+- [ ] Task: Ingress - Configure Routes for Plex and Overseerr
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Player & Discovery' (Protocol in workflow.md)

@@ -2,7 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
+  - serviceaccounts.yaml
+  - rbac.yaml
+  - secrets.yaml
   - limitrange.yaml
   - networkpolicy.yaml
   - pvc-media-library.yaml
-  - verify-media-mount.yaml
+  - zone1-deployments.yaml
