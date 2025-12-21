@@ -9,7 +9,7 @@
 ## Phase 2: Zone 1 - Connectivity & Cloud Gateway
 - [x] Task: Zone 1 - Deploy Zurg (Real-Debrid) (79d5fc2)
 - [x] Task: Zone 1 - Deploy Rclone (TorBox) (79d5fc2)
-- [ ] Task: Zone 1 - Deploy rdt-client and Riven
+- [x] Task: Zone 1 - Deploy rdt-client and Riven (PR #11)
 - [ ] Task: Zone 1 - Verify Cloud Mounts and Symlinking
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Zone 1 - Connectivity' (Protocol in workflow.md)
 

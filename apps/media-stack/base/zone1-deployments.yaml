@@ -84,3 +84,117 @@ spec:
       - name: rclone-config
         secret:
           secretName: rclone-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rdt-client
+  namespace: media-stack
+  labels:
+    app: rdt-client
+    zone: zone1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rdt-client
+  template:
+    metadata:
+      labels:
+        app: rdt-client
+        zone: zone1
+    spec:
+      serviceAccountName: cloud-gateway
+      containers:
+      - name: rdt-client
+        image: rogueosb/rdt-client:latest
+        ports:
+        - containerPort: 6500
+          name: http
+        volumeMounts:
+        - name: media-storage
+          mountPath: /data/downloads
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rdt-client
+  namespace: media-stack
+  labels:
+    app: rdt-client
+spec:
+  selector:
+    app: rdt-client
+  ports:
+    - protocol: TCP
+      port: 6500
+      targetPort: 6500
+      name: http
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: riven
+  namespace: media-stack
+  labels:
+    app: riven
+    zone: zone1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: riven
+  template:
+    metadata:
+      labels:
+        app: riven
+        zone: zone1
+    spec:
+      serviceAccountName: cloud-gateway
+      containers:
+      - name: riven
+        image: rivenmedia/riven:latest
+        env:
+        - name: REAL_DEBRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: real-debrid-api
+              key: token
+        - name: TORBOX_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: torbox-api
+              key: api-token
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        ports:
+        - containerPort: 8080
+          name: http
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: riven
+  namespace: media-stack
+  labels:
+    app: riven
+spec:
+  selector:
+    app: riven
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+    name: http
+  type: ClusterIP
