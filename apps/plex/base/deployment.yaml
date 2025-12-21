@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: plex
   namespace: media-stack
+  labels:
+    app: plex
+    zone: zone3
 spec:
   replicas: 1
   selector:
@@ -12,13 +15,60 @@ spec:
     metadata:
       labels:
         app: plex
+        zone: zone3
     spec:
       serviceAccountName: plex
+      initContainers:
+      - name: init-dirs
+        image: docker.io/alpine:latest
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/zurg /mnt/media/torbox"]
+        volumeMounts:
+        - name: plex-media
+          mountPath: /mnt/media
       containers:
+      # Sidecar: Mount Zurg
+      - name: rclone-zurg
+        image: docker.io/rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - "mount"
+        - "zurg:"
+        - "/mnt/media/zurg"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--vfs-cache-mode=full"
+        volumeMounts:
+        - name: plex-media
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-zurg-config
+          mountPath: /config/rclone
+          readOnly: true
+      # Sidecar: Mount TorBox
+      - name: rclone-torbox
+        image: docker.io/rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - "mount"
+        - "torbox:"
+        - "/mnt/media/torbox"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--vfs-cache-mode=full"
+        volumeMounts:
+        - name: plex-media
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-config
+          mountPath: /config/rclone
+          readOnly: true
+      # Main: Plex
       - name: plex
         image: lscr.io/linuxserver/plex:latest
         securityContext:
-          runAsUser: 0
+          privileged: true 
         env:
         - name: PUID
           value: "1000"
@@ -33,7 +83,8 @@ spec:
         - name: plex-config
           mountPath: /config
         - name: plex-media
-          mountPath: /data
+          mountPath: /mnt/media
+          mountPropagation: HostToContainer
         livenessProbe:
           tcpSocket:
             port: 32400
@@ -46,11 +97,11 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            cpu: 500m
-            memory: 1Gi
+            cpu: 1000m
+            memory: 2Gi
           limits:
-            cpu: "2"
-            memory: 4Gi
+            cpu: "4"
+            memory: 8Gi
       volumes:
       - name: plex-config
         persistentVolumeClaim:
@@ -58,3 +109,9 @@ spec:
       - name: plex-media
         persistentVolumeClaim:
           claimName: media-library-pvc
+      - name: rclone-zurg-config
+        secret:
+          secretName: rclone-zurg-config
+      - name: rclone-config
+        secret:
+          secretName: rclone-config
