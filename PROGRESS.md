@@ -34,12 +34,19 @@
     - [x] **Persistence**: Migrated configs to shared NFS PVC (`/mnt/media/config/...`).
     - [x] **Structure**: Created `/stream`, `/archive`, `/downloads` on the 11TB Monster.
 
-- [x] **Zone 3 (The Player)**:
+- [x] Zone 3 (The Player):
     - [x] **Plex Architecture**: Refactored to Sidecar Pattern (Plex + Rclone-Zurg + Rclone-TorBox in one pod).
     - [x] **Visibility**: Verified Plex can see cloud content via local FUSE mounts.
     - [x] **Network**: Configured Service on Machine Network (MetalLB) and updated NetworkPolicy.
+    - [x] **HTTPS**: Implemented Nginx sidecar for SSL termination on dedicated IP (172.16.100.200).
+    - [x] **Persistence**: Migrated Plex config to shared NFS PVC subpath (/mnt/media/config/plex).
 
-- [x] **Secret Templates**: Established SealedSecret structure for Real-Debrid and TorBox APIs.
+- [x] Zone 4 (The Discovery Layer):
+    - [x] **Overseerr**: Deployed and configured with NFS persistence.
+
+- [x] Ingress:
+    - [x] **Unified Ingress**: Configured *.sigtom.dev routes for all media apps.
+    - [x] **DNS**: Updated pihole1-dns.list with correct IP mappings (.200 for Plex, .106 for others).
 
 
 
