@@ -1,0 +1,10 @@
+Task: Export and GitOps-ify OpenShift GitOps Operator
+Summary: Exported the existing OpenShift GitOps Operator configuration from the cluster and brought it under GitOps management.
+Files:
+- infrastructure/operators/openshift-gitops-operator/base/namespace.yaml
+- infrastructure/operators/openshift-gitops-operator/base/operatorgroup.yaml
+- infrastructure/operators/openshift-gitops-operator/base/subscription.yaml
+- infrastructure/operators/openshift-gitops-operator/base/gitopsservice.yaml
+- infrastructure/operators/openshift-gitops-operator/base/kustomization.yaml
+- argocd-apps/gitops-operator.yaml
+Why: To ensure the GitOps Operator itself is managed via GitOps, allowing for consistent configuration and easier updates.
