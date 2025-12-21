@@ -231,3 +231,74 @@ spec:
     targetPort: 8080
     name: http
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zurg
+  namespace: media-stack
+  labels:
+    app: zurg
+spec:
+  selector:
+    app: zurg
+  ports:
+  - protocol: TCP
+    port: 9999
+    targetPort: 9999
+    name: webdav
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rclone-zurg
+  namespace: media-stack
+  labels:
+    app: rclone-zurg
+    zone: zone1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rclone-zurg
+  template:
+    metadata:
+      labels:
+        app: rclone-zurg
+        zone: zone1
+    spec:
+      serviceAccountName: cloud-gateway
+      initContainers:
+      - name: init-dirs
+        image: docker.io/alpine:latest
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/zurg"]
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+      containers:
+      - name: rclone
+        image: docker.io/rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - "mount"
+        - "zurg:"
+        - "/mnt/media/zurg"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--vfs-cache-mode=full"
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-config
+          mountPath: /config/rclone
+          readOnly: true
+      volumes:
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+      - name: rclone-config
+        secret:
+          secretName: rclone-zurg-config
