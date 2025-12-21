@@ -1,6 +1,6 @@
 # Implementation Plan - Track: bugfix_20251221
 
-## Phase 1: Prometheus Metrics Fix & GitOps Hardening (Issue #1)
+## Phase 1: Prometheus Metrics Fix & GitOps Hardening (Issue #1) [checkpoint: d19a027]
 This phase focuses on bringing the GitOps operator under management and fixing the metric collection errors.
 
 - [x] Task: Export and GitOps-ify OpenShift GitOps Operator (beb0662)
@@ -14,7 +14,7 @@ This phase focuses on bringing the GitOps operator under management and fixing t
     - [x] Sub-task: Create Kustomize patches (overlays) for MetalLB and GitOps Operator to switch to `bearerTokenSecret`.
     - [x] Sub-task: Apply patches via GitOps.
     - [x] Sub-task: Verify Prometheus Targets are UP.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Prometheus Metrics Fix & GitOps Hardening (Issue #1)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Prometheus Metrics Fix & GitOps Hardening (Issue #1)' (Protocol in workflow.md)
 
 ## Phase 2: NFD Garbage Collector Fix (Issue #9)
 This phase addresses the CrashLoopBackOff in the Node Feature Discovery operator.
