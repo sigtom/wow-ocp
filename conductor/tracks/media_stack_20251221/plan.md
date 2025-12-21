@@ -14,7 +14,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Zone 1 - Connectivity' (Protocol in workflow.md)
 
 ## Phase 3: Zone 2 - Management & Logic
-- [ ] Task: Zone 2 - Deploy Sonarr and Radarr
+- [x] Task: Zone 2 - Deploy Sonarr and Radarr [cdf0f98]
 - [ ] Task: Zone 2 - Deploy SABnzbd and Bazarr
 - [ ] Task: Zone 2 - Configure Root Folders (/stream and /archive)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Zone 2 - Management' (Protocol in workflow.md)
