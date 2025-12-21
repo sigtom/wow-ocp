@@ -18,9 +18,17 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      initContainers:
+      - name: init-dirs
+        image: docker.io/alpine:latest
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/zurg"]
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
       containers:
       - name: zurg
-        image: ghcr.io/debridmediamanager/zurg:latest
+        image: ghcr.io/debridmediamanager/zurg:v0.9.3-hotfix.1
         securityContext:
           privileged: true
         env:
@@ -58,6 +66,14 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      initContainers:
+      - name: init-dirs
+        image: docker.io/alpine:latest
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/torbox"]
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
       containers:
       - name: rclone
         image: docker.io/rclone/rclone:latest
@@ -66,7 +82,7 @@ spec:
         args:
         - "mount"
         - "torbox:"
-        - "/mnt/media"
+        - "/mnt/media/torbox"
         - "--config=/config/rclone/rclone.conf"
         - "--allow-other"
         - "--vfs-cache-mode=full"
