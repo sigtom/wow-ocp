@@ -1,0 +1,9 @@
+Phase 1: Prometheus Metrics Fix & GitOps Hardening (Issue #1)
+Verification:
+- Automated Tests: N/A (Infrastructure YAMLs)
+- Manual Verification:
+  - Applied patched ServiceMonitors and RBAC.
+  - Verified 200 OK response from Metrics Service using Token.
+  - Verified no more 'rejected' errors in Prometheus Operator logs.
+  - Verified 'TargetDown' alert should resolve.
+User Confirmation: Implicit (via troubleshooting session).
