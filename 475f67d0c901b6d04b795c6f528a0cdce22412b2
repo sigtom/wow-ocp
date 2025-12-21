@@ -1,0 +1,7 @@
+Task: Update LVM Configuration
+Summary: Rebuilt the LVMCluster configuration to use 'optionalPaths' in 'deviceSelector' to support heterogeneous hardware (Node 2/3 vs Node 4).
+Files:
+- infrastructure/storage/lvms/base/lvmcluster.yaml
+- infrastructure/storage/lvms/base/kustomization.yaml
+- argocd-apps/cluster-lvms.yaml
+Why: The previous configuration failed on Node 2 and 3 because the device path list was interpreted strictly. Using 'optionalPaths' allows the operator to pick the valid path for each node.
