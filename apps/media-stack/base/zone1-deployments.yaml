@@ -20,7 +20,7 @@ spec:
       serviceAccountName: cloud-gateway
       containers:
       - name: zurg
-        image: zurg:latest
+        image: ghcr.io/debridmediamanager/zurg:latest
         securityContext:
           privileged: true
         env:
@@ -60,16 +60,16 @@ spec:
       serviceAccountName: cloud-gateway
       containers:
       - name: rclone
-        image: rclone/rclone:latest
+        image: docker.io/rclone/rclone:latest
         securityContext:
           privileged: true
         args:
-        - mount
-        - torbox:
-        - /mnt/media
-        - --config=/config/rclone/rclone.conf
-        - --allow-other
-        - --vfs-cache-mode=full
+        - "mount"
+        - "torbox:"
+        - "/mnt/media"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--vfs-cache-mode=full"
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
@@ -107,7 +107,7 @@ spec:
       serviceAccountName: cloud-gateway
       containers:
       - name: rdt-client
-        image: rogueosb/rdt-client:latest
+        image: docker.io/rogueosb/rdt-client:latest
         ports:
         - containerPort: 6500
           name: http
@@ -158,7 +158,9 @@ spec:
       serviceAccountName: cloud-gateway
       containers:
       - name: riven
-        image: rivenmedia/riven:latest
+        image: ghcr.io/rivenmedia/riven:latest
+        securityContext:
+          privileged: true
         env:
         - name: REAL_DEBRID_API_KEY
           valueFrom:
