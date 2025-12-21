@@ -72,7 +72,7 @@ spec:
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
-          mountPropagation: Bidirectional
+
       containers:
       - name: rclone
         image: docker.io/rclone/rclone:latest
