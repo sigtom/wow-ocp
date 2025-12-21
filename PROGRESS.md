@@ -15,11 +15,11 @@
 - [x] **Namespace Scaffolding**: Created `media-stack` namespace with:
     - [x] **LimitRange**: Enforcing resource discipline (256Mi/1Gi RAM).
     - [x] **NetworkPolicy**: Defaulting to allow-same-namespace.
-- [x] **VLAN Bridges**: Configured br110, br120, br130 across all nodes via NMState (NodeNetworkConfigurationPolicy).
-- [x] **MetalLB**: Configured Layer 2 advertisements and address pools for all workload VLANs.
+    - [x] **VLAN Bridges**: Configured br110, br120, br130 across all nodes via NMState (NodeNetworkConfigurationPolicy).
+    - [x] **MetalLB**: Configured Layer 2 advertisements and address pools for all workload VLANs.
+    - [x] **MetalLB Machine Pool**: Added Layer 2 pool (172.16.100.200-220) on br-ex.
 
-### 3. Hybrid Media Stack (In Progress)
-- [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
+### 3. Hybrid Media Stack (In Progress)- [x] **Security Contexts**: Configured `privileged` and `anyuid` SCC bindings for media-stack ServiceAccounts to support FUSE/Rclone mounts.
 - [x] **Zone 1 (Cloud Gateway)**: Deployed Zurg, Rclone, rdt-client, and Riven manifests via GitOps (PR #11).
 - [x] **Secret Templates**: Established SealedSecret structure for Real-Debrid and TorBox APIs.
 

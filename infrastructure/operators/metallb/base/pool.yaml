@@ -60,3 +60,24 @@ spec:
   - vlan120-pool
   interfaces:
   - br120
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: machine-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.16.100.200-172.16.100.220
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: machine-adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - machine-pool
+  interfaces:
+  - br-ex
