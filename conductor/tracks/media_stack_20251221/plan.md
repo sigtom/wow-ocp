@@ -15,7 +15,7 @@
 
 ## Phase 3: Zone 2 - Management & Logic
 - [x] Task: Zone 2 - Deploy Sonarr and Radarr [cdf0f98]
-- [ ] Task: Zone 2 - Deploy SABnzbd and Bazarr
+- [x] Task: Zone 2 - Deploy SABnzbd and Bazarr [956cf71]
 - [ ] Task: Zone 2 - Configure Root Folders (/stream and /archive)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Zone 2 - Management' (Protocol in workflow.md)
 
