@@ -14,10 +14,16 @@ The project is a private OpenShift 4.20 Homelab running on Dell FC630 blades, de
 ## Key Features & Roadmap
 - **Storage & Media Management (Complete):** Integration with TrueNAS via CSI, managing the 11TB media library, and deploying the media stack (Plex/Jellyfin).
 - **GitOps & Automation (Complete):** Managing all configurations via Kustomize and ArgoCD, implementing Sealed Secrets for security, and using Cert-Manager for TLS.
+- **Hybrid Media Stack (Complete):**
+    - **Cloud Gateway:** Real-Debrid (Zurg) and TorBox (Rclone) integration for infinite streaming.
+    - **Unified Player:** Plex with sidecar architecture for seamless cloud/local playback.
+    - **Automation Suite:** Sonarr, Radarr, SABnzbd, Bazarr, and Overseerr fully deployed and integrated.
 - **Infrastructure & Networking (Complete):** 
     - Hybrid workload management (Containers + VMs).
     - Advanced Layer 2 networking (VLANs 110, 120, 130, 160).
-    - MetalLB Load Balancing on dedicated bridges.
+    - MetalLB Load Balancing:
+        - **Plex:** Dedicated IP (`172.16.100.200`) for direct client access.
+        - **Other Apps:** Shared Ingress VIP (`172.16.100.106`) via `*.sigtom.dev`.
     - Node Optimization (Kubelet Tuning) for compact cluster topology.
 - **Core Services (Complete):**
     - User Workload Monitoring with persistent storage.
