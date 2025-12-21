@@ -22,5 +22,5 @@
 ## Phase 4: Zone 3 & 4 - Player & Discovery
 - [x] Task: Zone 3 - Update Plex Deployment with Sidecars (Completed ahead of schedule)
 - [x] Task: Zone 4 - Deploy Overseerr [bd23426]
-- [ ] Task: Ingress - Configure Routes for Plex and Overseerr
+- [x] Task: Ingress - Configure Routes for Plex and Overseerr [2ea159a]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Player & Discovery' (Protocol in workflow.md)
