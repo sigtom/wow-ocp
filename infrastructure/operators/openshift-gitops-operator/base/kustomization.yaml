@@ -7,3 +7,4 @@ resources:
   - gitopsservice.yaml
   - token-secret.yaml
   - metrics-monitor.yaml
+  - metrics-rbac.yaml

@@ -6,3 +6,4 @@ resources:
   - token-secret.yaml
   - speaker-monitor.yaml
   - controller-monitor.yaml
+  - metrics-rbac.yaml
