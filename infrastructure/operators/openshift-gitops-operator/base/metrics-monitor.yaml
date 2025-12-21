@@ -18,12 +18,16 @@ spec:
   - bearerTokenSecret:
       name: gitops-monitor-token
       key: token
-    interval: 30s      path: /metrics
-      port: metrics
-      scheme: https
-      tlsConfig:
-        caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-        serverName: openshift-gitops-operator-metrics-service.openshift-gitops-operator.svc
+    interval: 30s
+    path: /metrics
+    port: metrics
+    scheme: https
+    tlsConfig:
+      ca:
+        configMap:
+          name: openshift-service-ca.crt
+          key: service-ca.crt
+      serverName: openshift-gitops-operator-metrics-service.openshift-gitops-operator.svc
   selector:
     matchLabels:
       control-plane: gitops-operator
