@@ -25,7 +25,6 @@ spec:
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
-          mountPropagation: Bidirectional
       containers:
       - name: zurg
         image: ghcr.io/debridmediamanager/zurg:v0.9.3-hotfix.1
