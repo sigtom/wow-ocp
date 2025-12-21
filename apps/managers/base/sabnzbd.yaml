@@ -21,6 +21,8 @@ spec:
       containers:
       - name: sabnzbd
         image: lscr.io/linuxserver/sabnzbd:latest
+        securityContext:
+          privileged: true
         env:
         - name: PUID
           value: "1000"

@@ -67,6 +67,8 @@ spec:
       # Main: Bazarr
       - name: bazarr
         image: lscr.io/linuxserver/bazarr:latest
+        securityContext:
+          privileged: true
         env:
         - name: PUID
           value: "1000"
