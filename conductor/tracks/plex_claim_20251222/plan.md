@@ -8,13 +8,13 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation' (Protocol in workflow.md)
 
 ## Phase 2: Execution (Operational)
-- [ ] Task: Pause ArgoCD application `plex`
-- [ ] Task: Scale Plex deployment to 0
-- [ ] Task: **USER ACTION** Delete `Preferences.xml` from TrueNAS
-- [ ] Task: **USER ACTION** Update `.env` with NEW `PLEX_CLAIM`
-- [ ] Task: Read `.env`, Generate Secret, Seal it, and **Directly Apply** to Cluster
-- [ ] Task: Scale Plex deployment to 1
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Execution' (Protocol in workflow.md)
+- [x] Task: Pause ArgoCD application `plex`
+- [x] Task: Scale Plex deployment to 0
+- [x] Task: **USER ACTION** Delete `Preferences.xml` from TrueNAS
+- [x] Task: **USER ACTION** Update `.env` with NEW `PLEX_CLAIM`
+- [x] Task: Read `.env`, Generate Secret, Seal it, and **Directly Apply** to Cluster
+- [x] Task: Scale Plex deployment to 1
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Execution' (Protocol in workflow.md)
 
 ## Phase 3: Reconciliation
 - [ ] Task: Overwrite local `apps/plex/base/plex-claim-sealed-secret.yaml` with the newly generated one
