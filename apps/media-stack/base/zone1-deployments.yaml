@@ -171,6 +171,8 @@ spec:
         - "/mnt/media/torbox"
         - "--config=/config/rclone/rclone.conf"
         - "--allow-other"
+        - "--allow-non-empty"
+        - "--log-level=DEBUG"
         - "--vfs-cache-mode=full"
         volumeMounts:
         - name: media-storage
