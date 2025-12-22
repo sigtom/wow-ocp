@@ -5,3 +5,4 @@ resources:
 - namespace.yaml
 - operatorgroup.yaml
 - subscription-logging.yaml
+- subscription-loki.yaml
