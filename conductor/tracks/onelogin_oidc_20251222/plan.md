@@ -1,11 +1,11 @@
 # Plan: Configure OneLogin OIDC Identity Provider
 
 ## Phase 1: Secret Management
-- [x] Task: Read OneLogin credentials from `.env` file
-- [x] Task: Generate a Kubernetes Secret for the OneLogin Client Secret (dry-run)
-- [x] Task: Seal the Secret using `kubeseal` and the public key `pub-sealed-secrets.pem`
-- [x] Task: Add the `SealedSecret` to `infrastructure/auth/onelogin-sealed-secret.yaml`
-- [x] Task: Update `infrastructure/auth/kustomization.yaml` to include the new secret
+- [x] Task: Read OneLogin credentials from `.env` file 5cbe12d
+- [x] Task: Generate a Kubernetes Secret for the OneLogin Client Secret (dry-run) 5cbe12d
+- [x] Task: Seal the Secret using `kubeseal` and the public key `pub-sealed-secrets.pem` 5cbe12d
+- [x] Task: Add the `SealedSecret` to `infrastructure/auth/onelogin-sealed-secret.yaml` 5cbe12d
+- [x] Task: Update `infrastructure/auth/kustomization.yaml` to include the new secret 5cbe12d
 - [~] Task: Conductor - User Manual Verification 'Phase 1: Secret Management' (Protocol in workflow.md)
 
 ## Phase 2: OAuth Configuration
