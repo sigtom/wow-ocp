@@ -16,9 +16,9 @@
 - [x] Task: Scale Plex deployment to 1
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Execution' (Protocol in workflow.md)
 
-## Phase 3: Reconciliation
+## Phase 3: Reconciliation [checkpoint: 11fb0a6]
 - [x] Task: Overwrite local `apps/plex/base/plex-claim-sealed-secret.yaml` with the newly generated one
 - [x] Task: Commit and Push the real SealedSecret
 - [x] Task: Unpause ArgoCD application `plex`
 - [x] Task: Verify ArgoCD Sync
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Reconciliation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Reconciliation' (Protocol in workflow.md)
