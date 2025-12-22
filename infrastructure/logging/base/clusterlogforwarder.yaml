@@ -19,7 +19,7 @@ spec:
       tls:
         ca:
           key: service-ca.crt
-          name: openshift-service-ca.crt
+          secretName: openshift-service-ca.crt
   pipelines:
     - name: application-logs
       inputRefs:
