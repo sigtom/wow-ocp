@@ -18,7 +18,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: LokiStack Deployment' (Protocol in workflow.md) 6654171
 
 ## Phase 4: Log Collection & Console Integration
-- [ ] Task: Deploy `ClusterLogging` instance to enable Console integration
+- [x] Task: Deploy `ClusterLogging` instance to enable Console integration ef85803
 - [ ] Task: Deploy `ClusterLogForwarder` to send Application and Infrastructure logs to Loki
 - [ ] Task: Verify logs are appearing in OpenShift Console -> Observe -> Logs
 - [ ] Task: Verify 30-day retention configuration is active
