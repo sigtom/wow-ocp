@@ -8,11 +8,11 @@
 - [x] Task: Update `infrastructure/auth/kustomization.yaml` to include the new secret 5cbe12d
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Secret Management' (Protocol in workflow.md)
 
-## Phase 2: OAuth Configuration
+## Phase 2: OAuth Configuration [checkpoint: db66841]
 - [x] Task: Update `infrastructure/auth/cluster-oauth.yaml` to include the OneLogin OIDC provider 075c747
 - [x] Task: Verify the Kustomize build for the `infrastructure/auth/` directory 075c747
 - [x] Task: Update `argocd-apps/cluster-auth.yaml` to ensure sync of authentication changes (if not already synced) 075c747
-- [~] Task: Conductor - User Manual Verification 'Phase 2: OAuth Configuration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: OAuth Configuration' (Protocol in workflow.md)
 
 ## Phase 3: Validation and Testing
 - [ ] Task: Monitor the `openshift-authentication` namespace pods for successful rollout
