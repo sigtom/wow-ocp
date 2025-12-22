@@ -1,6 +1,6 @@
 # Plan: Plex Server Claiming Procedure
 
-## Phase 1: Preparation (GitOps) [checkpoint: 789abcd]
+## Phase 1: Preparation (GitOps) [checkpoint: 6224d8e]
 - [x] Task: Update `apps/plex/base/deployment.yaml` to add `PLEX_CLAIM` env var mapped to secret `plex-claim` key `claimToken` a38d5b7
 - [x] Task: Create a placeholder `SealedSecret` for `plex-claim` (to satisfy Kustomize build) a38d5b7
 - [x] Task: Update `apps/plex/base/kustomization.yaml` to include the secret a38d5b7
