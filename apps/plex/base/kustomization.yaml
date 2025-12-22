@@ -5,3 +5,4 @@ resources:
   - service.yaml
   - deployment.yaml
   - nginx-config.yaml
+  - plex-claim-sealed-secret.yaml
