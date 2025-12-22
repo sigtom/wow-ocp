@@ -1,0 +1,7 @@
+apiVersion: lvm.topolvm.io/v1alpha1
+kind: LVMVolumeGroupNodeStatus
+metadata:
+  name: wow-ocp-node2
+  namespace: openshift-storage
+spec:
+  nodeStatus: []

@@ -89,4 +89,7 @@
 - [2025-12-20]: Operationalized Homelab - Completed Networking (VLANs/MetalLB), Storage (GitOps/CSI), Monitoring (UWM/PVs), and Node Tuning.
 - [2025-12-20]: Alert Investigation - Investigating NFD and Storage rollout issues.
 - [2025-12-21]: Hybrid Media Stack - Deployed Zone 1 (Cloud Gateway) and configured security context constraints for FUSE.
-- [2025-12-21]: Design Pivot - Backtracking from `bootstrap_project_v1.sh` multi-agent design in favor of sequential Conductor-led batching.
+- [2025-12-21]: Design Pivot - Backtracking from `bootstrap_project_v1.sh` multi-agent design in favor of sequential Conductor-led batching.- [2025-12-21]: Bug Fixes & Infrastructure Stabilization - [Mixed Success]
+  - Fixed Prometheus Operator 'Rejected Resources' by GitOps-ifying GitOps Operator and patching ServiceMonitors with correct RBAC and Secret-based auth.
+  - Partially Fixed LVM Storage: Restored service on Node 4, but Node 2/3 remain degraded due to operator detection issues despite correct configuration.
+  - Skipped NFD Garbage Collector fix: Upstream bug in NFD Operator (port mismatch) cannot be patched via CRD.
