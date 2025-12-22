@@ -15,8 +15,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: OAuth Configuration' (Protocol in workflow.md)
 
 ## Phase 3: Validation and Testing
-- [ ] Task: Monitor the `openshift-authentication` namespace pods for successful rollout
-- [ ] Task: Verify the presence of the OneLogin IDP in the OpenShift Console login page
-- [ ] Task: Perform a test login with a OneLogin account
-- [ ] Task: Verify the created `Identity` and `User` resources in OpenShift
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Validation and Testing' (Protocol in workflow.md)
+- [x] Task: Monitor the `openshift-authentication` namespace pods for successful rollout
+- [x] Task: Verify the presence of the OneLogin IDP in the OpenShift Console login page
+- [x] Task: Perform a test login with a OneLogin account
+- [x] Task: Verify the created `Identity` and `User` resources in OpenShift
+- [x] Task: Grant cluster-admin to OneLogin user `sigtom`
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Validation and Testing' (Protocol in workflow.md)
