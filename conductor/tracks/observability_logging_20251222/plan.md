@@ -9,7 +9,7 @@
 
 ## Phase 2: Storage & Secrets
 - [x] Task: Create SealedSecret for Minio S3 credentials in `openshift-logging` 35c7dcf
-- [ ] Task: Create LokiStack storage secret manifest
+- [x] Task: Create LokiStack storage secret manifest 35c7dcf
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Storage & Secrets' (Protocol in workflow.md)
 
 ## Phase 3: LokiStack Deployment
