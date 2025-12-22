@@ -8,11 +8,12 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Secret Management' (Protocol in workflow.md)
 
 ## Phase 2: Alertmanager Configuration
-- [ ] Task: Research/Confirm Alertmanager configuration method for OCP 4.20 (likely patching `alertmanager-main` secret)
-- [ ] Task: Create Alertmanager configuration manifest (YAML) with Slack receiver details
-- [ ] Task: Create Kustomize overlay to apply the configuration to the cluster
-- [ ] Task: Update `argocd-apps/cluster-monitoring.yaml` to ensure sync of configuration changes
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Alertmanager Configuration' (Protocol in workflow.md)
+- [x] Task: Research/Confirm Alertmanager configuration method for OCP 4.20 (likely patching `alertmanager-main` secret) 20c71e7
+- [x] Task: Create Alertmanager configuration manifest (YAML) with Slack receiver details ef136b5
+- [x] Task: Update cluster-monitoring-config.yaml to mount the slack-webhook secret ef136b5
+- [x] Task: Create Kustomize overlay to apply the configuration to the cluster ef136b5
+- [x] Task: Update `argocd-apps/cluster-monitoring.yaml` to ensure sync of configuration changes ef136b5
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Alertmanager Configuration' (Protocol in workflow.md)
 
 ## Phase 3: Validation and Alert Testing
 - [ ] Task: Verify ArgoCD successful sync of monitoring components
