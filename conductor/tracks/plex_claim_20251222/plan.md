@@ -17,8 +17,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Execution' (Protocol in workflow.md)
 
 ## Phase 3: Reconciliation
-- [ ] Task: Overwrite local `apps/plex/base/plex-claim-sealed-secret.yaml` with the newly generated one
-- [ ] Task: Commit and Push the real SealedSecret
-- [ ] Task: Unpause ArgoCD application `plex`
-- [ ] Task: Verify ArgoCD Sync
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Reconciliation' (Protocol in workflow.md)
+- [x] Task: Overwrite local `apps/plex/base/plex-claim-sealed-secret.yaml` with the newly generated one
+- [x] Task: Commit and Push the real SealedSecret
+- [x] Task: Unpause ArgoCD application `plex`
+- [x] Task: Verify ArgoCD Sync
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Reconciliation' (Protocol in workflow.md)
