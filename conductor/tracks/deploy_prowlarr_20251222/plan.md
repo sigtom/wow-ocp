@@ -1,6 +1,6 @@
 # Plan: Deploy Prowlarr Indexer Manager
 
-## Phase 1: Resource Creation [checkpoint: a0d58b6]
+## Phase 1: Resource Creation [checkpoint: ce0fbae]
 - [x] Task: Create `apps/managers/base/prowlarr.yaml` (Deployment & Service) a0d58b6
 - [x] Task: Update `apps/managers/base/kustomization.yaml` to include prowlarr a0d58b6
 - [x] Task: Update `apps/media-stack/base/ingress.yaml` to expose prowlarr.sigtom.dev a0d58b6
