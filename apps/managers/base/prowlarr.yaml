@@ -22,6 +22,8 @@ spec:
       # Main: Prowlarr
       - name: prowlarr
         image: lscr.io/linuxserver/prowlarr:latest
+        securityContext:
+          privileged: true
         env:
         - name: PUID
           value: "1000"
