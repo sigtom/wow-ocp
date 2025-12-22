@@ -2,7 +2,7 @@
 
 ## Phase 1: Foundation & Operators
 - [x] Task: Create `infrastructure/logging/base` directory structure 183b865
-- [ ] Task: Deploy Red Hat OpenShift Logging Operator via Subscription
+- [x] Task: Deploy Red Hat OpenShift Logging Operator via Subscription 0af6ad7
 - [ ] Task: Deploy Loki Operator via Subscription
 - [ ] Task: Create `openshift-logging` namespace and necessary RBAC
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Operators' (Protocol in workflow.md)
