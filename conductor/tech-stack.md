@@ -24,6 +24,11 @@
 - **Security:** OpenShift Security Context Constraints (SCCs), NetworkPolicies, HTPasswd IDP + RBAC.
 
 ## Monitoring & Observability
+
 - **Cluster Monitoring:** Prometheus/Alertmanager (Default)
+
+- **Alerting:** Slack Receiver configured for `#ocp-alerts`.
+
 - **User Workload:** Prometheus User Workload Monitoring (Enabled with PV storage)
+
 - **Registry:** OpenShift Image Registry (Managed with PV storage)
