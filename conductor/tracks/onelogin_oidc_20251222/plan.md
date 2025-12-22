@@ -14,7 +14,7 @@
 - [x] Task: Update `argocd-apps/cluster-auth.yaml` to ensure sync of authentication changes (if not already synced) 075c747
 - [x] Task: Conductor - User Manual Verification 'Phase 2: OAuth Configuration' (Protocol in workflow.md)
 
-## Phase 3: Validation and Testing
+## Phase 3: Validation and Testing [checkpoint: 351ab44]
 - [x] Task: Monitor the `openshift-authentication` namespace pods for successful rollout
 - [x] Task: Verify the presence of the OneLogin IDP in the OpenShift Console login page
 - [x] Task: Perform a test login with a OneLogin account
