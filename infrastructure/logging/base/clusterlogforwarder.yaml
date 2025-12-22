@@ -28,7 +28,7 @@ spec:
           key: service-ca.crt
           configMapName: openshift-service-ca.crt
       rateLimit:
-        maxRecordsPerSecond: 5000
+        maxRecordsPerSecond: 1000
   pipelines:
     - name: application-logs
       inputRefs:
