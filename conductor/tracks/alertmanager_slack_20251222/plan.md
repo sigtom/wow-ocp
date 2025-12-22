@@ -1,6 +1,6 @@
 # Plan: Configure Alertmanager Receivers (Slack)
 
-## Phase 1: Secret Management
+## Phase 1: Secret Management [checkpoint: 4563b54]
 - [x] Task: Generate Slack Webhook Secret (dry-run) 7f3c5cb
 - [x] Task: Seal the Secret using `kubeseal` and the public key `pub-sealed-secrets.pem` 7f3c5cb
 - [x] Task: Add the `SealedSecret` to `infrastructure/monitoring/slack-webhook-sealed-secret.yaml` 7f3c5cb
