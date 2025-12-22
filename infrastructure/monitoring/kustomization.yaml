@@ -4,3 +4,4 @@ resources:
   - cluster-monitoring-config.yaml
   - user-workload-monitoring-config.yaml
   - slack-webhook-sealed-secret.yaml
+  - alertmanager-main-secret.yaml
