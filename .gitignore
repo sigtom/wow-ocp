@@ -9,7 +9,7 @@ secrets/
 tmp-secrets/
 .env
 pihole1-dns.list
-
+.env*
 .gemini/
 gha-creds-*.json
 truenas-setup.md
