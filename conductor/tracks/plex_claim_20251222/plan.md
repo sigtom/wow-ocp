@@ -7,7 +7,7 @@
 - [x] Task: Commit and Push preparation changes a38d5b7
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Preparation' (Protocol in workflow.md)
 
-## Phase 2: Execution (Operational)
+## Phase 2: Execution (Operational) [checkpoint: 866b872]
 - [x] Task: Pause ArgoCD application `plex`
 - [x] Task: Scale Plex deployment to 0
 - [x] Task: **USER ACTION** Delete `Preferences.xml` from TrueNAS
