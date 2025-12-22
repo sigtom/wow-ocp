@@ -18,6 +18,8 @@ spec:
         zone: zone2
     spec:
       serviceAccountName: managers
+      securityContext:
+        runAsUser: 0
       containers:
       # Main: Prowlarr
       - name: prowlarr
@@ -26,9 +28,9 @@ spec:
           privileged: true
         env:
         - name: PUID
-          value: "1000"
+          value: "0"
         - name: PGID
-          value: "1000"
+          value: "0"
         - name: TZ
           value: "Etc/UTC"
         ports:
