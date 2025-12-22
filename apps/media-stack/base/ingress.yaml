@@ -18,6 +18,7 @@ spec:
     - rdt-client.sigtom.dev
     - zurg.sigtom.dev
     - riven.sigtom.dev
+    - prowlarr.sigtom.dev
     secretName: media-sigtom-tls
   rules:
   - host: plex.sigtom.dev
@@ -30,6 +31,16 @@ spec:
             name: plex-service
             port:
               number: 32400
+  - host: prowlarr.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prowlarr
+            port:
+              number: 9696
   - host: overseerr.sigtom.dev
     http:
       paths:
