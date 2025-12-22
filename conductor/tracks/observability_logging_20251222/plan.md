@@ -14,7 +14,7 @@
 
 ## Phase 3: LokiStack Deployment
 - [x] Task: Deploy `LokiStack` instance (Size-S) using Minio storage 2746f04
-- [ ] Task: Verify LokiStack pods are healthy and connected to Minio
+- [x] Task: Verify LokiStack pods are healthy and connected to Minio 2b5d8de
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: LokiStack Deployment' (Protocol in workflow.md)
 
 ## Phase 4: Log Collection & Console Integration
