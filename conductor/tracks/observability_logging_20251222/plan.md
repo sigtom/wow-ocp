@@ -19,7 +19,7 @@
 
 ## Phase 4: Log Collection & Console Integration
 - [x] Task: Deploy `ClusterLogging` instance to enable Console integration ef85803
-- [ ] Task: Deploy `ClusterLogForwarder` to send Application and Infrastructure logs to Loki
+- [x] Task: Deploy `ClusterLogForwarder` to send Application and Infrastructure logs to Loki 8be208a
 - [ ] Task: Verify logs are appearing in OpenShift Console -> Observe -> Logs
 - [ ] Task: Verify 30-day retention configuration is active
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Log Collection & Console Integration' (Protocol in workflow.md)
