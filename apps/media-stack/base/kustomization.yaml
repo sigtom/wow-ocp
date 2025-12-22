@@ -2,14 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - serviceaccounts.yaml
-  - rbac.yaml
-  - sealed-secret-rclone-config.yaml
-  - sealed-secret-rclone-zurg-config.yaml
-  - sealed-secret-real-debrid-api.yaml
-  - sealed-secret-torbox-api.yaml
-  - limitrange.yaml
   - networkpolicy.yaml
+  - rbac.yaml
+  - serviceaccounts.yaml
+  - limitrange.yaml
   - pvc-media-library.yaml
   - zone1-deployments.yaml
+  - sealed-secret-real-debrid-api.yaml
+  - sealed-secret-torbox-api.yaml
+  - sealed-secret-rclone-config.yaml
+  - sealed-secret-rclone-zurg-config.yaml
+  - zurg-configmap.yaml
   - ingress.yaml

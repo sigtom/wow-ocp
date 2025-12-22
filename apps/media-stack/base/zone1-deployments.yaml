@@ -33,6 +33,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
+            cp /config/zurg/config.yml /app/config.yml && \
             sed -i "s/YOUR_RD_API_TOKEN/$REAL_DEBRID_TOKEN/g" /app/config.yml && \
             ./zurg
         env:
@@ -45,10 +46,16 @@ spec:
         - name: media-storage
           mountPath: /mnt/media
           mountPropagation: Bidirectional
+        - name: zurg-config
+          mountPath: /config/zurg
+          readOnly: true
       volumes:
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-library-pvc
+      - name: zurg-config
+        configMap:
+          name: zurg-config
 ---
 apiVersion: apps/v1
 kind: Deployment
