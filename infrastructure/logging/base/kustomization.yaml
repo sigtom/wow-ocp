@@ -10,3 +10,4 @@ resources:
 - loki-minio-secret.yaml
 - lokistack.yaml
 - clusterlogforwarder.yaml
+- uiplugin.yaml
