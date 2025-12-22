@@ -8,7 +8,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Ingress Update' (Protocol in workflow.md)
 
 ## Phase 2: Sync and Verification
-- [ ] Task: Verify ArgoCD successful sync of `media-stack` application
-- [ ] Task: Verify OpenShift Routes are created for the new services
-- [ ] Task: Verify external accessibility (browser test) for rdt-client, zurg, and riven
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Sync and Verification' (Protocol in workflow.md)
+- [x] Task: Verify ArgoCD successful sync of `media-stack` application
+- [x] Task: Verify OpenShift Routes are created for the new services
+- [x] Task: Verify external accessibility (browser test) for rdt-client, zurg, and riven
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Sync and Verification' (Protocol in workflow.md)
