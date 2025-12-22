@@ -129,7 +129,7 @@ spec:
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
-        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/zurg /mnt/media/torbox /mnt/media/downloads"]
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/zurg /mnt/media/torbox /mnt/media/downloads /mnt/media/config/rdt-client"]
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
@@ -189,6 +189,9 @@ spec:
         - name: media-storage
           mountPath: /data/downloads
           subPath: downloads
+        - name: media-storage
+          mountPath: /data/db
+          subPath: config/rdt-client
         - name: media-storage
           mountPath: /mnt/media
           mountPropagation: HostToContainer
