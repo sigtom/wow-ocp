@@ -93,3 +93,4 @@
   - Fixed Prometheus Operator 'Rejected Resources' by GitOps-ifying GitOps Operator and patching ServiceMonitors with correct RBAC and Secret-based auth.
   - Partially Fixed LVM Storage: Restored service on Node 4, but Node 2/3 remain degraded due to operator detection issues despite correct configuration.
   - Skipped NFD Garbage Collector fix: Upstream bug in NFD Operator (port mismatch) cannot be patched via CRD.
+- 2025-12-22: Infinite Streaming Setup - Confirmed RdtClient+Zurg+Radarr importing symlinks with 0 byte disk usage.
