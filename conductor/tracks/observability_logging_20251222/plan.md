@@ -13,7 +13,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Storage & Secrets' (Protocol in workflow.md) 7a6baf8
 
 ## Phase 3: LokiStack Deployment
-- [ ] Task: Deploy `LokiStack` instance (Size-S) using Minio storage
+- [x] Task: Deploy `LokiStack` instance (Size-S) using Minio storage 2746f04
 - [ ] Task: Verify LokiStack pods are healthy and connected to Minio
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: LokiStack Deployment' (Protocol in workflow.md)
 
