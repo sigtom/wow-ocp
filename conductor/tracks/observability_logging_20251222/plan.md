@@ -8,7 +8,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Operators' (Protocol in workflow.md) 04bd0bb
 
 ## Phase 2: Storage & Secrets
-- [ ] Task: Create SealedSecret for Minio S3 credentials in `openshift-logging`
+- [x] Task: Create SealedSecret for Minio S3 credentials in `openshift-logging` 35c7dcf
 - [ ] Task: Create LokiStack storage secret manifest
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Storage & Secrets' (Protocol in workflow.md)
 
