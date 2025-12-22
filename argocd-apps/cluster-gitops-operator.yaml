@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-gitops-operator
+  namespace: openshift-gitops
+  labels:
+    cluster: infrastructure
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: main
+    path: infrastructure/operators/openshift-gitops-operator/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

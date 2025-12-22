@@ -1,4 +1,4 @@
-*.json
+.*.json
 *.tmp
 .env
 bin/
@@ -7,3 +7,8 @@ bin/
 *-raw.yaml
 secrets/
 tmp-secrets/
+.env
+pihole1-dns.list
+
+.gemini/
+gha-creds-*.json

@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: speaker-certs-secret
+  labels:
+    app: metallb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: v0.0.0
+    component: speaker
+    helm.sh/chart: metallb-0.0.0
+  name: speaker-monitor
+  namespace: metallb-system
+  ownerReferences:
+    - apiVersion: metallb.io/v1beta1
+      blockOwnerDeletion: true
+      controller: true
+      kind: MetalLB
+      name: metallb
+      uid: d38e7124-b274-4720-971f-dc2686f4a15d
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      name: metallb-monitor-token
+      key: token
+    honorLabels: true
+    port: metricshttps
+    scheme: https
+    tlsConfig:
+      ca:
+        configMap:
+          name: openshift-service-ca.crt
+          key: service-ca.crt
+      insecureSkipVerify: false
+      serverName: speaker-monitor-service.metallb-system.svc
+  jobLabel: app.kubernetes.io/name
+  namespaceSelector:
+    matchNames:
+      - metallb-system
+  selector:
+    matchLabels:
+      name: speaker-monitor-service
