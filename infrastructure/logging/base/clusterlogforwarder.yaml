@@ -7,7 +7,7 @@ spec:
   collector:
     resources:
       limits:
-        memory: 4Gi
+        memory: 8Gi
       requests:
         cpu: 100m
         memory: 1Gi
@@ -33,6 +33,6 @@ spec:
     - name: application-logs
       inputRefs:
         - application
-        # - infrastructure  <-- COMMENTED OUT
+        # - infrastructure
       outputRefs:
         - loki-stack
