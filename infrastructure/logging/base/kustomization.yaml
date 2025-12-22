@@ -9,5 +9,4 @@ resources:
 - rbac.yaml
 - loki-minio-secret.yaml
 - lokistack.yaml
-- clusterlogging.yaml
 - clusterlogforwarder.yaml
