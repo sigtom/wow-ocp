@@ -16,8 +16,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Alertmanager Configuration' (Protocol in workflow.md)
 
 ## Phase 3: Validation and Alert Testing
-- [ ] Task: Verify ArgoCD successful sync of monitoring components
-- [ ] Task: Check Alertmanager Status via OC CLI to confirm receiver is active
-- [ ] Task: Verify that the `AlertmanagerReceiversNotConfigured` alert has cleared
-- [ ] Task: Trigger a test alert or wait for a watchdog alert to verify Slack delivery
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Validation and Alert Testing' (Protocol in workflow.md)
+- [x] Task: Verify ArgoCD successful sync of monitoring components
+- [x] Task: Check Alertmanager Status via OC CLI to confirm receiver is active
+- [x] Task: Verify that the `AlertmanagerReceiversNotConfigured` alert has cleared
+- [x] Task: Trigger a test alert or wait for a watchdog alert to verify Slack delivery
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Validation and Alert Testing' (Protocol in workflow.md)
