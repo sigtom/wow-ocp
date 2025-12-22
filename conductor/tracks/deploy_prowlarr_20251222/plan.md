@@ -9,7 +9,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Resource Creation' (Protocol in workflow.md)
 
 ## Phase 2: Deployment and Validation
-- [ ] Task: Verify ArgoCD successful sync of `media-managers` and `media-stack`
-- [ ] Task: Verify Prowlarr pod is running
-- [ ] Task: Verify Ingress route is functional and TLS is valid
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Deployment and Validation' (Protocol in workflow.md)
+- [x] Task: Verify ArgoCD successful sync of `media-managers` and `media-stack` 7857e68
+- [x] Task: Verify Prowlarr pod is running 7857e68
+- [x] Task: Verify Ingress route is functional and TLS is valid 7857e68
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Deployment and Validation' (Protocol in workflow.md)
