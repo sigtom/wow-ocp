@@ -21,7 +21,7 @@
 - **GitOps:** ArgoCD (App of Apps pattern)
 - **Configuration:** Kustomize (Base/Overlay pattern)
 - **Secrets:** Bitnami Sealed Secrets
-- **Security:** OpenShift Security Context Constraints (SCCs), NetworkPolicies, HTPasswd IDP + RBAC.
+- **Security:** OpenShift Security Context Constraints (SCCs), NetworkPolicies, HTPasswd + OneLogin OIDC IDP + RBAC.
 
 ## Monitoring & Observability
 
