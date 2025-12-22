@@ -3,6 +3,9 @@ kind: LokiStack
 metadata:
   name: logging-loki
   namespace: openshift-logging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   size: 1x.small
   storage:
