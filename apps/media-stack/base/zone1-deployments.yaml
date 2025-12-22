@@ -124,6 +124,8 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      securityContext:
+        runAsUser: 0
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
@@ -175,6 +177,11 @@ spec:
         image: docker.io/rogerfar/rdtclient:latest
         securityContext:
           privileged: true
+        env:
+        - name: PUID
+          value: "0"
+        - name: PGID
+          value: "0"
         ports:
         - containerPort: 6500
           name: http
