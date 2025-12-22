@@ -7,3 +7,4 @@ resources:
 - subscription-logging.yaml
 - subscription-loki.yaml
 - rbac.yaml
+- loki-minio-secret.yaml
