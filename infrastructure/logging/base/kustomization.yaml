@@ -8,3 +8,4 @@ resources:
 - subscription-loki.yaml
 - rbac.yaml
 - loki-minio-secret.yaml
+- lokistack.yaml
