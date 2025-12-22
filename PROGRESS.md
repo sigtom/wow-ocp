@@ -50,6 +50,14 @@
 
 
 
+- [x] **Infinite Streaming flow**: Successfully integrated RdtClient + Zurg + Radarr/Sonarr with 0-byte disk usage via symlinks.
+
+### 4. Observability & Maintenance
+- [x] **Centralized Logging**: Deployed Red Hat OpenShift Logging + Loki Operator (6.4).
+    - [x] **Persistence**: Configured LokiStack to use TrueNAS Minio S3 bucket for log storage.
+    - [x] **Collector**: Deployed Vector as the collector with OOM prevention tuning (8Gi memory limit + 1000 rec/s rate limiting).
+    - [x] **Console Integration**: Enabled Logging Console Plugin via UIPlugin and Console operator patching.
+
 ---
 
 ## 🔐 How to Use Sealed Secrets
@@ -78,6 +86,7 @@
 ---
 
 ## 📅 Next Steps
+- [ ] **Enable Infrastructure Logs**: Re-enable log collection for nodes and control plane after backlog ingestion (Scheduled for 2025-12-24 @ Noon).
 - [ ] **OIDC Authentication**: Configure Google/GitHub identity provider (Issue #2).
 - [ ] **Monitoring Remediation**: Fix rejected ServiceMonitors and configure Alertmanager receivers (Issues #1, #5, #9).
 - [ ] **Storage Tuning**: Resolve LVM vg-manager rollout issues (Issue #10).
@@ -93,4 +102,6 @@
   - Fixed Prometheus Operator 'Rejected Resources' by GitOps-ifying GitOps Operator and patching ServiceMonitors with correct RBAC and Secret-based auth.
   - Partially Fixed LVM Storage: Restored service on Node 4, but Node 2/3 remain degraded due to operator detection issues despite correct configuration.
   - Skipped NFD Garbage Collector fix: Upstream bug in NFD Operator (port mismatch) cannot be patched via CRD.
-- 2025-12-22: Infinite Streaming Setup - Confirmed RdtClient+Zurg+Radarr importing symlinks with 0 byte disk usage.
+- [2025-12-22]: Infinite Streaming Setup - Confirmed RdtClient+Zurg+Radarr importing symlinks with 0 byte disk usage.
+- [2025-12-22]: RdtClient Stabilization - Fixed NFS permissions (UID 0), configuration persistence (NFS mount for DB), and path mapping issues.
+- [2025-12-22]: Centralized Logging - Implemented Loki-based logging stack with Minio persistence and Console integration. Tuned Vector collector to handle initial log backlog.
