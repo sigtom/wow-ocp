@@ -4,6 +4,13 @@ metadata:
   name: instance
   namespace: openshift-logging
 spec:
+  collector:
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 256Mi
   serviceAccount:
     name: log-collector
   outputs:
