@@ -15,6 +15,9 @@ spec:
     - radarr.sigtom.dev
     - sabnzbd.sigtom.dev
     - bazarr.sigtom.dev
+    - rdt-client.sigtom.dev
+    - zurg.sigtom.dev
+    - riven.sigtom.dev
     secretName: media-sigtom-tls
   rules:
   - host: plex.sigtom.dev
@@ -77,3 +80,33 @@ spec:
             name: bazarr
             port:
               number: 6767
+  - host: rdt-client.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rdt-client
+            port:
+              number: 6500
+  - host: zurg.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: zurg
+            port:
+              number: 9999
+  - host: riven.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: riven
+            port:
+              number: 80
