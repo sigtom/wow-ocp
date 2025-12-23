@@ -18,6 +18,8 @@ spec:
         zone: zone2
     spec:
       serviceAccountName: managers
+      nodeSelector:
+        kubernetes.io/hostname: wow-ocp-node4
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest

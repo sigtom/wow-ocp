@@ -18,6 +18,8 @@ spec:
         zone: zone2
     spec:
       serviceAccountName: managers
+      nodeSelector:
+        kubernetes.io/hostname: wow-ocp-node4
       containers:
       - name: sabnzbd
         image: lscr.io/linuxserver/sabnzbd:latest
