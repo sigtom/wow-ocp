@@ -130,9 +130,13 @@ spec:
         app: rdt-client
         zone: zone1
     spec:
-      serviceAccountName: cloud-gateway
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      nodeSelector:
+        kubernetes.io/hostname: wow-ocp-node4
       securityContext:
         runAsUser: 0
+      serviceAccount: cloud-gateway
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
