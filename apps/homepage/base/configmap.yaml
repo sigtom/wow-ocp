@@ -103,7 +103,7 @@ data:
             description: GitOps
         - OpenShift:
             icon: openshift.png
-            href: https://console-openshift-console.apps.ocp.sigtomtech.com
+            href: https://console-openshift-console.apps.ossus.sigtomtech.com/
             description: Cluster Console
 
   widgets.yaml: |
