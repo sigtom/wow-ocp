@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailrise
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailrise
+  template:
+    metadata:
+      labels:
+        app: mailrise
+    spec:
+      containers:
+      - name: mailrise
+        image: docker.io/snoonet/mailrise:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
