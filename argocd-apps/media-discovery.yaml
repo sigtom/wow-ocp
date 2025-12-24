@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/sigtom/wow-ocp.git
-    targetRevision: HEAD
+    targetRevision: feature/sidecar-migration
     path: apps/discovery/base
   destination:
     server: https://kubernetes.default.svc
