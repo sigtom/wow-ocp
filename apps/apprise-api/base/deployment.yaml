@@ -12,10 +12,8 @@ spec:
       labels:
         app: apprise-api
     spec:
-      volumes:
-      - name: apprise-config
-        secret:
-          secretName: apprise-config
+      containers:
+      - name: apprise-api
         image: ghcr.io/caronc/apprise:latest
         ports:
         - containerPort: 8000
@@ -30,6 +28,12 @@ spec:
         - name: apprise-config
           mountPath: /config/apprise.yml
           subPath: apprise.yml
+      volumes:
+      - name: apprise-config
+        secret:
+          secretName: apprise-config
+        livenessProbe:
+          httpGet:
             path: /
             port: 8000
           initialDelaySeconds: 30
