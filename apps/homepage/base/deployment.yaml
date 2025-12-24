@@ -16,9 +16,9 @@ spec:
         app: homepage
     spec:
       serviceAccountName: cloud-gateway
-      containers:
-      - name: homepage
-        image: ghcr.io/gethomepage/homepage:latest
+        env:
+        - name: HOMEPAGE_ALLOWED_HOSTS
+          value: "dashboard.sigtom.dev"
         ports:
         - containerPort: 3000
           name: http
