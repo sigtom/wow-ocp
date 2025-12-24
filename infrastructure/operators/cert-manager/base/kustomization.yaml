@@ -7,3 +7,4 @@ resources:
   - cloudflare-sealed-secret.yaml
   - cluster-issuer.yaml
   - cluster-issuer-staging.yaml
+  - cluster-ingress
