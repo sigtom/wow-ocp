@@ -24,10 +24,26 @@ spec:
           name: http
         volumeMounts:
         - name: config
-          mountPath: /app/config
+          mountPath: /app/config/settings.yaml
+          subPath: settings.yaml
+        - name: config
+          mountPath: /app/config/services.yaml
+          subPath: services.yaml
+        - name: config
+          mountPath: /app/config/widgets.yaml
+          subPath: widgets.yaml
+        - name: config
+          mountPath: /app/config/kubernetes.yaml
+          subPath: kubernetes.yaml
+        - name: config
+          mountPath: /app/config/docker.yaml
+          subPath: docker.yaml
         - name: media-storage
-          mountPath: /mnt/media
-          subPath: config/homepage
+          mountPath: /app/config/logs
+          subPath: config/homepage/logs
+        - name: media-storage
+          mountPath: /app/config/images
+          subPath: config/homepage/images
         resources:
           requests:
             cpu: 100m
