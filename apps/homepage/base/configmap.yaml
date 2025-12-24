@@ -30,6 +30,9 @@ data:
   custom.css: |
     /* Custom CSS */
 
+  custom.js: |
+    /* Custom JS */
+
   services.yaml: |
     - Media:
         - Plex:
