@@ -35,33 +35,34 @@ The stack is divided into four logical zones (Pods/Deployments) to ensure separa
 
 ### **Zone 1: The Cloud Gateway (Connectivity)**
 
-* **Role:** Establishes connections to external cloud providers and exposes them as local file systems.  
-* **Components:**  
-  * **Zurg:** High-performance WebDAV gateway for Real-Debrid.  
-  * **Rclone:** Mounts TorBox WebDAV for Usenet streaming.  
-  * **rdt-client:** Emulates a qBittorrent client. Receives magnet links from \*Arrs, initiates Cloud downloads, and generates local symlinks.  
-  * **Riven:** Backup orchestrator. Handles "Usenet Streaming" requests by searching indexers, sending NZBs to TorBox, and symlinking the result.  
+* **Role:** Establishes connections to external cloud providers and exposes them as local file systems.
+* **Components:**
+  * **Zurg:** Legacy/Library access for existing Real-Debrid content.
+  * **Rclone:** Mounts TorBox WebDAV for *active* new downloads.
+  * **rdt-client:** Switched to **TorBox** provider. Receives magnet links, initiates Cloud downloads, and generates local symlinks pointing to the TorBox mount.
+  * **Riven:** Backup orchestrator.
 * **Mounts:** Reads/Writes to TrueNAS /stream (Symlinks). Exports /mnt/zurg and /mnt/torbox via shared volume.
+* **Constraint:** **MUST** run on the same node as Plex (Node 4) to ensure FUSE mount visibility and symlink resolution.
 
 ### **Zone 2: The Managers (Logic)**
 
-* **Role:** Library management, metadata retrieval, and decision making.  
-* **Components:**  
-  * **Sonarr / Radarr:** Manage TV/Movie libraries. Configured with two Root Folders (/stream and /archive) to direct content flow.  
-  * **SABnzbd:** Local Usenet downloader. Connects exclusively to TrueNAS /archive for permanent file extraction.  
-  * **Bazarr:** Subtitle management. Configured to save .srt files locally to TrueNAS even for cloud streams.  
-* **Integration:** Connects to Zone 1 via internal Service networking (rdt-client) and Localhost (SABnzbd).
+* **Role:** Library management, metadata retrieval, and decision making.
+* **Components:**
+  * **Sonarr / Radarr:** Manage TV/Movie libraries. Configured with two Root Folders (/stream and /archive).
+  * **SABnzbd:** Local Usenet downloader (Zone 2 specific).
+  * **Bazarr:** Subtitle management.
+* **Integration:** Connects to Zone 1 via internal Service networking.
+* **Constraint:** Pinned to Node 4 to share the stable FUSE mount environment.
 
 ### **Zone 3: The Player (Delivery)**
 
-* **Role:** Content playback and transcoding.  
-* **Components:**  
-  * **Plex Media Server:** The primary playback engine.  
-  * **Sidecars:** Includes lightweight **Zurg** and **Rclone** sidecar containers to mount the cloud paths locally, ensuring Plex can read the symlinks created by Zone 1\.  
-* **Network:** Exposes port 32400 via LoadBalancer or NodePort for playback.
+* **Role:** Content playback and transcoding.
+* **Components:**
+  * **Plex Media Server:** The primary playback engine.
+  * **Sidecars:** Includes lightweight **Zurg** and **Rclone** sidecar containers.
+* **Network:** Exposes port 32400 via LoadBalancer (MetalLB) on Node 4.
 
 ### **Zone 4: The Discovery Layer (User Experience)**
-
 * **Role:** Frontend interface for content discovery, trending lists, and user requests.  
 * **Components:**  
   * **Overseerr:** The "Storefront." Aggregates TMDB/IMDb data into "Trending," "Upcoming," and "New Release" lists.  
