@@ -26,9 +26,11 @@ The project is a private OpenShift 4.20 Homelab running on Dell FC630 blades, de
         - **Other Apps:** Shared Ingress VIP (`172.16.100.106`) via `*.sigtom.dev`.
     - Node Optimization (Kubelet Tuning) for compact cluster topology.
 - **Core Services (Complete):**
-    - User Workload Monitoring with persistent storage.
-    - Internal Image Registry with persistent storage.
-    - Authentication via HTPasswd and RBAC.
+    - **User Workload:** Prometheus User Workload Monitoring (Enabled with PV storage)
+    
+    - **Logging:** Centralized Logging with LokiStack (Size-S) + Vector + Minio S3 storage. Integrated with OpenShift Console.
+    
+    - **Registry:** OpenShift Image Registry (Managed with PV storage)    - Authentication via HTPasswd and RBAC.
 
 ## Success Criteria
 - **Reliability ("Set it and forget it"):** The media stack runs reliably without manual intervention, and backups are automated.

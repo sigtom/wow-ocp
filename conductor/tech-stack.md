@@ -31,4 +31,6 @@
 
 - **User Workload:** Prometheus User Workload Monitoring (Enabled with PV storage)
 
+- **Logging:** Red Hat OpenShift Logging Operator + Loki Operator (LokiStack) + Vector Collector + Minio S3 storage.
+
 - **Registry:** OpenShift Image Registry (Managed with PV storage)

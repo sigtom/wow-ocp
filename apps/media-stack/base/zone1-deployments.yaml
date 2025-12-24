@@ -18,6 +18,17 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
@@ -77,6 +88,17 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
@@ -132,8 +154,17 @@ spec:
     spec:
       restartPolicy: Always
       schedulerName: default-scheduler
-      nodeSelector:
-        kubernetes.io/hostname: wow-ocp-node4
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       securityContext:
         runAsUser: 0
       serviceAccount: cloud-gateway
@@ -256,14 +287,66 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
-        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/riven-data"]
+        command: ["/bin/sh", "-c", "mkdir -p /mnt/media/riven-data /mnt/media/zurg /mnt/media/torbox"]
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
       containers:
+      # Sidecar: Mount Zurg
+      - name: rclone-zurg
+        image: docker.io/rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - "mount"
+        - "zurg:"
+        - "/mnt/media/zurg"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--vfs-cache-mode=full"
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-zurg-config
+          mountPath: /config/rclone
+          readOnly: true
+      # Sidecar: Mount TorBox
+      - name: rclone-torbox
+        image: docker.io/rclone/rclone:latest
+        securityContext:
+          privileged: true
+        args:
+        - "mount"
+        - "torbox:"
+        - "/mnt/media/torbox"
+        - "--config=/config/rclone/rclone.conf"
+        - "--allow-other"
+        - "--allow-non-empty"
+        - "--log-level=DEBUG"
+        - "--vfs-cache-mode=full"
+        volumeMounts:
+        - name: media-storage
+          mountPath: /mnt/media
+          mountPropagation: Bidirectional
+        - name: rclone-config
+          mountPath: /config/rclone
+          readOnly: true
+      # Main: riven
       - name: riven
         image: ghcr.io/rivenmedia/riven:latest
         securityContext:
@@ -282,7 +365,7 @@ spec:
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
-          mountPropagation: Bidirectional
+          mountPropagation: HostToContainer
         - name: media-storage
           mountPath: /riven/data
           subPath: riven-data
@@ -293,6 +376,12 @@ spec:
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-library-pvc
+      - name: rclone-zurg-config
+        secret:
+          secretName: rclone-zurg-config
+      - name: rclone-config
+        secret:
+          secretName: rclone-config
 ---
 apiVersion: v1
 kind: Service
@@ -348,6 +437,17 @@ spec:
         zone: zone1
     spec:
       serviceAccountName: cloud-gateway
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
