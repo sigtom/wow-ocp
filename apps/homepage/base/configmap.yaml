@@ -39,7 +39,5 @@ data:
           dateStyle: long
           timeStyle: short
 
-  kubernetes.yaml: |
-    # Disabled
-
+  kubernetes.yaml: ""
   docker.yaml: ""
