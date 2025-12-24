@@ -70,3 +70,42 @@ spec:
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: media-stack
+spec:
+  selector:
+    app: homepage
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+    name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage-ingress
+  namespace: media-stack
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+spec:
+  ingressClassName: openshift-default
+  tls:
+  - hosts:
+    - dashboard.sigtom.dev
+    secretName: media-sigtom-tls
+  rules:
+  - host: dashboard.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homepage
+            port:
+              number: 80
