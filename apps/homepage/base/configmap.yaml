@@ -117,10 +117,7 @@ data:
         cpu: true
         memory: true
         disk:
-          - /media: MEDIA
-    - kubernetes:
-        cluster: Homelab
-        showStatus: true
+          /media: MEDIA
     - datetime:
         text_size: xl
         format:
@@ -131,6 +128,7 @@ data:
     mode: cluster
     cluster: Homelab
     showStats: true
+    showStatus: true
     namespaces:
       - media-stack
 
