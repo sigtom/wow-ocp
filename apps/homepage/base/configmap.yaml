@@ -64,6 +64,10 @@ data:
             href: https://console-openshift-console.apps.ossus.sigtomtech.com/
 
   widgets.yaml: |
+    - resources:
+        cpu: true
+        memory: true
+        disk: /media
     - datetime:
         text_size: xl
         format:
