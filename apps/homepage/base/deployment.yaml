@@ -50,6 +50,9 @@ spec:
         - name: config
           mountPath: /app/config/custom.css
           subPath: custom.css
+        - name: config
+          mountPath: /app/config/custom.js
+          subPath: custom.js
         - name: media-storage
           mountPath: /app/config/logs
           subPath: config/homepage/logs
