@@ -18,6 +18,12 @@ data:
         style: columns
         columns: 4
 
+  bookmarks.yaml: |
+    - Media:
+        - GitHub:
+            - icon: github.png
+              href: https://github.com/
+
   services.yaml: |
     - Media:
         - Plex:
