@@ -24,6 +24,9 @@ data:
             - icon: github.png
               href: https://github.com/
 
+  proxmox.yaml: |
+    # Empty Proxmox Config
+
   services.yaml: |
     - Media:
         - Plex:

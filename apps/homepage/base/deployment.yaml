@@ -44,6 +44,9 @@ spec:
         - name: config
           mountPath: /app/config/bookmarks.yaml
           subPath: bookmarks.yaml
+        - name: config
+          mountPath: /app/config/proxmox.yaml
+          subPath: proxmox.yaml
         - name: media-storage
           mountPath: /app/config/logs
           subPath: config/homepage/logs
