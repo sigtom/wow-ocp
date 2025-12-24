@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: media-stack
+  labels:
+    app: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homepage
+  template:
+    metadata:
+      labels:
+        app: homepage
+    spec:
+      serviceAccountName: cloud-gateway
+      containers:
+      - name: homepage
+        image: ghcr.io/gethomepage/homepage:latest
+        ports:
+        - containerPort: 3000
+          name: http
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        - name: media-storage
+          mountPath: /mnt/media
+          subPath: config/homepage
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: homepage-config
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-library-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: media-stack
+spec:
+  selector:
+    app: homepage
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+    name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage-ingress
+  namespace: media-stack
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+spec:
+  ingressClassName: openshift-default
+  tls:
+  - hosts:
+    - dashboard.sigtom.dev
+    secretName: media-sigtom-tls
+  rules:
+  - host: dashboard.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homepage
+            port:
+              number: 80

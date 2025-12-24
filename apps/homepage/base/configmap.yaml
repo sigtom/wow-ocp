@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: media-stack
+data:
+  settings.yaml: |
+    title: HomeLab Dashboard
+    base: https://dashboard.sigtom.dev
+    layout:
+      Media:
+        style: columns
+        columns: 4
+      Management:
+        style: columns
+        columns: 4
+      Infrastructure:
+        style: columns
+        columns: 4
+
+  services.yaml: |
+    - Media:
+        - Plex:
+            icon: plex.png
+            href: https://plex.sigtom.dev
+            description: Media Server
+            widget:
+              type: plex
+              url: http://plex-service.media-stack.svc:32400
+              key: {{HOMEPAGE_VAR_PLEX_TOKEN}}
+        - Overseerr:
+            icon: overseerr.png
+            href: https://overseerr.sigtom.dev
+            description: Media Requests
+            widget:
+              type: overseerr
+              url: http://overseerr.media-stack.svc:5055
+              key: {{HOMEPAGE_VAR_OVERSEERR_KEY}}
+        - Riven:
+            icon: riven.png
+            href: https://riven.sigtom.dev
+            description: Stream Debrid
+
+    - Management:
+        - Sonarr:
+            icon: sonarr.png
+            href: https://sonarr.sigtom.dev
+            description: TV Management
+            widget:
+              type: sonarr
+              url: http://sonarr.media-stack.svc:8989
+              key: {{HOMEPAGE_VAR_SONARR_KEY}}
+        - Radarr:
+            icon: radarr.png
+            href: https://radarr.sigtom.dev
+            description: Movie Management
+            widget:
+              type: radarr
+              url: http://radarr.media-stack.svc:7878
+              key: {{HOMEPAGE_VAR_RADARR_KEY}}
+        - Sabnzbd:
+            icon: sabnzbd.png
+            href: https://sabnzbd.sigtom.dev
+            description: Usenet Downloader
+            widget:
+              type: sabnzbd
+              url: http://sabnzbd.media-stack.svc:8080
+              key: {{HOMEPAGE_VAR_SABNZBD_KEY}}
+        - Prowlarr:
+            icon: prowlarr.png
+            href: https://prowlarr.sigtom.dev
+            description: Indexer Manager
+            widget:
+              type: prowlarr
+              url: http://prowlarr.media-stack.svc:9696
+              key: {{HOMEPAGE_VAR_PROWLARR_KEY}}
+        - Bazarr:
+            icon: bazarr.png
+            href: https://bazarr.sigtom.dev
+            description: Subtitle Manager
+            widget:
+              type: bazarr
+              url: http://bazarr.media-stack.svc:6767
+              key: {{HOMEPAGE_VAR_BAZARR_KEY}}
+        - RDT-Client:
+            icon: rdtclient.png
+            href: https://rdt-client.sigtom.dev
+            description: Real-Debrid Client
+
+    - Infrastructure:
+        - ArgoCD:
+            icon: argocd.png
+            href: https://argocd.sigtom.dev
+            description: GitOps
+        - OpenShift:
+            icon: openshift.png
+            href: https://console-openshift-console.apps.ocp.sigtomtech.com
+            description: Cluster Console
+
+  widgets.yaml: |
+    - resources:
+        cpu: true
+        memory: true
+    - kubernetes:
+        cluster: Homelab
+        showStatus: true
+    - datetime:
+        text_size: xl
+        format:
+          dateStyle: long
+          timeStyle: short
+
+  kubernetes.yaml: |
+    mode: cluster
+    showStats: true
+    namespaces:
+      - media-stack
+
+  docker.yaml: ""
