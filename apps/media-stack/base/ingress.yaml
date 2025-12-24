@@ -19,8 +19,19 @@ spec:
     - zurg.sigtom.dev
     - riven.sigtom.dev
     - prowlarr.sigtom.dev
+    - dashboard.sigtom.dev
     secretName: media-sigtom-tls
   rules:
+  - host: dashboard.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: homepage
+            port:
+              number: 80
   - host: plex.sigtom.dev
     http:
       paths:
