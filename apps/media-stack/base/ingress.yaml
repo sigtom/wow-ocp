@@ -19,6 +19,7 @@ spec:
     - zurg.sigtom.dev
     - riven.sigtom.dev
     - prowlarr.sigtom.dev
+    - dashboard.sigtom.dev
     secretName: media-sigtom-tls
   rules:
   - host: plex.sigtom.dev
