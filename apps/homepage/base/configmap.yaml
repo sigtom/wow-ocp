@@ -116,7 +116,8 @@ data:
     - resources:
         cpu: true
         memory: true
-        disk: /media
+        disk:
+          - /media: MEDIA
     - kubernetes:
         cluster: Homelab
         showStatus: true
@@ -128,6 +129,7 @@ data:
 
   kubernetes.yaml: |
     mode: cluster
+    cluster: Homelab
     showStats: true
     namespaces:
       - media-stack
