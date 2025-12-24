@@ -116,13 +116,9 @@ data:
     - resources:
         cpu: true
         memory: true
-        disk:
-          /mnt/media: MEDIA
+        disk: /media
     - kubernetes:
         cluster: Homelab
-        show: true
-        cpu: true
-        memory: true
         showStatus: true
     - datetime:
         text_size: xl
