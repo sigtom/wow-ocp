@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ocp-apps-wildcard
+  namespace: openshift-config
+spec:
+  secretName: ocp-apps-wildcard-tls
+  issuerRef:
+    name: cloudflare-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - "*.apps.ossus.sigtomtech.com"
