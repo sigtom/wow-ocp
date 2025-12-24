@@ -116,6 +116,7 @@ data:
     - resources:
         cpu: true
         memory: true
+        disk: /mnt/media
     - kubernetes:
         cluster: Homelab
         showStatus: true
