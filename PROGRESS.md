@@ -8,3 +8,7 @@
     - **Result**: Resolved FUSE/NFS mount propagation issues. Apps no longer need to be pinned to a single node.
     - **Optimization**: Replaced hard `nodeSelector` with `nodeAffinity` (preferred) for Node 2 and 3 to utilize 10G NICs and superior CPU resources.
     - **Outcome**: Verified cross-pod mount consistency and successful deployment to Node 3 via ArgoCD.
+- [2025-12-23]: **INFRASTRUCTURE HARDENING**: Secured Cluster Application Domain.
+    - **Change**: Requested Let's Encrypt Wildcard Certificate for `*.apps.ossus.sigtomtech.com` via Cert-Manager (DNS-01).
+    - **Action**: Patched `IngressController/default` to use the new certificate as the default for all system routes.
+    - **Result**: Successfully replaced self-signed certificates for OpenShift Console, ArgoCD, and all apps. "Green Lock" is now active cluster-wide.
