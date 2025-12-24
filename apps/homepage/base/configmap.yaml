@@ -31,6 +31,37 @@ data:
         - Overseerr:
             icon: overseerr.png
             href: https://overseerr.sigtom.dev
+        - Riven:
+            icon: riven.png
+            href: https://riven.sigtom.dev
+
+    - Management:
+        - Sonarr:
+            icon: sonarr.png
+            href: https://sonarr.sigtom.dev
+        - Radarr:
+            icon: radarr.png
+            href: https://radarr.sigtom.dev
+        - Sabnzbd:
+            icon: sabnzbd.png
+            href: https://sabnzbd.sigtom.dev
+        - Prowlarr:
+            icon: prowlarr.png
+            href: https://prowlarr.sigtom.dev
+        - Bazarr:
+            icon: bazarr.png
+            href: https://bazarr.sigtom.dev
+        - RDT-Client:
+            icon: rdtclient.png
+            href: https://rdt-client.sigtom.dev
+
+    - Infrastructure:
+        - ArgoCD:
+            icon: argocd.png
+            href: https://argocd.sigtom.dev
+        - OpenShift:
+            icon: openshift.png
+            href: https://console-openshift-console.apps.ossus.sigtomtech.com/
 
   widgets.yaml: |
     - datetime:
