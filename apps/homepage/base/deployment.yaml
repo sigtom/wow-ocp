@@ -59,6 +59,8 @@ spec:
         - name: media-storage
           mountPath: /app/config/images
           subPath: config/homepage/images
+        - name: media-storage
+          mountPath: /mnt/media
         resources:
           requests:
             cpu: 100m
