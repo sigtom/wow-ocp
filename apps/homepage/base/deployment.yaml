@@ -16,6 +16,9 @@ spec:
         app: homepage
     spec:
       serviceAccountName: cloud-gateway
+      containers:
+      - name: homepage
+        image: ghcr.io/gethomepage/homepage:latest
         env:
         - name: HOMEPAGE_ALLOWED_HOSTS
           value: "dashboard.sigtom.dev"
@@ -67,17 +70,3 @@ spec:
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-library-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: homepage
-  namespace: media-stack
-spec:
-  selector:
-    app: homepage
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
-    name: http
