@@ -2,6 +2,9 @@
 - [2025-12-22]: Updated `zurg` configuration to improve compatibility with `rdt-client` (retain names, auto-delete RARs) for legacy library access.
 - [2025-12-22]: Confirmed `rclone-torbox` mount is active and populating new downloads in Plex.
 - [2025-12-22]: **CRITICAL FIX**: Pinned `rdt-client`, `sonarr`, `radarr`, and `plex` to `wow-ocp-node4`.
-    - **Reason**: FUSE mounts on NFS PVCs were failing to propagate correctly on Node 3 (empty directory listing), causing "File Not Found" errors in `rdt-client`.
-    - **Result**: Co-locating all apps on Node 4 ensures they share the same functional mount namespace. Symlinks are now created correctly and immediately visible to Plex.
 - [2025-12-22]: Verified end-to-end flow with "Peacemaker S02E05" via TorBox -> rdt-client (Node 4) -> Symlink -> Plex (Node 4).
+- [2025-12-23]: **ARCHITECTURAL UPGRADE**: Migrated entire media stack to Sidecar Pattern.
+    - **Change**: Added `rclone-zurg` and `rclone-torbox` containers to every deployment (Plex, Sonarr, Radarr, Bazarr, Sabnzbd, Riven, Rdt-client).
+    - **Result**: Resolved FUSE/NFS mount propagation issues. Apps no longer need to be pinned to a single node.
+    - **Optimization**: Replaced hard `nodeSelector` with `nodeAffinity` (preferred) for Node 2 and 3 to utilize 10G NICs and superior CPU resources.
+    - **Outcome**: Verified cross-pod mount consistency and successful deployment to Node 3 via ArgoCD.
