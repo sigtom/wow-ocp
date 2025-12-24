@@ -1,0 +1,16 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: apprise-api
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+spec:
+  to:
+    kind: Service
+    name: apprise-api
+    weight: 100
+  port:
+    targetPort: 80
+  tls:
+    termination: edge
+  wildcardPolicy: None
