@@ -18,8 +18,17 @@ spec:
         zone: zone2
     spec:
       serviceAccountName: managers
-      nodeSelector:
-        kubernetes.io/hostname: wow-ocp-node4
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest

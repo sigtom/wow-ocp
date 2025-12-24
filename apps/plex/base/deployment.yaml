@@ -18,6 +18,17 @@ spec:
         zone: zone3
     spec:
       serviceAccountName: plex
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - wow-ocp-node2
+                - wow-ocp-node3
       initContainers:
       - name: init-dirs
         image: docker.io/alpine:latest
