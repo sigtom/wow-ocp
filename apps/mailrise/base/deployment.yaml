@@ -24,6 +24,9 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        env:
+        - name: PYTHONPATH
+          value: /home/mailrise/.local/lib/python3.12/site-packages
         volumeMounts:
         - name: mailrise-config
           mountPath: /etc/mailrise.conf
