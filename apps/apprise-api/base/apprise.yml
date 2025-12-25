@@ -1,1 +1,2 @@
-# Apprise Configuration
+urls:
+  - slack://TNXE2SPQE/B0A4YAEMURY/btJI348Nhvz6BOkqz57JdrMo/#ocp-alerts
