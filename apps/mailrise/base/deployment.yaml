@@ -16,7 +16,7 @@ spec:
       - name: mailrise
         image: docker.io/sandipb/mailrise:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8025
         resources:
           requests:
             memory: "128Mi"
@@ -33,12 +33,12 @@ spec:
           subPath: mailrise.conf
         livenessProbe:
           tcpSocket:
-            port: 8080
+            port: 8025
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           tcpSocket:
-            port: 8080
+            port: 8025
           initialDelaySeconds: 30
           periodSeconds: 10
       volumes:
