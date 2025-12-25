@@ -9,7 +9,8 @@ data:
     import urllib.request
     import os
 
-    APPRISE_URL = os.environ.get('APPRISE_URL', 'http://apprise-api.media-stack.svc.cluster.local/notify/apprise')
+    APPRISE_URL = os.environ.get('APPRISE_URL', 'http://apprise-api.media-stack.svc.cluster.local/notify')
+    SLACK_URL = 'slack://TNXE2SPQE/B0A4YAEMURY/btJI348Nhvz6BOkqz57JdrMo/#ocp-alerts'
 
     class AlertHandler(BaseHTTPRequestHandler):
         def do_POST(self):
@@ -23,6 +24,7 @@ data:
                 summary = alert.get('annotations', {}).get('summary', 'No summary')
                 
                 payload = {
+                    'urls': SLACK_URL,
                     'title': f"OCP Alert: {name}",
                     'body': f"[{status}] {name}\n{summary}"
                 }
