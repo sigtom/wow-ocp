@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: mailrise
-        image: docker.io/yoryan/mailrise:latest
+        image: docker.io/mboilen/mailrise:latest
         ports:
         - containerPort: 8080
         resources:
