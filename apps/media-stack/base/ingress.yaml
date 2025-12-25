@@ -20,8 +20,19 @@ spec:
     - riven.sigtom.dev
     - prowlarr.sigtom.dev
     - dashboard.sigtom.dev
+    - apprise.sigtom.dev
     secretName: media-sigtom-tls
   rules:
+  - host: apprise.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: apprise-api
+            port:
+              number: 80
   - host: dashboard.sigtom.dev
     http:
       paths:
