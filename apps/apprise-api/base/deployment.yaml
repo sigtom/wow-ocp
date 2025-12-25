@@ -15,6 +15,9 @@ spec:
       containers:
       - name: apprise-api
         image: ghcr.io/caronc/apprise:latest
+        env:
+        - name: APPRISE_WORKER_COUNT
+          value: "2"
         ports:
         - containerPort: 8000
         resources:
@@ -31,13 +34,17 @@ spec:
         livenessProbe:
           tcpSocket:
             port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 45
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 6
         readinessProbe:
           tcpSocket:
             port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 45
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 6
       volumes:
       - name: apprise-config
         secret:
