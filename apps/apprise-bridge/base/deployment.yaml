@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apprise-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apprise-bridge
+  template:
+    metadata:
+      labels:
+        app: apprise-bridge
+    spec:
+      containers:
+      - name: bridge
+        image: python:3.11-slim
+        command: ["python3", "/app/bridge.py"]
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: script
+          mountPath: /app/bridge.py
+          subPath: bridge.py
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+      volumes:
+      - name: script
+        configMap:
+          name: apprise-bridge-script
