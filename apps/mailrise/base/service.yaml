@@ -10,5 +10,5 @@ spec:
     app: mailrise
   ports:
   - protocol: TCP
-    port: 8080
-    targetPort: 8080
+    port: 8025
+    targetPort: 8025
