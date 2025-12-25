@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: mailrise
-        image: docker.io/snoonet/mailrise:latest
+        image: docker.io/yoryan/mailrise:latest
         ports:
         - containerPort: 8080
         resources:
@@ -24,6 +24,10 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        volumeMounts:
+        - name: mailrise-config
+          mountPath: /etc/mailrise.conf
+          subPath: mailrise.conf
         livenessProbe:
           tcpSocket:
             port: 8080
@@ -34,3 +38,7 @@ spec:
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
+      volumes:
+      - name: mailrise-config
+        secret:
+          secretName: mailrise-config

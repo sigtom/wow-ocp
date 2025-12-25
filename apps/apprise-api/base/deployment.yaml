@@ -28,10 +28,6 @@ spec:
         - name: apprise-config
           mountPath: /config/apprise.yml
           subPath: apprise.yml
-      volumes:
-      - name: apprise-config
-        secret:
-          secretName: apprise-config
         livenessProbe:
           httpGet:
             path: /
@@ -44,3 +40,7 @@ spec:
             port: 8000
           initialDelaySeconds: 30
           periodSeconds: 10
+      volumes:
+      - name: apprise-config
+        secret:
+          secretName: apprise-config

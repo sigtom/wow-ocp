@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: mailrise
   annotations:
-    metallb.universe.tf/loadBalancerIPs: 172.16.100.222
+    metallb.universe.tf/loadBalancerIPs: 172.16.100.211
 spec:
   type: LoadBalancer
   selector:
