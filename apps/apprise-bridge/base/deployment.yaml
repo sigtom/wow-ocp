@@ -31,7 +31,6 @@ spec:
           subPath: bridge.py
         securityContext:
           runAsNonRoot: true
-          runAsUser: 1000
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
