@@ -13,3 +13,4 @@ pihole1-dns.list
 .gemini/
 gha-creds-*.json
 truenas-setup.md
+ALERTS.md
