@@ -93,8 +93,8 @@ spec:
           mountPath: /config
           subPath: config/sonarr
         - name: media-storage
-          mountPath: /mnt/media
-          mountPropagation: HostToContainer
+          mountPath: /config/rclone
+          subPath: config/rclone
         readinessProbe:
           tcpSocket:
             port: 8989
