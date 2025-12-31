@@ -12,7 +12,7 @@ data:
           storageClassName: truenas-nfs
           resources:
             requests:
-              storage: 20Gi
+              storage: 100Gi
     alertmanagerMain:
       secrets:
         - slack-webhook
