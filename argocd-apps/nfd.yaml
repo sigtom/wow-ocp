@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nfd-operator
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: feature/add-apprise-mailrise
+    path: infrastructure/operators/nfd/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-nfd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
