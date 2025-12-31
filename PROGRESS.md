@@ -18,4 +18,6 @@
     - **GitOps**: Aligned `LVMCluster` manifest in Git with hardware-specific `by-path` IDs and `optionalPaths` to resolve persistent ArgoCD Sync errors.
     - **Virtualization**: Repaired Node Feature Discovery (NFD) crash loop by removing hardcoded operand images. Verified hardware VMX detection and enabled `kubevirt.io/schedulable` across the cluster.
     - **Monitoring**: Resolved Prometheus `CrashLoopBackOff` caused by "disk quota exceeded." Increased storage from 20Gi to 100Gi via GitOps and triggered PVC expansion on TrueNAS.
+    - **Media Stack**: Fixed missing media mounts in Sonarr, Overseerr, and Prowlarr by adding `/mnt/media` parent mount and `rclone` sidecars. Verified cross-pod mount visibility for Cloud (Zurg/TorBox) and Local storage.
+    - **Security**: Rotated leaked GitOps token, hardened `.gitignore`, and cleaned up dangling branches.
     - **Maintenance**: Merged `feature/add-apprise-mailrise` into `main` and normalized all ArgoCD applications to track `HEAD`. Cluster is now "All Green" with zero alerts.
