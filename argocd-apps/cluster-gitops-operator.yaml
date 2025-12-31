@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/sigtom/wow-ocp.git
-    targetRevision: main
+    targetRevision: HEAD
     path: infrastructure/operators/openshift-gitops-operator/base
   destination:
     server: https://kubernetes.default.svc
