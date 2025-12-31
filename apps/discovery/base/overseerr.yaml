@@ -49,6 +49,12 @@ spec:
         - "--config=/config/rclone/rclone.conf"
         - "--allow-other"
         - "--vfs-cache-mode=full"
+        - "--poll-interval=10s"
+        - "--dir-cache-time=10s"
+        - "--attr-timeout=10s"
+        - "--rc"
+        - "--rc-no-auth"
+        - "--rc-addr=:5572"
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
@@ -68,6 +74,12 @@ spec:
         - "--config=/config/rclone/rclone.conf"
         - "--allow-other"
         - "--vfs-cache-mode=full"
+        - "--poll-interval=10s"
+        - "--dir-cache-time=10s"
+        - "--attr-timeout=10s"
+        - "--rc"
+        - "--rc-no-auth"
+        - "--rc-addr=:5573"
         volumeMounts:
         - name: media-storage
           mountPath: /mnt/media
