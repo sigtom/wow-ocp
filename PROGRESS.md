@@ -12,3 +12,10 @@
     - **Change**: Requested Let's Encrypt Wildcard Certificate for `*.apps.ossus.sigtomtech.com` via Cert-Manager (DNS-01).
     - **Action**: Patched `IngressController/default` to use the new certificate as the default for all system routes.
     - **Result**: Successfully replaced self-signed certificates for OpenShift Console, ArgoCD, and all apps. "Green Lock" is now active cluster-wide.
+- [2025-12-31]: **MAJOR CLUSTER RECOVERY & GITOPYS REALIGNMENT**:
+    - **Storage**: Resolved LVM operator deadlock on Node 4 by manually removing stale thin pools and dependent volumes (MCE).
+    - **Storage**: Successfully initialized LVM Volume Groups across all blades (Node 2, 3, 4) for the first time.
+    - **GitOps**: Aligned `LVMCluster` manifest in Git with hardware-specific `by-path` IDs and `optionalPaths` to resolve persistent ArgoCD Sync errors.
+    - **Virtualization**: Repaired Node Feature Discovery (NFD) crash loop by removing hardcoded operand images. Verified hardware VMX detection and enabled `kubevirt.io/schedulable` across the cluster.
+    - **Monitoring**: Resolved Prometheus `CrashLoopBackOff` caused by "disk quota exceeded." Increased storage from 20Gi to 100Gi via GitOps and triggered PVC expansion on TrueNAS.
+    - **Maintenance**: Merged `feature/add-apprise-mailrise` into `main` and normalized all ArgoCD applications to track `HEAD`. Cluster is now "All Green" with zero alerts.
