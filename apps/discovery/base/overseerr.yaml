@@ -87,7 +87,7 @@ spec:
           name: http
         volumeMounts:
         - name: media-storage
-          mountPath: /app/config
+          mountPath: /config
           subPath: config/overseerr
         - name: media-storage
           mountPath: /mnt/media
