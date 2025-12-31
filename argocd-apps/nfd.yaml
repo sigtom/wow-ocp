@@ -1,23 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cluster-logging
+  name: nfd-operator
   namespace: openshift-gitops
-  finalizers:
-  - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/sigtom/wow-ocp.git
     targetRevision: HEAD
-    path: infrastructure/logging/base
+    path: infrastructure/operators/nfd/base
   destination:
     server: https://kubernetes.default.svc
-    namespace: openshift-logging
+    namespace: openshift-nfd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-    - CreateNamespace=true
-    - ServerSideApply=true 
