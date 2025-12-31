@@ -14,3 +14,5 @@ pihole1-dns.list
 gha-creds-*.json
 truenas-setup.md
 ALERTS.md
+gitops-token
+*-token
