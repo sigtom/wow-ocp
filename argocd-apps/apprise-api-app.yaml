@@ -11,7 +11,7 @@ spec:
   source:
     path: apps/apprise-api/overlays/prod
     repoURL: https://github.com/sigtom/wow-ocp.git
-    targetRevision: feature/add-apprise-mailrise
+    targetRevision: HEAD
   syncPolicy:
     automated:
       prune: true
