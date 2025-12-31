@@ -7,8 +7,9 @@ spec:
   storage:
     deviceClasses:
     - deviceSelector:
-        paths:
-        - /dev/sdb
+        optionalPaths:
+        - /dev/disk/by-path/pci-0000:02:00.0-scsi-0:0:1:0
+        - /dev/disk/by-path/pci-0000:00:11.4-ata-2
       fstype: xfs
       name: vg1
       thinPoolConfig:
