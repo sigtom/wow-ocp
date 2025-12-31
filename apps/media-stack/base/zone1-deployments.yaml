@@ -231,9 +231,6 @@ spec:
           name: http
         volumeMounts:
         - name: media-storage
-          mountPath: /data/downloads
-          subPath: downloads
-        - name: media-storage
           mountPath: /data/db
           subPath: config/rdt-client
         - name: media-storage
