@@ -95,20 +95,27 @@ spec:
       storage: 5Gi
   storageClassName: truenas-nfs
 ---
-apiVersion: route.openshift.io/v1
-kind: Route
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: technitium-ui
+  name: technitium-ingress
   namespace: technitium-dns
   annotations:
     cert-manager.io/cluster-issuer: cloudflare-prod
 spec:
-  host: dns.sigtom.dev
-  to:
-    kind: Service
-    name: technitium-dns-svc
-  port:
-    targetPort: web-ui
+  ingressClassName: openshift-default
   tls:
-    termination: edge
-    insecureEdgeTerminationPolicy: Redirect
+  - hosts:
+    - dns.sigtom.dev
+    secretName: technitium-dns-tls
+  rules:
+  - host: dns.sigtom.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: technitium-dns-svc
+            port:
+              number: 5380
