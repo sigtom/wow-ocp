@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: technitium-dns
+  namespace: openshift-gitops
+  labels:
+    app.kubernetes.io/instance: root-app
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/sigtom/wow-ocp.git
+    targetRevision: HEAD
+    path: apps/technitium-dns/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: technitium-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
