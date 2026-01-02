@@ -4,4 +4,5 @@ resources:
   - htpasswd-sealed-secret.yaml
   - cluster-oauth.yaml
   - admin-rbac.yaml
+  - onelogin-rbac.yaml
   - onelogin-sealed-secret.yaml

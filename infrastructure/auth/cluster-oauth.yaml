@@ -24,4 +24,6 @@ spec:
             - name
           email:
             - email
+          groups:
+            - Groups
         issuer: https://sigtom.onelogin.com/oidc/2
