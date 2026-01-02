@@ -21,3 +21,11 @@
     - **Media Stack**: Fixed missing media mounts in Sonarr, Overseerr, and Prowlarr by adding `/mnt/media` parent mount and `rclone` sidecars. Verified cross-pod mount visibility for Cloud (Zurg/TorBox) and Local storage.
     - **Security**: Rotated leaked GitOps token, hardened `.gitignore`, and cleaned up dangling branches.
     - **Maintenance**: Merged `feature/add-apprise-mailrise` into `main` and normalized all ArgoCD applications to track `HEAD`. Cluster is now "All Green" with zero alerts.
+- [2026-01-02]: **DNS MODERNIZATION: Technitium DNS Deployment**
+    - **Deployment**: Migrated DNS from Pi-hole logic to Technitium DNS (`dns.sigtom.dev`).
+    - **Persistence**: Configured private NFS share on TrueNAS for configuration and zone persistence.
+    - **Migration**: Bulk-imported 80+ records and 11 zones.
+    - **Monitoring**: Deployed `technitium-exporter` using `pablokbs/technitium-exporter:1.1.1`.
+    - **Dashboards**: Integrated Technitium Grafana dashboard into OpenShift Console via `openshift-config-managed` ConfigMap.
+    - **Security**: Enabled OISD Big blocklist and OIDC `anyuid` SCC for root-privileged port 53 access.
+    - **Networking**: Assigned MetalLB IP `172.16.100.210` for DNS traffic.
