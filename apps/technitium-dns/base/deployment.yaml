@@ -33,7 +33,7 @@ spec:
           value: dns.sigtom.dev
         volumeMounts:
         - name: config
-          mountPath: /etc/technitium
+          mountPath: /etc/dns
         livenessProbe:
           tcpSocket:
             port: 5380
