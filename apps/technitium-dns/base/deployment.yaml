@@ -54,20 +54,18 @@ spec:
             cpu: 500m
             memory: 512Mi
       - name: metrics-exporter
-        image: ghcr.io/brioche-works/technitium-dns-prometheus-exporter:master
+        image: technitium/dns-exporter:latest
         ports:
-        - containerPort: 9100
+        - containerPort: 8080
           name: metrics
         env:
-        - name: TECHNITIUM_URL_1
+        - name: TECHNITIUM_DNS_SERVER_URL
           value: "http://localhost:5380"
-        - name: TECHNITIUM_TOKEN_1
+        - name: TECHNITIUM_DNS_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: technitium-api-token
               key: token
-        - name: TECHNITIUM_LABEL_1
-          value: "cluster-dns"
         resources:
           requests:
             cpu: 50m
@@ -106,9 +104,9 @@ spec:
     protocol: TCP
     targetPort: 5380
   - name: metrics
-    port: 9100
+    port: 8080
     protocol: TCP
-    targetPort: 9100
+    targetPort: 8080
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
