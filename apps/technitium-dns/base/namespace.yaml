@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: technitium-dns
+  labels:
+    openshift.io/user-monitoring: "true"
 ---
 apiVersion: v1
 kind: ResourceQuota
@@ -49,3 +51,10 @@ spec:
       port: 53
     - protocol: TCP
       port: 5380
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-user-workload-monitoring
+    ports:
+    - protocol: TCP
+      port: 9100
