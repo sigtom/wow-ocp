@@ -22,14 +22,14 @@ spec:
         env:
         - name: TECHNITIUM_EXPORTER_PORT
           value: "9100"
-        - name: SERVER_1_URL
+        - name: TECHNITIUM_SERVER_1_URL
           value: "http://technitium-dns-svc.technitium-dns.svc.cluster.local:5380"
-        - name: SERVER_1_TOKEN
+        - name: TECHNITIUM_SERVER_1_TOKEN
           valueFrom:
             secretKeyRef:
               name: technitium-api-token
               key: token
-        - name: SERVER_1_LABEL
+        - name: TECHNITIUM_SERVER_1_LABEL
           value: "cluster-dns"
         resources:
           requests:
