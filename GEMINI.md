@@ -72,9 +72,12 @@ The cluster runs on 3x Dell FC630s. Routing to storage (172.16.160.100) is autom
 ⦁	Load Balancing: Use MetalLB (Layer 2) for services needing dedicated IPs.
 I. External Infrastructure (The "Sidecar" Blade)
 Node: wow-prox1.sigtomtech.com (Standalone Dell FC630)
-IP: 172.16.110.101
+IP: 172.16.110.101 (VLAN 110)
 OS: Proxmox VE 9.1.2
-Role: Out-of-cluster virtualization and utility services.
+Specs: 2x E5-2683 v4 (32C/64T), 256GB RAM.
+Storage: Dedicated NFS share on Fangtooth via VLAN 160 (NICs 3/4).
+API: sre-bot@pve!sre-token (Permissions: VM/LXC Admin, Datastore Admin, Auditor).
+Role: Out-of-cluster virtualization and utility services. All VMs/LXC on VLAN 110.
 J. Image Management (The "Docker Tax" Rule)
 ⦁	Problem: Docker Hub rate limits will kill us.
 ⦁	Fix: Do not suggest imagePullSecrets per pod. The cluster Global Pull Secret (pull-secret in openshift-config) must be patched with Docker Hub credentials.
