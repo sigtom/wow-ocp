@@ -15,18 +15,22 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: docker.io/pablokbs/technitium-exporter:1.1.1
+        image: ghcr.io/brioche-works/technitium-dns-prometheus-exporter:master
         ports:
         - containerPort: 9100
           name: metrics
         env:
-        - name: TECHNITIUM_HOST
+        - name: TECHNITIUM_EXPORTER_PORT
+          value: "9100"
+        - name: TECHNITIUM_API_SERVER_BASE_URL
           value: "http://technitium-dns-svc.technitium-dns.svc.cluster.local:5380"
-        - name: TECHNITIUM_API_KEY
+        - name: TECHNITIUM_API_SERVER_TOKEN
           valueFrom:
             secretKeyRef:
               name: technitium-api-token
               key: token
+        - name: TECHNITIUM_API_SERVER_LABEL
+          value: "cluster-dns"
         resources:
           requests:
             cpu: 50m

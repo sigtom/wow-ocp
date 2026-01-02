@@ -33,6 +33,6 @@ spec:
     - name: application-logs
       inputRefs:
         - application
-        # - infrastructure
+        - infrastructure
       outputRefs:
         - loki-stack
