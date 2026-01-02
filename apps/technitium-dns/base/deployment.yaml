@@ -65,7 +65,7 @@ metadata:
     metallb.universe.tf/loadBalancerIPs: 172.16.100.210
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   selector:
     app: technitium-dns
   ports:
