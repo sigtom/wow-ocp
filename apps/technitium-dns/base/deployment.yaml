@@ -59,13 +59,15 @@ spec:
         - containerPort: 9100
           name: metrics
         env:
-        - name: TECHNITIUM_URL
+        - name: TECHNITIUM_URL_1
           value: "http://localhost:5380"
-        - name: TECHNITIUM_TOKEN
+        - name: TECHNITIUM_TOKEN_1
           valueFrom:
             secretKeyRef:
               name: technitium-api-token
               key: token
+        - name: TECHNITIUM_LABEL_1
+          value: "cluster-dns"
         resources:
           requests:
             cpu: 50m
