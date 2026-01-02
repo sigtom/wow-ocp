@@ -6,3 +6,4 @@ resources:
   - rbac.yaml
   - exporter.yaml
   - token-sealed-secret.yaml
+  - dashboard.yaml
