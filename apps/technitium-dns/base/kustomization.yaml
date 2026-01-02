@@ -4,3 +4,5 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - rbac.yaml
+  - servicemonitor.yaml
+  - token-sealed-secret.yaml
