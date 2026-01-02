@@ -52,7 +52,7 @@ spec:
             cpu: 500m
             memory: 512Mi
       - name: metrics-exporter
-        image: docker.io/pablokbs/technitium-exporter:latest
+        image: docker.io/pablokbs/technitium-exporter:1.1.1
         ports:
         - containerPort: 9100
           name: metrics
