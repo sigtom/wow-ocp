@@ -23,7 +23,7 @@ spec:
         - name: TECHNITIUM_EXPORTER_PORT
           value: "9100"
         - name: TECHNITIUM_URL_1
-          value: "https://dns.sigtom.dev"
+          value: "http://technitium-dns-svc.technitium-dns.svc.cluster.local:5380"
         - name: TECHNITIUM_TOKEN_1
           valueFrom:
             secretKeyRef:
