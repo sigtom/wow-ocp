@@ -17,6 +17,8 @@ spec:
         clientID: 389bbe10-fc73-013d-efa8-6773d26b29b1142641
         clientSecret:
           name: onelogin-client-secret
+        extraScopes:
+          - groups
         claims:
           preferredUsername:
             - preferred_username
@@ -26,4 +28,5 @@ spec:
             - email
           groups:
             - Groups
+            - groups
         issuer: https://sigtom.onelogin.com/oidc/2
