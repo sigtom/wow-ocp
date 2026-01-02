@@ -20,6 +20,8 @@ spec:
         - containerPort: 9100
           name: metrics
         env:
+        - name: TECHNITIUM_EXPORTER_PORT
+          value: "9100"
         - name: TECHNITIUM_URL_1
           value: "https://dns.sigtom.dev"
         - name: TECHNITIUM_TOKEN_1
