@@ -16,6 +16,8 @@ spec:
       containers:
       - name: dns-server
         image: technitium/dns-server:latest
+        securityContext:
+          runAsUser: 0
         ports:
         - containerPort: 53
           name: dns-udp
