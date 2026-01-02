@@ -5,6 +5,8 @@ metadata:
   namespace: technitium-dns
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: technitium-dns
@@ -113,7 +115,7 @@ metadata:
   namespace: technitium-dns
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 5Gi
