@@ -92,3 +92,19 @@ oc adm prune images
 Backup Check (OADP):  
 If the user asks "Is my data safe?", run:  
 oc get backup -n openshift-adp
+
+4. Current Operational State (January 2026)
+DNS Infrastructure:
+⦁	Primary DNS: Technitium DNS (172.16.100.210) in technitium-dns namespace.
+⦁	Web UI: https://dns.sigtom.dev (Ingress: 172.16.100.106).
+⦁	Monitoring: pablokbs/technitium-exporter:1.1.1 reporting to OpenShift User Workload Monitoring.
+⦁	Storage: Persistent via NFS on TrueNAS (technitium-config-pvc).
+⦁	Blocking: OISD Big enabled.
+Media Stack:
+⦁	Pattern: Sidecar Rclone (Zurg/TorBox) for all media apps.
+⦁	Mounts: Flat /mnt/media structure.
+⦁	Nodes: Balanced across Node 2 & 3.
+Upcoming Tasks:
+⦁	Cluster Integration: Update dns.operator to use Technitium as upstream.
+⦁	High Availability: Setup secondary Technitium instance with zone sync.
+⦁	DoH/DoT: Configure encrypted DNS for mobile devices.
