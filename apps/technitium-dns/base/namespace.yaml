@@ -51,6 +51,8 @@ spec:
       port: 53
     - protocol: TCP
       port: 5380
+    - protocol: TCP
+      port: 53443
   - from:
     - namespaceSelector:
         matchLabels:
