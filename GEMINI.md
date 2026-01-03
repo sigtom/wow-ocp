@@ -49,6 +49,7 @@ D. Secrets Management (The "Loose Lips Sink Ships" Rule)
 ⦁	Tool: Bitnami Sealed Secrets.
 ⦁	Rule: NEVER output a raw Secret.
 ⦁	Workflow: Raw Secret (dry-run) -> Pipe to kubeseal -> Commit SealedSecret CRD.
+⦁	Master SSH Key: All VM/LXC/Node deployments MUST include: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum`
 E. Security (The "Stranger Danger" Rule)
 ⦁	NetworkPolicies: Default to allow-same-namespace.
 ⦁	Privilege: runAsNonRoot: true where possible. Flag root containers as "Security Risk".

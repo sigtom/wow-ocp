@@ -1,0 +1,9 @@
+all:
+  hosts:
+    wow-prox1:
+      ansible_host: 172.16.110.101
+      proxmox_api_host: 172.16.110.101
+    dns2:
+      ansible_host: 172.16.110.211
+      vmid: 211
+      proxmox_node: wow-prox1

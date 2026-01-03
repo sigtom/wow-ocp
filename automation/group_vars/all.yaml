@@ -1,0 +1,14 @@
+# Proxmox API Credentials (will be pulled from env)
+pve_api_user: "sre-bot@pve"
+pve_api_token_id: "sre-token"
+pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+
+# Global SSH Keys to inject
+global_ssh_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILPyc7oAxzmaymnrZWblYRbTH/hOd+OPaQStsMNi/3bU sigtom@localhost.localdomain"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
+
+# Networking
+lab_vlan_mgmt: 110
+lab_bridge: "vmbr0"
+lab_gw: "172.16.110.1"
