@@ -108,3 +108,4 @@ Upcoming Tasks:
 ⦁	Cluster Integration: Update dns.operator to use Technitium as upstream.
 ⦁	High Availability: Setup secondary Technitium instance with zone sync.
 ⦁	DoH/DoT: Configure encrypted DNS for mobile devices.
+⦁	IPAM/DCIM: Deploy NetBox on wow-prox1 (standalone) as the Lab Source of Truth.
