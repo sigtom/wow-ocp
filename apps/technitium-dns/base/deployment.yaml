@@ -30,6 +30,9 @@ spec:
         - containerPort: 5380
           name: web-ui
           protocol: TCP
+        - containerPort: 53443
+          name: cluster-sync
+          protocol: TCP
         env:
         - name: DNS_SERVER_DOMAIN
           value: dns.sigtom.dev
@@ -83,6 +86,10 @@ spec:
     port: 5380
     protocol: TCP
     targetPort: 5380
+  - name: cluster-sync
+    port: 53443
+    protocol: TCP
+    targetPort: 53443
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
