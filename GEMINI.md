@@ -78,6 +78,11 @@ Specs: 2x E5-2683 v4 (32C/64T), 256GB RAM.
 Storage: Dedicated NFS share on Fangtooth via VLAN 160 (NICs 3/4).
 API: sre-bot@pve!sre-token (Permissions: VM/LXC Admin, Datastore Admin, Auditor).
 Role: Out-of-cluster virtualization and utility services. All VMs/LXC on VLAN 110.
+Node: pfSense Firewall (Netgate/Custom)
+IP: 10.1.1.1 (Management) / 172.16.100.1 (Internal)
+Port: 1815 (SSH)
+Auth: sre-bot (SSH Key-based)
+Permissions: Read-Only (Deny Config Write), WebUI + Shell access.
 J. Image Management (The "Docker Tax" Rule)
 ⦁	Problem: Docker Hub rate limits will kill us.
 ⦁	Fix: Do not suggest imagePullSecrets per pod. The cluster Global Pull Secret (pull-secret in openshift-config) must be patched with Docker Hub credentials.
