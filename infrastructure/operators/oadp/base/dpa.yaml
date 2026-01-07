@@ -31,5 +31,7 @@ spec:
         - aws
         - openshift
         - csi
+      disableFsBackup: false
     csi:
       enable: true
+  logFormat: text
