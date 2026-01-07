@@ -1,0 +1,57 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: technitium-vm
+  namespace: technitium-dns
+  labels:
+    app: technitium-dns
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: technitium-vm
+    spec:
+      domain:
+        cpu:
+          cores: 2
+        resources:
+          requests:
+            memory: 2Gi
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: bridge-net
+              bridge: {}
+          rng: {}
+      networks:
+        - name: bridge-net
+          multus:
+            networkName: machine-bridge
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: technitium-vm-disk
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              hostname: dns.sigtom.dev
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOYsVYU0IzJ4hKNz0Hx6RwGW4wUuIPid1wJxwccp3cDT sigtom@localhost.localdomain
+              networking:
+                version: 2
+                ethernets:
+                  eth0:
+                    addresses:
+                      - 172.16.100.210/24
+                    gateway4: 172.16.100.1
+                    nameservers:
+                      addresses: [1.1.1.1, 8.8.8.8]

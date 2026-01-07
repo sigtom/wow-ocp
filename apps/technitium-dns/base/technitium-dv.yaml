@@ -1,0 +1,16 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: technitium-vm-disk
+  namespace: technitium-dns
+spec:
+  source:
+    http:
+      url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+  storage:
+    resources:
+      requests:
+        storage: 20Gi
+    storageClassName: truenas-nfs
+    accessModes:
+      - ReadWriteMany
