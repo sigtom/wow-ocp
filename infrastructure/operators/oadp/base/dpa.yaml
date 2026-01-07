@@ -19,12 +19,6 @@ spec:
         credential:
           key: cloud
           name: cloud-credentials
-  snapshotLocations:
-    - name: default
-      velero:
-        provider: aws
-        config:
-          region: wow-homelab
   configuration:
     velero:
       defaultPlugins:
@@ -32,6 +26,10 @@ spec:
         - openshift
         - csi
       disableFsBackup: false
-    csi:
-      enable: true
   logFormat: text
+  snapshotLocations:
+    - name: default
+      velero:
+        provider: aws
+        config:
+          region: wow-homelab
