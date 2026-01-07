@@ -81,3 +81,17 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: truenas-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: vaultwarden
