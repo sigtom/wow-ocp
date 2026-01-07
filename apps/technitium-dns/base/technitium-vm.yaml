@@ -57,8 +57,11 @@ kind: Service
 metadata:
   name: technitium-vm-svc
   namespace: technitium-dns
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 172.16.100.210
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     app: technitium-dns
   ports:
@@ -82,4 +85,3 @@ spec:
       protocol: TCP
       port: 22
       targetPort: 22
-  externalTrafficPolicy: Local
