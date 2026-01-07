@@ -29,7 +29,12 @@ spec:
                 bus: virtio
           interfaces:
             - name: default
-              bridge: {}
+              masquerade: {}
+              ports:
+                - port: 22
+                - port: 53
+                - port: 5380
+                - port: 53443
           rng: {}
       networks:
         - name: default
