@@ -17,17 +17,19 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: bitnami/postgresql:16
           env:
-            - name: POSTGRES_DB
+            - name: POSTGRESQL_DATABASE
               value: vaultwarden
-            - name: POSTGRES_USER
+            - name: POSTGRESQL_USERNAME
               value: vaultwarden
-            - name: POSTGRES_PASSWORD
+            - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: vaultwarden-db-config
                   key: db-password
+            - name: POSTGRESQL_PGAUDIT_LOG
+              value: "read,write"
           ports:
             - containerPort: 5432
           resources:
@@ -39,15 +41,15 @@ spec:
               memory: 512Mi
           volumeMounts:
             - name: db-data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /bitnami/postgresql
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "vaultwarden"]
+              command: ["/opt/bitnami/scripts/postgresql/healthcheck.sh"]
             initialDelaySeconds: 15
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "vaultwarden"]
+              command: ["/opt/bitnami/scripts/postgresql/healthcheck.sh"]
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
