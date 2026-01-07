@@ -29,7 +29,7 @@ spec:
                 bus: virtio
           interfaces:
             - name: default
-              masquerade: {}
+              bridge: {}
           rng: {}
       networks:
         - name: default
