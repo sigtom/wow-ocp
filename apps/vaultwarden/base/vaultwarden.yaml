@@ -24,7 +24,7 @@ spec:
             - name: DOMAIN
               value: "https://vault.sigtom.dev"
             - name: SIGNUPS_ALLOWED
-              value: "true"
+              value: "false"
             - name: WEBSOCKET_ENABLED
               value: "true"
             - name: DATABASE_URL
