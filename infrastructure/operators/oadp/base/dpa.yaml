@@ -4,23 +4,27 @@ metadata:
   name: wow-oadp
   namespace: openshift-adp
 spec:
-  backupStorageLocations:
+  backupLocations:
     - name: default
-      backupSyncPeriod: 2m
-      bucket: oadp-backups
-      provider: aws
-      config:
-        region: wow-homelab
-        s3ForcePathStyle: "true"
-        s3Url: http://172.16.160.100:9000
-      credential:
-        key: cloud
-        name: cloud-credentials
-  volumeSnapshotLocations:
+      velero:
+        provider: aws
+        default: true
+        objectStorage:
+          bucket: oadp-backups
+          prefix: velero
+        config:
+          region: wow-homelab
+          s3ForcePathStyle: "true"
+          s3Url: http://172.16.160.100:9000
+        credential:
+          key: cloud
+          name: cloud-credentials
+  snapshotLocations:
     - name: default
-      provider: aws
-      config:
-        region: wow-homelab
+      velero:
+        provider: aws
+        config:
+          region: wow-homelab
   configuration:
     velero:
       defaultPlugins:
