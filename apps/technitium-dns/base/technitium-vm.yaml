@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         kubevirt.io/domain: technitium-vm
+        app: technitium-dns
     spec:
       domain:
         cpu:
@@ -27,13 +28,12 @@ spec:
               disk:
                 bus: virtio
           interfaces:
-            - name: bridge-net
-              bridge: {}
+            - name: default
+              masquerade: {}
           rng: {}
       networks:
-        - name: bridge-net
-          multus:
-            networkName: machine-bridge
+        - name: default
+          pod: {}
       volumes:
         - name: rootdisk
           dataVolume:
@@ -46,7 +46,32 @@ spec:
               ssh_authorized_keys:
                 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum
                 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOYsVYU0IzJ4hKNz0Hx6RwGW4wUuIPid1wJxwccp3cDT sigtom@localhost.localdomain
-              runcmd:
-                - ip addr add 172.16.100.210/24 dev eth0
-                - ip link set eth0 up
-                - ip route add default via 172.16.100.1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: technitium-vm-svc
+  namespace: technitium-dns
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 172.16.100.210
+spec:
+  type: LoadBalancer
+  selector:
+    app: technitium-dns
+  ports:
+    - name: dns-udp
+      protocol: UDP
+      port: 53
+      targetPort: 53
+    - name: dns-tcp
+      protocol: TCP
+      port: 53
+      targetPort: 53
+    - name: http
+      protocol: TCP
+      port: 5380
+      targetPort: 5380
+    - name: https
+      protocol: TCP
+      port: 53443
+      targetPort: 53443
