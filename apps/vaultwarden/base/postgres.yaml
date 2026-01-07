@@ -17,19 +17,17 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: bitnami/postgresql:16.4.0
+          image: quay.io/sclorg/postgresql-16-c9s:latest
           env:
             - name: POSTGRESQL_DATABASE
               value: vaultwarden
-            - name: POSTGRESQL_USERNAME
+            - name: POSTGRESQL_USER
               value: vaultwarden
             - name: POSTGRESQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: vaultwarden-db-config
                   key: db-password
-            - name: POSTGRESQL_PGAUDIT_LOG
-              value: "read,write"
           ports:
             - containerPort: 5432
           resources:
@@ -41,44 +39,18 @@ spec:
               memory: 512Mi
           volumeMounts:
             - name: db-data
-              mountPath: /bitnami/postgresql
+              mountPath: /var/lib/postgresql/data
           livenessProbe:
             exec:
-              command: ["/opt/bitnami/scripts/postgresql/healthcheck.sh"]
+              command: ["/usr/bin/pg_isready", "-U", "vaultwarden"]
             initialDelaySeconds: 15
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["/opt/bitnami/scripts/postgresql/healthcheck.sh"]
+              command: ["/usr/bin/pg_isready", "-U", "vaultwarden"]
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
         - name: db-data
           persistentVolumeClaim:
             claimName: vaultwarden-db-data
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: vaultwarden-db-data
-  namespace: vaultwarden
-  labels:
-    velero.io/backup: "true"
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: truenas-nfs
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vaultwarden-db
-  namespace: vaultwarden
-spec:
-  ports:
-    - port: 5432
-  selector:
-    app: vaultwarden-db
