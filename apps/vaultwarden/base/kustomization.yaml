@@ -2,6 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - vaultwarden.yaml
+  - postgres.yaml
   - ingress.yaml
   - certificate.yaml
   - admin-token-sealed-secret.yaml
+  - db-sealed-secret.yaml

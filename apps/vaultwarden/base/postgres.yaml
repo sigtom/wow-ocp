@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden-db
+  namespace: vaultwarden
+  labels:
+    app: vaultwarden-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaultwarden-db
+  template:
+    metadata:
+      labels:
+        app: vaultwarden-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_DB
+              value: vaultwarden
+            - name: POSTGRES_USER
+              value: vaultwarden
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-db-config
+                  key: db-password
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "vaultwarden"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "vaultwarden"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: vaultwarden-db-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-db-data
+  namespace: vaultwarden
+  labels:
+    velero.io/backup: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: truenas-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden-db
+  namespace: vaultwarden
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: vaultwarden-db
