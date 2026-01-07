@@ -30,7 +30,7 @@ spec:
     - name: http
       port: 80
       protocol: TCP
-      targetPort: 80
+      targetPort: 8080
   selector:
     app: vaultwarden
 ---
@@ -55,6 +55,8 @@ spec:
         - name: vaultwarden
           image: vaultwarden/server:latest
           env:
+            - name: ROCKET_PORT
+              value: "8080"
             - name: DOMAIN
               value: "https://vault.sigtom.dev"
             - name: SIGNUPS_ALLOWED
@@ -67,7 +69,7 @@ spec:
                   name: vaultwarden-admin-token
                   key: token
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: http
           resources:
             requests:
@@ -82,13 +84,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /alive
-              port: 80
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /alive
-              port: 80
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
