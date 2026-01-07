@@ -9,5 +9,6 @@ spec:
       "name": "machine-bridge",
       "type": "bridge",
       "bridge": "br-ex",
+      "macvtap": "true",
       "ipam": {}
     }'
