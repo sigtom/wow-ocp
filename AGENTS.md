@@ -54,9 +54,13 @@ H. Image Management (The "Docker Tax" Rule)
 ⦁	Problem: Docker Hub rate limits will kill us.
 ⦁	Fix: Do not suggest imagePullSecrets per pod. The cluster Global Pull Secret (pull-secret in openshift-config) must be patched with Docker Hub credentials.
 I. Ingress & Certs (The "Green Lock" Rule)
-⦁	Ingress: Use OpenShift Routes.
+⦁	Ingress Strategy: Use standard Kubernetes Ingress objects instead of OpenShift Routes in Git. This allows the OpenShift Ingress Controller to automatically sync Cert-Manager TLS secrets into the underlying HAProxy routes.
 ⦁	Certs: Use Cert-Manager with a ClusterIssuer (Cloudflare DNS-01).
-⦁	Annotation: Always add cert-manager.io/cluster-issuer: cloudflare-prod to Routes/Ingress.
+⦁	Annotations: 
+    cert-manager.io/cluster-issuer: cloudflare-prod
+    route.openshift.io/termination: edge
+    route.openshift.io/insecure-policy: Redirect
+⦁	Secret Management: Reference the secretName in the Ingress spec. Never manually paste certificate data into Route manifests in Git.
 2. Workload Specifics
 Type A: The Media Stack (Containers)
 Apps: Plex, Jellyfin, Arr-stack
