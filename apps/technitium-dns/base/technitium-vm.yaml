@@ -51,6 +51,11 @@ spec:
               ssh_authorized_keys:
                 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum
                 - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOYsVYU0IzJ4hKNz0Hx6RwGW4wUuIPid1wJxwccp3cDT sigtom@localhost.localdomain
+              network:
+                version: 2
+                ethernets:
+                  enp1s0:
+                    dhcp4: true
 ---
 apiVersion: v1
 kind: Service
@@ -58,10 +63,10 @@ metadata:
   name: technitium-vm-svc
   namespace: technitium-dns
   annotations:
-    metallb.universe.tf/loadBalancerIPs: 172.16.130.50
+    metallb.universe.tf/loadBalancerIPs: 172.16.100.210
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   selector:
     app: technitium-dns
   ports:
