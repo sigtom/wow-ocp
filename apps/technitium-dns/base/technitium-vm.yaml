@@ -57,8 +57,6 @@ kind: Service
 metadata:
   name: technitium-vm-svc
   namespace: technitium-dns
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: 172.16.100.210
 spec:
   type: LoadBalancer
   selector:
