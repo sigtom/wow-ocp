@@ -66,3 +66,18 @@ spec:
         - name: vaultwarden-data
           persistentVolumeClaim:
             claimName: vaultwarden-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-data
+  namespace: vaultwarden
+  labels:
+    velero.io/backup: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: truenas-nfs
