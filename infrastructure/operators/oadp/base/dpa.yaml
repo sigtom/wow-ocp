@@ -1,0 +1,31 @@
+apiVersion: oadp.openshift.io/v1alpha1
+kind: DataProtectionApplication
+metadata:
+  name: wow-oadp
+  namespace: openshift-adp
+spec:
+  backupStorageLocations:
+    - name: default
+      backupSyncPeriod: 2m
+      bucket: oadp-backups
+      provider: aws
+      config:
+        region: wow-homelab
+        s3ForcePathStyle: "true"
+        s3Url: http://172.16.160.100:9000
+      credential:
+        key: cloud
+        name: cloud-credentials
+  volumeSnapshotLocations:
+    - name: default
+      provider: aws
+      config:
+        region: wow-homelab
+  configuration:
+    velero:
+      defaultPlugins:
+        - aws
+        - openshift
+        - csi
+    csi:
+      enable: true
