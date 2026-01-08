@@ -61,4 +61,13 @@ spec:
                   enp1s0:
                     dhcp4: true
                   enp2s0:
-                    dhcp4: true
+                    dhcp4: no
+                    addresses:
+                      - 172.16.130.210/24
+                    routes:
+                      - to: default
+                        via: 172.16.130.1
+                    nameservers:
+                      addresses:
+                        - 127.0.0.1
+                        - 172.16.110.211
