@@ -1,0 +1,176 @@
+---
+# Proxmox LXC Deployment Playbook
+# Uses existing proxmox_lxc role from automation/roles/proxmox_lxc/
+#
+# Prerequisites:
+# 1. Add target LXC to automation/inventory/hosts.yaml:
+#    my-lxc:
+#      ansible_host: 172.16.110.XXX  # Free IP in VLAN 110
+#      vmid: XXX                      # Unique VMID
+#      proxmox_node: wow-prox1
+#
+# 2. Set PROXMOX_SRE_BOT_API_TOKEN environment variable:
+#    export PROXMOX_SRE_BOT_API_TOKEN="your-token-here"
+#
+# 3. Ensure community.general collection installed:
+#    ansible-galaxy collection install community.general
+#
+# Usage:
+#   cd automation
+#   ansible-playbook -i inventory/hosts.yaml playbooks/deploy-my-lxc.yaml
+
+- name: Deploy Proxmox LXC Container
+  hosts: my-lxc  # CHANGE ME: Match host in inventory
+  gather_facts: no
+  
+  # Optional: Override default LXC resources
+  # vars:
+  #   lxc_cores: 2
+  #   lxc_memory: 1024
+  #   lxc_rootfs_size: 16
+  #   lxc_ostemplate: "TSVMDS01:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+  
+  roles:
+    - proxmox_lxc
+
+- name: Wait for LXC to boot
+  hosts: my-lxc  # CHANGE ME
+  gather_facts: no
+  tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 120
+
+- name: Post-provisioning configuration
+  hosts: my-lxc  # CHANGE ME
+  tasks:
+    - name: Wait for systemd to be ready
+      command: systemctl is-system-running
+      register: systemctl_status
+      until: systemctl_status.stdout in ["running", "degraded"]
+      retries: 30
+      delay: 2
+      changed_when: false
+      failed_when: false
+    
+    - name: Update package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+    
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+    
+    - name: Install essential packages
+      apt:
+        name:
+          - vim
+          - git
+          - curl
+          - wget
+          - htop
+          - net-tools
+          - python3-pip
+        state: present
+    
+    - name: Set timezone
+      timezone:
+        name: America/New_York
+    
+    - name: Set hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+    
+    - name: Configure /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_host }} {{ inventory_hostname }} {{ inventory_hostname }}.sigtomtech.com"
+        state: present
+    
+    - name: Enable systemd-resolved
+      systemd:
+        name: systemd-resolved
+        enabled: yes
+        state: started
+
+# Optional: Register LXC in Technitium DNS
+# - name: Register LXC in DNS
+#   hosts: localhost
+#   gather_facts: no
+#   roles:
+#     - role: technitium_record
+#       vars:
+#         dns_server: "172.16.110.211"
+#         dns_zone: "sigtomtech.com"
+#         dns_record: "{{ hostvars['my-lxc'].inventory_hostname }}"
+#         dns_record_type: "A"
+#         dns_record_value: "{{ hostvars['my-lxc'].ansible_host }}"
+
+# Optional: Configure UFW firewall
+# - name: Configure UFW firewall
+#   hosts: my-lxc
+#   tasks:
+#     - name: Install UFW
+#       apt:
+#         name: ufw
+#         state: present
+#     
+#     - name: Allow SSH
+#       ufw:
+#         rule: allow
+#         port: '22'
+#         proto: tcp
+#     
+#     - name: Enable UFW
+#       ufw:
+#         state: enabled
+#         policy: deny
+
+# Example: Install Docker in LXC
+# - name: Install Docker (optional)
+#   hosts: my-lxc
+#   tasks:
+#     - name: Install Docker prerequisites
+#       apt:
+#         name:
+#           - apt-transport-https
+#           - ca-certificates
+#           - gnupg
+#           - lsb-release
+#         state: present
+#     
+#     - name: Add Docker GPG key
+#       apt_key:
+#         url: https://download.docker.com/linux/ubuntu/gpg
+#         state: present
+#     
+#     - name: Add Docker repository
+#       apt_repository:
+#         repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+#         state: present
+#     
+#     - name: Install Docker
+#       apt:
+#         name:
+#           - docker-ce
+#           - docker-ce-cli
+#           - containerd.io
+#           - docker-compose-plugin
+#         state: present
+#         update_cache: yes
+#     
+#     - name: Enable Docker service
+#       systemd:
+#         name: docker
+#         enabled: yes
+#         state: started
+#     
+#     - name: Add root user to docker group
+#       user:
+#         name: root
+#         groups: docker
+#         append: yes

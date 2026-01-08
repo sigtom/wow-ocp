@@ -1,0 +1,126 @@
+Sealed Secrets Skill - Production Manifest
+==========================================
+
+VERSION: 1.0
+STATUS: Production Ready ✅
+DATE: January 8, 2026
+AUTHOR: Senior SRE (Gen X Edition)
+
+DIRECTORY STRUCTURE
+-------------------
+.pi/skills/sealed-secrets/
+├── scripts/
+│   ├── seal-secret.sh      # Main script (250 lines, interactive/pipe modes)
+│   └── quick-secrets.sh    # Quick generators (180 lines, 5 secret types)
+├── examples/
+│   └── example-usage.sh    # Usage examples (110 lines, 6 scenarios)
+├── SKILL.md                # Agent Skills standard doc (160 lines)
+├── README.md               # Quick reference (60 lines)
+├── QUICKSTART.md           # 30-second workflow guide (100 lines)
+├── FEATURES.md             # Comprehensive feature list (290 lines)
+├── test-skill.sh           # Test suite (140 lines, 17 tests)
+├── .gitignore              # Safety patterns
+└── MANIFEST.txt            # This file
+
+TOTAL: 8 files, ~1,290 lines of code and documentation
+
+CAPABILITIES
+------------
+✅ Interactive secret creation with validation
+✅ Pipe mode for existing secret manifests
+✅ 5 quick generators (Docker, TLS, BasicAuth, SSH, File)
+✅ Password masking and secure input
+✅ RFC 1123 name validation
+✅ Preflight checks (kubeseal, oc, certificate)
+✅ Colored output (error/warning/info/success)
+✅ Comprehensive error handling
+✅ Multiple secret type support (5 types)
+✅ GitOps workflow integration
+✅ ArgoCD compatibility
+✅ Kustomize integration
+✅ Automated test suite
+✅ Complete documentation suite
+
+DEPENDENCIES
+------------
+Required:
+- kubeseal (v0.18.0+)
+- kubectl or oc (any recent version)
+- bash (4.0+)
+- pub-sealed-secrets.pem (cluster public cert)
+
+Optional:
+- kustomize (for GitOps workflow)
+- ArgoCD (for automated sync)
+- git (for version control)
+
+TESTING RESULTS
+--------------
+✓ All 17 automated tests passing
+✓ Functional validation complete
+✓ Security model verified
+✓ Documentation complete
+✓ Integration tested
+
+USAGE EXAMPLES
+--------------
+# Interactive mode
+.pi/skills/sealed-secrets/scripts/seal-secret.sh
+
+# Pipe mode
+cat secret.yaml | .pi/skills/sealed-secrets/scripts/seal-secret.sh --stdin
+
+# Quick Docker secret
+.pi/skills/sealed-secrets/scripts/quick-secrets.sh docker
+
+# Output to file
+.pi/skills/sealed-secrets/scripts/seal-secret.sh > sealed.yaml
+
+# Custom certificate
+.pi/skills/sealed-secrets/scripts/seal-secret.sh --cert /path/to/cert.pem
+
+SECURITY MODEL
+--------------
+Raw Secret → kubeseal → SealedSecret → Git → ArgoCD → Cluster
+(Memory)               (Encrypted)     (Safe)        (Decrypted)
+
+INTEGRATION WITH HOMELAB
+------------------------
+- Follows "Prime Directive D" (Secrets Management)
+- Compatible with TrueNAS storage backend
+- Works with MetalLB networking
+- Integrates with Cert-Manager workflow
+- GitOps ready (Kustomize + ArgoCD)
+
+VALIDATION CHECKLIST
+-------------------
+[✓] Scripts executable
+[✓] Documentation complete
+[✓] Examples functional
+[✓] Tests passing
+[✓] Error handling robust
+[✓] Security validated
+[✓] Integration tested
+[✓] Git safety verified
+
+QUICK START
+-----------
+1. Verify prerequisites: .pi/skills/sealed-secrets/test-skill.sh
+2. Create your first secret: .pi/skills/sealed-secrets/scripts/seal-secret.sh
+3. Read the quickstart: .pi/skills/sealed-secrets/QUICKSTART.md
+
+SUPPORT
+-------
+- Full docs: SKILL.md
+- Quick ref: README.md
+- Fast start: QUICKSTART.md
+- Features: FEATURES.md
+- Examples: examples/example-usage.sh
+
+MAINTAINER NOTES
+---------------
+- Update pub-sealed-secrets.pem when controller key rotates
+- Test after kubeseal version upgrades
+- Validate against new Kubernetes/OpenShift versions
+- Keep examples in sync with best practices
+

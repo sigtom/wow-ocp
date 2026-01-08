@@ -1,0 +1,176 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-vm-namespace  # CHANGE ME
+
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: my-vm-disk  # CHANGE ME
+  namespace: my-vm-namespace  # CHANGE ME
+spec:
+  source:
+    registry:
+      url: "docker://registry.redhat.io/rhel9/rhel-guest-image:latest"
+      # Or clone from existing PVC:
+      # pvc:
+      #   namespace: templates
+      #   name: rhel9-template-disk
+  storage:
+    resources:
+      requests:
+        storage: 30Gi  # CHANGE ME: Disk size
+    storageClassName: truenas-nfs  # RWX for live migration
+    accessModes:
+      - ReadWriteMany
+
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: my-vm  # CHANGE ME
+  namespace: my-vm-namespace  # CHANGE ME
+  labels:
+    app: my-vm  # CHANGE ME
+spec:
+  runStrategy: Always  # VM always running (auto-restart)
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: my-vm  # CHANGE ME
+        app: my-vm  # CHANGE ME
+    spec:
+      domain:
+        cpu:
+          cores: 2  # CHANGE ME
+          sockets: 1
+          threads: 1
+        resources:
+          requests:
+            memory: 4Gi  # CHANGE ME
+          limits:
+            memory: 4Gi  # CHANGE ME
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}  # NAT via pod network
+            # Optional: Add additional network interface
+            # - name: workload
+            #   bridge: {}
+          rng: {}  # Random number generator for better entropy
+      networks:
+        - name: default
+          pod: {}
+        # Optional: Add Multus network for VLAN access
+        # - name: workload
+        #   multus:
+        #     networkName: workload-br130
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: my-vm-disk  # CHANGE ME: Match DataVolume name
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              hostname: my-vm.sigtom.dev  # CHANGE ME
+              fqdn: my-vm.sigtom.dev  # CHANGE ME
+              
+              # SSH Keys (OCP Master Key)
+              ssh_authorized_keys:
+                - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum
+              
+              # Default user (RHEL uses cloud-user)
+              user: cloud-user
+              
+              # Optional: Set password (for console access)
+              # password: mypassword
+              # chpasswd: { expire: False }
+              # ssh_pwauth: True
+              
+              # Network Configuration
+              # Default: DHCP on first interface (pod network)
+              network:
+                version: 2
+                ethernets:
+                  enp1s0:
+                    dhcp4: true
+                  # Optional: Static IP on second interface (Multus)
+                  # enp2s0:
+                  #   dhcp4: no
+                  #   addresses:
+                  #     - 172.16.130.XXX/24
+                  #   routes:
+                  #     - to: default
+                  #       via: 172.16.130.1
+                  #   nameservers:
+                  #     addresses:
+                  #       - 172.16.110.211
+              
+              # Package installation
+              packages:
+                - vim
+                - git
+                - curl
+                - wget
+                - htop
+              
+              # Run commands on first boot
+              runcmd:
+                - echo "VM provisioned at $(date)" >> /etc/motd
+                - systemctl enable --now cockpit.socket
+              
+              # Timezone
+              timezone: America/New_York
+              
+              # Optional: Install QEMU guest agent
+              package_update: true
+              package_upgrade: true
+
+---
+# Optional: Create Service for VM
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-vm-service  # CHANGE ME
+  namespace: my-vm-namespace  # CHANGE ME
+spec:
+  selector:
+    kubevirt.io/domain: my-vm  # CHANGE ME: Match VM label
+  ports:
+    - name: ssh
+      protocol: TCP
+      port: 22
+      targetPort: 22
+    # Add more ports as needed
+    # - name: http
+    #   protocol: TCP
+    #   port: 80
+    #   targetPort: 80
+  type: ClusterIP
+
+---
+# Optional: Create Route/Ingress for VM
+# apiVersion: route.openshift.io/v1
+# kind: Route
+# metadata:
+#   name: my-vm-route
+#   namespace: my-vm-namespace
+# spec:
+#   to:
+#     kind: Service
+#     name: my-vm-service
+#   port:
+#     targetPort: http
+#   tls:
+#     termination: edge
+#     insecureEdgeTerminationPolicy: Redirect

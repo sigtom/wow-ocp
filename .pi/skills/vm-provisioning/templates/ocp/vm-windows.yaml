@@ -1,0 +1,186 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: windows-vm  # CHANGE ME
+
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: windows-vm-disk  # CHANGE ME
+  namespace: windows-vm  # CHANGE ME
+spec:
+  source:
+    blank: {}  # Blank disk for Windows installation
+    # Or import from HTTP:
+    # http:
+    #   url: "http://your-storage/windows-server-2022.iso"
+  storage:
+    resources:
+      requests:
+        storage: 60Gi  # CHANGE ME: Windows needs more space
+    storageClassName: truenas-nfs  # RWX for live migration
+    accessModes:
+      - ReadWriteMany
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: windows-iso  # CHANGE ME: Upload ISO first
+  namespace: windows-vm  # CHANGE ME
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: truenas-nfs-dynamic
+
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: windows-vm  # CHANGE ME
+  namespace: windows-vm  # CHANGE ME
+  labels:
+    app: windows-vm  # CHANGE ME
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: windows-vm  # CHANGE ME
+        app: windows-vm  # CHANGE ME
+    spec:
+      domain:
+        cpu:
+          cores: 4  # CHANGE ME: Windows needs more CPU
+          sockets: 1
+          threads: 1
+        resources:
+          requests:
+            memory: 8Gi  # CHANGE ME: Windows needs more RAM
+          limits:
+            memory: 8Gi  # CHANGE ME
+        features:
+          acpi: {}
+          apic: {}
+          hyperv:
+            relaxed: {}
+            vapic: {}
+            spinlocks:
+              spinlocks: 8191
+            vpindex: {}
+            runtime: {}
+            synic: {}
+            stimer: {}
+            reset: {}
+            frequencies: {}
+            reenlightenment: {}
+            tlbflush: {}
+            ipi: {}
+        clock:
+          utc: {}
+          timer:
+            hpet:
+              present: false
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+            hyperv: {}
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: sata  # Windows works better with SATA initially
+            - name: windows-iso
+              cdrom:
+                bus: sata
+            - name: virtio-drivers
+              cdrom:
+                bus: sata
+          interfaces:
+            - name: default
+              model: e1000e  # Better Windows compatibility
+              masquerade: {}
+          tpm: {}  # TPM for Windows 11 (optional)
+          rng: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: windows-vm-disk  # CHANGE ME
+        - name: windows-iso
+          persistentVolumeClaim:
+            claimName: windows-iso  # CHANGE ME: Upload ISO to this PVC first
+        - name: virtio-drivers
+          containerDisk:
+            image: quay.io/kubevirt/virtio-container-disk:latest
+
+---
+# Service for RDP access
+apiVersion: v1
+kind: Service
+metadata:
+  name: windows-vm-rdp  # CHANGE ME
+  namespace: windows-vm  # CHANGE ME
+spec:
+  selector:
+    kubevirt.io/domain: windows-vm  # CHANGE ME
+  ports:
+    - name: rdp
+      protocol: TCP
+      port: 3389
+      targetPort: 3389
+    # WinRM (optional)
+    # - name: winrm
+    #   protocol: TCP
+    #   port: 5986
+    #   targetPort: 5986
+  type: LoadBalancer  # Or NodePort for external access
+
+---
+# Notes for Windows VM Setup:
+# 
+# 1. Upload Windows ISO to PVC:
+#    virtctl image-upload pvc windows-iso \
+#      --image-path=/path/to/windows-server-2022.iso \
+#      --size=10Gi \
+#      --storage-class=truenas-nfs-dynamic \
+#      --namespace=windows-vm
+#
+# 2. Access VM console for installation:
+#    virtctl vnc windows-vm -n windows-vm
+#    # Or:
+#    virtctl console windows-vm -n windows-vm
+#
+# 3. During Windows installation:
+#    - Load VirtIO drivers from CD (virtio-drivers disk)
+#    - Install VirtIO SCSI controller driver
+#    - Install VirtIO Network adapter driver
+#    - Install on rootdisk
+#
+# 4. After installation:
+#    - Install QEMU Guest Agent from virtio-win ISO
+#    - Enable RDP (Remote Desktop)
+#    - Configure Windows Firewall for RDP
+#    - Set administrator password
+#
+# 5. Post-install improvements:
+#    - Change disk bus from SATA to virtio (better performance)
+#    - Change network adapter to virtio (better performance)
+#    - Remove ISO volumes after installation
+#
+# 6. Access RDP:
+#    oc get svc windows-vm-rdp -n windows-vm
+#    # Use LoadBalancer IP or NodePort with node IP
+#    # RDP client: mstsc on Windows, Remmina on Linux
+#
+# 7. Optional: Cloud-init for Windows (requires cloudbase-init)
+#    # Install cloudbase-init in Windows VM
+#    # Then use sysprep and cloud-init volume like Linux

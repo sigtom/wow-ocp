@@ -16,3 +16,9 @@ truenas-setup.md
 ALERTS.md
 gitops-token
 *-token
+# Pi agent user config (never commit)
+.pi/agent/
+
+# But allow project skills (safe to commit)
+!.pi/skills/
+zone.jsSKILLS.md
