@@ -24,8 +24,8 @@
 - `kubeseal` (sealed secrets)
 
 ### ArgoCD Access
-- URL: https://argocd.apps.wow.sigtomtech.com
-- Login: `argocd login argocd.apps.wow.sigtomtech.com`
+- URL: https://openshift-gitops-server-openshift-gitops.apps.ossus.sigtomtech.com
+- Login: `argocd login openshift-gitops-server-openshift-gitops.apps.ossus.sigtomtech.com`
 - Verify: `argocd app list`
 
 ## The Prime Directive: GitOps First
