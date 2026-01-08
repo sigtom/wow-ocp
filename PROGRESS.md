@@ -29,3 +29,8 @@
     - **Dashboards**: Integrated Technitium Grafana dashboard into OpenShift Console via `openshift-config-managed` ConfigMap.
     - **Security**: Enabled OISD Big blocklist and OIDC `anyuid` SCC for root-privileged port 53 access.
     - **Networking**: Assigned MetalLB IP `172.16.100.210` for DNS traffic.
+- [2026-01-07]: **OADP Activation**: Configured OADP Operator with MinIO S3 backend and verified nightly schedules for vaultwarden, media-stack, and technitium.
+- [2026-01-07]: **Vaultwarden Migration**: Migrated Vaultwarden from SQLite to Postgres 16 (Bitnami/SCL) to resolve NFS locking issues. Verified successful LastPass import.
+- [2026-01-07]: **Technitium VM Migration**: Migrated Technitium DNS from containers to an OpenShift VirtualMachine. 
+- [2026-01-07]: **Technitium HA**: Established clustering between OpenShift VM (172.16.130.210) and Proxmox VM (172.16.110.211).
+- [2026-01-07]: **DNS Standardization**: Imported all legacy Pi-hole records into the new Technitium Primary node and verified cluster-wide replication.

@@ -159,3 +159,21 @@ Upcoming Tasks:
 ⦁	High Availability: Setup secondary Technitium instance with zone sync.
 ⦁	DoH/DoT: Configure encrypted DNS for mobile devices.
 ⦁	IPAM/DCIM: Deploy NetBox on wow-prox1 (standalone) as the Lab Source of Truth.
+
+### 7. v1.7 Additions (January 2026 Updates)
+A. Ingress over Routes (GitOps Standardization)
+- **Directive:** Use standard Kubernetes Ingress objects instead of OpenShift Routes in Git manifests. 
+- **Reasoning:** Prevents manual certificate toil. The OpenShift Ingress Controller automatically syncs Cert-Manager Secrets into generated Routes.
+- **Required Annotations:** 
+  - cert-manager.io/cluster-issuer: cloudflare-prod
+  - route.openshift.io/termination: edge
+  - route.openshift.io/insecure-policy: Redirect
+
+B. Data Protection (OADP/Velero)
+- **Status:** Active.
+- **Backend:** MinIO on TrueNAS (oadp-backups bucket).
+- **Strategy:** Daily CSI snapshots for databases (Postgres/SQLite) on truenas-nfs StorageClass.
+
+C. Workload Evolution
+- **Vaultwarden:** Migrated to Postgres 16 (Red Hat SCL image) for NFS reliability.
+- **Technitium DNS:** Migrated from containers to a HA VM Cluster. Primary node is now an OpenShift VM (172.16.130.210) on NIC 3 (VLAN 130).
