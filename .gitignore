@@ -22,3 +22,4 @@ gitops-token
 # But allow project skills (safe to commit)
 !.pi/skills/
 zone.jsSKILLS.md
+.pi/PROJECT-DESIGN-MEDIA-STACK-ARCHIVE.md
