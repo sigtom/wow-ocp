@@ -29,11 +29,16 @@ spec:
                 bus: virtio
           interfaces:
             - name: default
+              masquerade: {}
+            - name: workload
               bridge: {}
           rng: {}
       networks:
         - name: default
           pod: {}
+        - name: workload
+          multus:
+            networkName: workload-br130
       volumes:
         - name: rootdisk
           dataVolume:
@@ -55,65 +60,5 @@ spec:
                 ethernets:
                   enp1s0:
                     dhcp4: true
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: technitium-vm-svc
-  namespace: technitium-dns
-  annotations:
-    metallb.universe.tf/loadBalancerIPs: 172.16.100.210
-spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Cluster
-  selector:
-    app: technitium-dns
-  ports:
-    - name: dns-udp
-      protocol: UDP
-      port: 53
-      targetPort: 53
-    - name: dns-tcp
-      protocol: TCP
-      port: 53
-      targetPort: 53
-    - name: http-admin
-      protocol: TCP
-      port: 5380
-      targetPort: 5380
-    - name: https-admin
-      protocol: TCP
-      port: 53443
-      targetPort: 53443
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 80
-    - name: https
-      protocol: TCP
-      port: 443
-      targetPort: 443
-    - name: cluster
-      protocol: TCP
-      port: 5333
-      targetPort: 5333
-    - name: ssh
-      protocol: TCP
-      port: 22
-      targetPort: 22
-    - name: dot
-      protocol: TCP
-      port: 853
-      targetPort: 853
-    - name: doq
-      protocol: UDP
-      port: 853
-      targetPort: 853
-    - name: dhcp-67
-      protocol: UDP
-      port: 67
-      targetPort: 67
-    - name: dhcp-68
-      protocol: UDP
-      port: 68
-      targetPort: 68
+                  enp2s0:
+                    dhcp4: true
