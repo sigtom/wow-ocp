@@ -29,12 +29,7 @@ spec:
                 bus: virtio
           interfaces:
             - name: default
-              masquerade: {}
-              ports:
-                - port: 22
-                - port: 53
-                - port: 5380
-                - port: 53443
+              bridge: {}
           rng: {}
       networks:
         - name: default
@@ -82,15 +77,43 @@ spec:
       protocol: TCP
       port: 53
       targetPort: 53
-    - name: http
+    - name: http-admin
       protocol: TCP
       port: 5380
       targetPort: 5380
-    - name: https
+    - name: https-admin
       protocol: TCP
       port: 53443
       targetPort: 53443
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: cluster
+      protocol: TCP
+      port: 5333
+      targetPort: 5333
     - name: ssh
       protocol: TCP
       port: 22
       targetPort: 22
+    - name: dot
+      protocol: TCP
+      port: 853
+      targetPort: 853
+    - name: doq
+      protocol: UDP
+      port: 853
+      targetPort: 853
+    - name: dhcp-67
+      protocol: UDP
+      port: 67
+      targetPort: 67
+    - name: dhcp-68
+      protocol: UDP
+      port: 68
+      targetPort: 68
