@@ -1,0 +1,57 @@
+- name: Check if VM already exists
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/wow-prox1/qemu/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    validate_certs: no
+    status_code: [200, 404, 500]
+  register: vm_check
+  delegate_to: localhost
+
+- name: Clone VM from template
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/wow-prox1/qemu/9024/clone"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    body_format: form-urlencoded
+    body:
+      newid: "{{ vmid }}"
+      name: "dns2"
+      full: 0
+    validate_certs: no
+    status_code: 200
+  when: vm_check.status != 200
+  delegate_to: localhost
+  register: clone_job
+
+- name: Wait for clone to finish
+  ansible.builtin.pause:
+    seconds: 10
+  when: vm_check.status != 200
+
+- name: Configure VM via SSH (Keys and Network)
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ hostvars[proxmox_node].ansible_host }} << 'REMOTE'
+    echo "{{ global_ssh_keys | join('\n') }}" > /tmp/keys.pub
+    qm set {{ vmid }} --sshkeys /tmp/keys.pub
+    qm set {{ vmid }} --ipconfig0 "ip={{ ansible_host }}/24,gw={{ lab_gw }}"
+    qm set {{ vmid }} --memory 1024 --cores 1
+    rm /tmp/keys.pub
+    REMOTE
+  delegate_to: localhost
+
+- name: Start VM
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/wow-prox1/qemu/{{ vmid }}/status/start"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    validate_certs: no
+    status_code: 200
+  delegate_to: localhost
+
+- name: Wait for Cloud-Init initialization
+  ansible.builtin.pause:
+    seconds: 20

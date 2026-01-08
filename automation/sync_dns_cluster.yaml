@@ -1,0 +1,20 @@
+- name: Join Technitium Cluster
+  hosts: dns2.sigtom.dev
+  gather_facts: no
+  vars:
+    dns1_ip: "172.16.130.210"
+    dns2_ip: "172.16.110.211"
+    dns1_token: "{{ lookup('env', 'TECHNITIUM_API_TOKEN') }}"
+    dns2_token: "{{ lookup('env', 'TECHNITIUM_API_TOKEN_DNS2') }}"
+  tasks:
+    - name: Add dns2 as a cluster node on dns1
+      ansible.builtin.uri:
+        url: "http://{{ dns1_ip }}:5380/api/cluster/nodes/add?token={{ dns1_token }}&hostname={{ dns2_ip }}&apiKey={{ dns2_token }}"
+        method: GET
+        status_code: 200
+      delegate_to: localhost
+      register: cluster_add_status
+
+    - name: Debug cluster add status
+      ansible.builtin.debug:
+        var: cluster_add_status.json

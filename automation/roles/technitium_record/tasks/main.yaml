@@ -1,0 +1,11 @@
+- name: Add A record to Technitium DNS
+  ansible.builtin.uri:
+    url: "{{ technitium_api_url }}/zones/records/add?token={{ technitium_api_token }}&zone=sigtom.dev&domain={{ inventory_hostname }}&type=A&ipAddress={{ ansible_host }}&overwrite=true"
+    method: GET
+    status_code: 200
+  delegate_to: localhost
+  register: dns_record_status
+
+- name: Debug DNS record status
+  ansible.builtin.debug:
+    var: dns_record_status.json
