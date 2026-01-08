@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: technitium-dns2-tls
+  namespace: technitium-dns
+spec:
+  secretName: technitium-dns2-tls
+  issuerRef:
+    name: cloudflare-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - dns2.sigtom.dev

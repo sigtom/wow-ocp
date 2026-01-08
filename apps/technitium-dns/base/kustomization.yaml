@@ -5,3 +5,4 @@ resources:
   - technitium-dv.yaml
   - technitium-vm.yaml
   - ingress.yaml
+  - cert-dns2.yaml
