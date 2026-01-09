@@ -1,3 +1,8 @@
+---
+name: capacity-planning
+description: Track and forecast resource allocation across OpenShift cluster and Proxmox infrastructure. Check cluster capacity, estimate impact before deployments, generate monthly reports, identify resource hogs, and monitor capacity thresholds. Use when planning deployments, during monthly reviews, or investigating performance issues.
+---
+
 # Capacity Planning Skill
 
 **Purpose**: Track and forecast resource allocation across OpenShift cluster and Proxmox infrastructure to prevent outages and optimize utilization.
@@ -431,13 +436,16 @@ Recommendation: NO-GO
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `cluster-capacity.sh` | Overall cluster capacity | `./scripts/cluster-capacity.sh` |
-| `node-utilization.sh` | Per-node breakdown | `./scripts/node-utilization.sh` |
-| `storage-capacity.sh` | Storage usage (NFS, LVM) | `./scripts/storage-capacity.sh` |
-| `top-consumers.sh` | Top resource hogs | `./scripts/top-consumers.sh` |
-| `estimate-impact.sh` | Pre-deployment sizing | `./scripts/estimate-impact.sh 2 4 3` |
-| `proxmox-capacity.sh` | Proxmox VM/LXC usage | `./scripts/proxmox-capacity.sh` |
-| `capacity-report.sh` | Full monthly report | `./scripts/capacity-report.sh` |
+| `capacity-summary.sh` | **Quick capacity summary** | `.pi/skills/capacity-planning/scripts/capacity-summary.sh` |
+| `generate-report.sh` | **Full Markdown report** | `.pi/skills/capacity-planning/scripts/generate-report.sh` |
+| `cluster-capacity.sh` | Overall cluster capacity | `.pi/skills/capacity-planning/scripts/cluster-capacity.sh` |
+| `node-utilization.sh` | Per-node breakdown | `.pi/skills/capacity-planning/scripts/node-utilization.sh` |
+| `storage-capacity.sh` | Storage usage (NFS, LVM) | `.pi/skills/capacity-planning/scripts/storage-capacity.sh` |
+| `top-consumers.sh` | Top resource hogs | `.pi/skills/capacity-planning/scripts/top-consumers.sh` |
+| `estimate-impact.sh` | Pre-deployment sizing | `.pi/skills/capacity-planning/scripts/estimate-impact.sh 2 4 3` |
+| `proxmox-capacity.sh` | Proxmox VM/LXC usage | `.pi/skills/capacity-planning/scripts/proxmox-capacity.sh` |
+
+**Report Location:** Generated reports are saved to `reports/` (gitignored) and latest report symlinked to `reports/latest.md`
 
 ---
 

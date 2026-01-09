@@ -1,3 +1,8 @@
+---
+name: gitops-workflow
+description: Enforce GitOps-first workflow for all cluster changes using Git and ArgoCD. Create feature branches, validate manifests, commit with conventional commits, create PRs, verify ArgoCD sync, and update PROGRESS.md. Use for all cluster changes - Git is source of truth, manual oc apply is for emergencies only.
+---
+
 # GitOps Workflow Skill
 
 **Purpose**: Enforce GitOps-first workflow for all cluster changes. Git is the source of truth. Manual `oc apply` is for emergencies only.

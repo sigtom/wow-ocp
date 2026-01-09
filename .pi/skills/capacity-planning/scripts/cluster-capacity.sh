@@ -73,14 +73,29 @@ main() {
     NODE_COUNT=$(oc get nodes --no-headers | wc -l)
     
     # Get allocatable resources (total available for pods)
-    TOTAL_CPU=$(oc get nodes -o json | jq '[.items[].status.allocatable.cpu | rtrimstr("m") | tonumber] | add / 1000' 2>/dev/null || echo "0")
+    # CPU can be in cores (e.g., "62") or millicores (e.g., "62000m")
+    TOTAL_CPU=$(oc get nodes -o json | jq '[.items[].status.allocatable.cpu | if type == "string" and endswith("m") then (rtrimstr("m") | tonumber / 1000) else tonumber end] | add' 2>/dev/null || echo "0")
     TOTAL_MEMORY_KB=$(oc get nodes -o json | jq '[.items[].status.allocatable.memory | rtrimstr("Ki") | tonumber] | add' 2>/dev/null || echo "0")
     TOTAL_MEMORY_GB=$(echo "scale=2; $TOTAL_MEMORY_KB / 1024 / 1024" | bc)
     
     # Get requested resources (by pods)
     REQUESTED_CPU=$(oc get pods --all-namespaces -o json | jq '[.items[].spec.containers[]?.resources.requests.cpu // "0" | if type == "string" then (rtrimstr("m") | tonumber / 1000) else . end] | add' 2>/dev/null || echo "0")
-    REQUESTED_MEMORY_KB=$(oc get pods --all-namespaces -o json | jq '[.items[].spec.containers[]?.resources.requests.memory // "0" | if type == "string" then (rtrimstr("Ki") | tonumber) else (. * 1024 * 1024) end] | add' 2>/dev/null || echo "0")
-    REQUESTED_MEMORY_GB=$(echo "scale=2; $REQUESTED_MEMORY_KB / 1024 / 1024" | bc)
+    
+    # Handle memory units: Ki, Mi, Gi, M, G - convert all to Mi
+    REQUESTED_MEMORY_MI=$(oc get pods --all-namespaces -o json | jq '[.items[].spec.containers[]?.resources.requests.memory // "0" | 
+        if type == "string" then
+            if endswith("Gi") then (rtrimstr("Gi") | tonumber * 1024)
+            elif endswith("Mi") then (rtrimstr("Mi") | tonumber)
+            elif endswith("Ki") then (rtrimstr("Ki") | tonumber / 1024)
+            elif endswith("G") then (rtrimstr("G") | tonumber * 1024)
+            elif endswith("M") then (rtrimstr("M") | tonumber)
+            elif endswith("K") then (rtrimstr("K") | tonumber / 1024)
+            else tonumber / 1024 / 1024
+            end
+        else . / 1024 / 1024
+        end
+    ] | add' 2>/dev/null || echo "0")
+    REQUESTED_MEMORY_GB=$(echo "scale=2; $REQUESTED_MEMORY_MI / 1024" | bc)
     
     # Calculate available
     AVAILABLE_CPU=$(echo "scale=2; $TOTAL_CPU - $REQUESTED_CPU" | bc)

@@ -1,3 +1,8 @@
+---
+name: vm-provisioning
+description: Create and manage virtual machines and LXC containers on OpenShift Virtualization (KubeVirt) and Proxmox VE. Provision VMs on OpenShift or Proxmox, create LXC containers, clone from templates, and decide platform per workload. Use when creating new VMs/containers or managing virtualization infrastructure.
+---
+
 # VM Provisioning Skill
 
 **Purpose**: Create and manage virtual machines and LXC containers on OpenShift Virtualization (KubeVirt) and Proxmox VE.

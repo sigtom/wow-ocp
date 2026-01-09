@@ -59,14 +59,34 @@ main() {
         echo "  Roles: ${ROLES:-worker}"
         
         # Get allocatable resources
-        TOTAL_CPU=$(oc get node "$NODE" -o jsonpath='{.status.allocatable.cpu}' | sed 's/m$//' | awk '{print $1/1000}')
+        # Handle both cores (e.g., "62") and millicores (e.g., "62000m")
+        CPU_RAW=$(oc get node "$NODE" -o jsonpath='{.status.allocatable.cpu}')
+        if [[ "$CPU_RAW" == *m ]]; then
+            TOTAL_CPU=$(echo "$CPU_RAW" | sed 's/m$//' | awk '{print $1/1000}')
+        else
+            TOTAL_CPU="$CPU_RAW"
+        fi
         TOTAL_MEMORY_KB=$(oc get node "$NODE" -o jsonpath='{.status.allocatable.memory}' | sed 's/Ki$//')
         TOTAL_MEMORY_GB=$(echo "scale=2; $TOTAL_MEMORY_KB / 1024 / 1024" | bc)
         
         # Get requested resources (all pods on this node)
         REQUESTED_CPU=$(oc get pods --all-namespaces --field-selector spec.nodeName="$NODE" -o json | jq '[.items[].spec.containers[]?.resources.requests.cpu // "0" | if type == "string" then (rtrimstr("m") | tonumber / 1000) else . end] | add' 2>/dev/null || echo "0")
-        REQUESTED_MEMORY_KB=$(oc get pods --all-namespaces --field-selector spec.nodeName="$NODE" -o json | jq '[.items[].spec.containers[]?.resources.requests.memory // "0" | if type == "string" then (rtrimstr("Ki") | tonumber) else (. * 1024 * 1024) end] | add' 2>/dev/null || echo "0")
-        REQUESTED_MEMORY_GB=$(echo "scale=2; $REQUESTED_MEMORY_KB / 1024 / 1024" | bc)
+        
+        # Handle memory units: Ki, Mi, Gi, M, G - convert all to Mi
+        REQUESTED_MEMORY_MI=$(oc get pods --all-namespaces --field-selector spec.nodeName="$NODE" -o json | jq '[.items[].spec.containers[]?.resources.requests.memory // "0" | 
+            if type == "string" then
+                if endswith("Gi") then (rtrimstr("Gi") | tonumber * 1024)
+                elif endswith("Mi") then (rtrimstr("Mi") | tonumber)
+                elif endswith("Ki") then (rtrimstr("Ki") | tonumber / 1024)
+                elif endswith("G") then (rtrimstr("G") | tonumber * 1024)
+                elif endswith("M") then (rtrimstr("M") | tonumber)
+                elif endswith("K") then (rtrimstr("K") | tonumber / 1024)
+                else tonumber / 1024 / 1024
+                end
+            else . / 1024 / 1024
+            end
+        ] | add' 2>/dev/null || echo "0")
+        REQUESTED_MEMORY_GB=$(echo "scale=2; $REQUESTED_MEMORY_MI / 1024" | bc)
         
         # Calculate percentages
         if (( $(echo "$TOTAL_CPU > 0" | bc -l) )); then
