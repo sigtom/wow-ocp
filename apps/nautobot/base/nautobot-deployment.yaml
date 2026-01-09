@@ -1,0 +1,218 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nautobot
+  namespace: nautobot
+  labels:
+    app: nautobot
+    component: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nautobot
+      component: web
+  template:
+    metadata:
+      labels:
+        app: nautobot
+        component: web
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:15-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h nautobot-postgres -p 5432 -U nautobot; do
+                echo "Waiting for PostgreSQL..."
+                sleep 5
+              done
+              echo "PostgreSQL is ready!"
+        - name: wait-for-redis
+          image: redis:7-alpine
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: redis-password
+          command:
+            - sh
+            - -c
+            - |
+              until redis-cli -h nautobot-redis -a "$REDIS_PASSWORD" ping | grep -q PONG; do
+                echo "Waiting for Redis..."
+                sleep 5
+              done
+              echo "Redis is ready!"
+      containers:
+        - name: nautobot
+          image: networktocode/nautobot:2.3-py3.11
+          env:
+            - name: NAUTOBOT_DB_ENGINE
+              value: django.db.backends.postgresql
+            - name: NAUTOBOT_DB_HOST
+              value: nautobot-postgres
+            - name: NAUTOBOT_DB_PORT
+              value: "5432"
+            - name: NAUTOBOT_DB_NAME
+              value: nautobot
+            - name: NAUTOBOT_DB_USER
+              value: nautobot
+            - name: NAUTOBOT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: postgres-password
+            - name: NAUTOBOT_REDIS_HOST
+              value: nautobot-redis
+            - name: NAUTOBOT_REDIS_PORT
+              value: "6379"
+            - name: NAUTOBOT_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: redis-password
+            - name: NAUTOBOT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: secret-key
+            - name: NAUTOBOT_ALLOWED_HOSTS
+              value: "ipmgmt.sigtom.dev,nautobot,nautobot.nautobot.svc.cluster.local"
+            - name: NAUTOBOT_INSTALLATION_METRICS_ENABLED
+              value: "True"
+            - name: TZ
+              value: America/New_York
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: nautobot-media
+              mountPath: /opt/nautobot/media
+            - name: nautobot-git
+              mountPath: /opt/nautobot/git
+            - name: nautobot-jobs
+              mountPath: /opt/nautobot/jobs
+            - name: nautobot-static
+              mountPath: /opt/nautobot/static
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: nautobot-media
+          persistentVolumeClaim:
+            claimName: nautobot-media
+        - name: nautobot-git
+          persistentVolumeClaim:
+            claimName: nautobot-git
+        - name: nautobot-jobs
+          persistentVolumeClaim:
+            claimName: nautobot-jobs
+        - name: nautobot-static
+          persistentVolumeClaim:
+            claimName: nautobot-static
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nautobot-media
+  namespace: nautobot
+  labels:
+    app: nautobot
+    velero.io/backup: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: truenas-nfs
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nautobot-git
+  namespace: nautobot
+  labels:
+    app: nautobot
+    velero.io/backup: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: truenas-nfs
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nautobot-jobs
+  namespace: nautobot
+  labels:
+    app: nautobot
+    velero.io/backup: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: truenas-nfs
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nautobot-static
+  namespace: nautobot
+  labels:
+    app: nautobot
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: truenas-nfs
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nautobot
+  namespace: nautobot
+  labels:
+    app: nautobot
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: nautobot
+    component: web

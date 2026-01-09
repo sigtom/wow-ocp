@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nautobot-celery-beat
+  namespace: nautobot
+  labels:
+    app: nautobot
+    component: celery-beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nautobot
+      component: celery-beat
+  template:
+    metadata:
+      labels:
+        app: nautobot
+        component: celery-beat
+    spec:
+      initContainers:
+        - name: wait-for-nautobot
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              until curl -f http://nautobot/health/; do
+                echo "Waiting for Nautobot web to be ready..."
+                sleep 10
+              done
+              echo "Nautobot web is ready!"
+      containers:
+        - name: celery-beat
+          image: networktocode/nautobot:2.3-py3.11
+          command:
+            - nautobot-server
+            - celery
+            - beat
+            - --loglevel
+            - INFO
+          env:
+            - name: NAUTOBOT_DB_ENGINE
+              value: django.db.backends.postgresql
+            - name: NAUTOBOT_DB_HOST
+              value: nautobot-postgres
+            - name: NAUTOBOT_DB_PORT
+              value: "5432"
+            - name: NAUTOBOT_DB_NAME
+              value: nautobot
+            - name: NAUTOBOT_DB_USER
+              value: nautobot
+            - name: NAUTOBOT_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: postgres-password
+            - name: NAUTOBOT_REDIS_HOST
+              value: nautobot-redis
+            - name: NAUTOBOT_REDIS_PORT
+              value: "6379"
+            - name: NAUTOBOT_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: redis-password
+            - name: NAUTOBOT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nautobot-secrets
+                  key: secret-key
+            - name: TZ
+              value: America/New_York
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: nautobot-media
+              mountPath: /opt/nautobot/media
+            - name: nautobot-git
+              mountPath: /opt/nautobot/git
+      volumes:
+        - name: nautobot-media
+          persistentVolumeClaim:
+            claimName: nautobot-media
+        - name: nautobot-git
+          persistentVolumeClaim:
+            claimName: nautobot-git
