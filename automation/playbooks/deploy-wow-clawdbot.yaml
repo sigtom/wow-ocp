@@ -1,0 +1,121 @@
+---
+# Proxmox VM Deployment Playbook for wow-clawdbot
+# Custom configuration: DHCP networking, 2 CPU cores, 2GB RAM, 50GB disk
+#
+# Prerequisites:
+# 1. Set PROXMOX_SRE_BOT_API_TOKEN environment variable:
+#    export PROXMOX_SRE_BOT_API_TOKEN="your-token-here"
+#
+# 2. Ensure SSH key exists: ~/.ssh/id_pfsense_sre
+#
+# Usage:
+#   cd automation
+#   ansible-playbook -i inventory/hosts.yaml playbooks/deploy-wow-clawdbot.yaml
+
+- name: Deploy wow-clawdbot VM from Template
+  hosts: wow-clawdbot
+  gather_facts: no
+  
+  vars:
+    vm_cores: 2
+    vm_memory: 2048
+    vm_disk_size: 50
+    # Proxmox API Credentials
+    pve_api_user: "sre-bot@pve"
+    pve_api_token_id: "sre-token"
+    pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+    # Global SSH Keys
+    global_ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILPyc7oAxzmaymnrZWblYRbTH/hOd+OPaQStsMNi/3bU sigtom@localhost.localdomain"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
+  
+  tasks:
+    - name: Check if VM already exists
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/current"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 404, 500]
+      register: vm_check
+      delegate_to: localhost
+
+    - name: Clone VM from template
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/9024/clone"
+        method: POST
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        body_format: form-urlencoded
+        body:
+          newid: "{{ vmid }}"
+          name: "{{ inventory_hostname }}"
+          full: 0
+        validate_certs: no
+        status_code: 200
+      when: vm_check.status != 200
+      delegate_to: localhost
+      register: clone_job
+
+    - name: Wait for clone to finish
+      ansible.builtin.pause:
+        seconds: 10
+      when: vm_check.status != 200
+
+    - name: Configure VM (SSH keys, DHCP network, resources, disk)
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ hostvars[proxmox_node].ansible_host }} << 'REMOTE'
+        echo "{{ global_ssh_keys | join('\n') }}" > /tmp/keys.pub
+        qm set {{ vmid }} --sshkeys /tmp/keys.pub
+        qm set {{ vmid }} --ipconfig0 "ip=dhcp"
+        qm set {{ vmid }} --memory {{ vm_memory }} --cores {{ vm_cores }}
+        qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G
+        rm /tmp/keys.pub
+        REMOTE
+      delegate_to: localhost
+
+    - name: Start VM
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/start"
+        method: POST
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: 200
+      delegate_to: localhost
+
+    - name: Wait for Cloud-Init initialization
+      ansible.builtin.pause:
+        seconds: 30
+      
+    - name: Get VM IP address from Proxmox
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ hostvars[proxmox_node].ansible_host }} \
+        "qm guest cmd {{ vmid }} network-get-interfaces | jq -r '.[] | select(.name==\"eth0\") | .[\"ip-addresses\"][] | select(.\"ip-address-type\"==\"ipv4\") | .\"ip-address\"'"
+      delegate_to: localhost
+      register: vm_ip_output
+      retries: 10
+      delay: 10
+      until: vm_ip_output.stdout != ""
+
+    - name: Display VM IP address
+      ansible.builtin.debug:
+        msg: "VM {{ inventory_hostname }} is now running with IP: {{ vm_ip_output.stdout }}"
+
+- name: Post-provisioning configuration
+  hosts: wow-clawdbot
+  gather_facts: no
+  # Note: We can't use ansible_host since we don't know the DHCP IP ahead of time
+  # You'll need to SSH manually or add the IP to inventory after deployment
+  tasks:
+    - name: Info message
+      ansible.builtin.debug:
+        msg: |
+          VM wow-clawdbot has been created with DHCP networking.
+          To access the VM, use the IP address shown above.
+          
+          Manual next steps:
+          1. SSH to the VM: ssh -i ~/.ssh/id_pfsense_sre ubuntu@<IP_ADDRESS>
+          2. Update inventory with the DHCP-assigned IP if needed
+          3. Install additional packages as needed

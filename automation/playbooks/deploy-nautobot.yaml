@@ -1,0 +1,96 @@
+---
+# Nautobot IPAM Server Deployment Playbook
+# Deploys Nautobot on existing VM (ipmgmt/wow-ubu-test)
+# Uses Docker Compose with PostgreSQL, Redis, NGINX, and Let's Encrypt SSL
+#
+# SECURITY: Secrets fetched from Bitwarden using native Ansible lookup plugin
+# Setup: export BW_SESSION=$(bw unlock --raw)
+# Run: ansible-playbook playbooks/deploy-nautobot.yaml
+
+- name: Deploy Nautobot IPAM Server
+  hosts: ipmgmt
+  gather_facts: yes
+  become: no
+  vars:
+    # Required Bitwarden items (create in vault first):
+    #   - nautobot-db-password
+    #   - nautobot-redis-password
+    #   - nautobot-secret-key
+    #   - nautobot-admin-password
+
+  pre_tasks:
+    - name: Check SSH connectivity
+      ansible.builtin.ping:
+
+    - name: Gather system facts
+      ansible.builtin.setup:
+
+    - name: Display target information
+      ansible.builtin.debug:
+        msg:
+          - "Target Host: {{ inventory_hostname }}"
+          - "IP Address: {{ ansible_host }}"
+          - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Architecture: {{ ansible_architecture }}"
+          - "Python: {{ ansible_python_version }}"
+
+    - name: Verify Bitwarden session is available
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'BW_SESSION') != ""
+        fail_msg: |
+          ERROR: BW_SESSION environment variable not set
+          
+          This playbook requires access to Bitwarden vault.
+          
+          Setup:
+            1. Install Bitwarden CLI: https://bitwarden.com/help/cli/
+            2. Login: bw login
+            3. Unlock and export session:
+               export BW_SESSION=$(bw unlock --raw)
+          
+          Then run playbook:
+            ansible-playbook playbooks/deploy-nautobot.yaml
+          
+          Required Bitwarden items:
+            - nautobot-db-password
+            - nautobot-redis-password
+            - nautobot-secret-key
+            - nautobot-admin-password
+        success_msg: "Bitwarden session validated"
+
+  roles:
+    - role: nautobot_server
+
+  post_tasks:
+    - name: Final deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "🎉 Nautobot Deployment Complete!"
+          - "=========================================="
+          - ""
+          - "Access your Nautobot instance:"
+          - "  URL: https://ipmgmt.sigtom.dev"
+          - "  Username: sigtom"
+          - "  Password: [Your NAUTOBOT_SUPERUSER_PASSWORD]"
+          - ""
+          - "Useful commands on {{ inventory_hostname }}:"
+          - "  cd /opt/nautobot"
+          - "  docker compose logs -f            # View logs"
+          - "  docker compose ps                 # Check status"
+          - "  docker compose restart            # Restart services"
+          - "  docker compose exec nautobot bash # Shell access"
+          - ""
+          - "Configuration files:"
+          - "  /opt/nautobot/docker-compose.yml  # Container orchestration"
+          - "  /opt/nautobot/.env                # Secrets (mode 600)"
+          - "  /etc/nginx/sites-available/nautobot # NGINX config"
+          - "  /etc/letsencrypt/live/ipmgmt.sigtom.dev/ # SSL certificates"
+          - ""
+          - "Next steps:"
+          - "  1. Configure initial sites and VLANs"
+          - "  2. Set up Proxmox SSoT integration"
+          - "  3. Add OpenShift cluster"
+          - "  4. Configure network device backups (Golden Config)"
+          - "=========================================="

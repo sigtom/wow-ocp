@@ -1,0 +1,97 @@
+---
+# Nautobot Server Role - Main Tasks
+# Orchestrates the 5-phase installation process with pre-flight checks
+
+- name: Pre-flight DNS check
+  block:
+    - name: Check if DNS record exists for {{ nautobot_domain }}
+      ansible.builtin.command: dig +short {{ nautobot_domain }}
+      delegate_to: localhost
+      register: dns_check
+      changed_when: false
+      failed_when: false
+
+    - name: Verify DNS resolution
+      ansible.builtin.assert:
+        that:
+          - dns_check.stdout != ""
+          - dns_check.stdout is search(ansible_host)
+        fail_msg: |
+          DNS check failed for {{ nautobot_domain }}
+          Expected: {{ ansible_host }}
+          Got: {{ dns_check.stdout if dns_check.stdout != '' else 'No DNS record found' }}
+          
+          Please create DNS A record:
+            {{ nautobot_domain }} -> {{ ansible_host }}
+          
+          Then wait for propagation and try again.
+        success_msg: "DNS check passed: {{ nautobot_domain }} resolves to {{ dns_check.stdout.strip() }}"
+  when: false  # Set to true to enforce DNS check, false to skip for initial testing
+
+- name: Display installation plan
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Nautobot Installation Starting"
+      - "=========================================="
+      - "Target Host: {{ inventory_hostname }}"
+      - "IP Address: {{ ansible_host }}"
+      - "Domain: {{ nautobot_domain }}"
+      - "Version: {{ nautobot_version }}"
+      - "Timezone: {{ nautobot_timezone }}"
+      - ""
+      - "Installation Phases:"
+      - "  1. System Preparation (Docker, timezone, hostname)"
+      - "  2. Docker Setup (containers, secrets, compose)"
+      - "  3. SSL Setup (NGINX, Let's Encrypt)"
+      - "  4. Initialize (migrations, superuser, static files)"
+      - "  5. Verification (health checks, access tests)"
+      - "=========================================="
+
+- name: Phase 1 - System Preparation
+  ansible.builtin.include_tasks: 01_system_prep.yaml
+  tags:
+    - nautobot
+    - system_prep
+    - phase1
+
+- name: Phase 2 - Docker Setup
+  ansible.builtin.include_tasks: 02_docker_setup.yaml
+  tags:
+    - nautobot
+    - docker_setup
+    - phase2
+
+- name: Phase 3 - SSL Setup
+  ansible.builtin.include_tasks: 03_ssl_setup.yaml
+  tags:
+    - nautobot
+    - ssl_setup
+    - phase3
+
+- name: Phase 4 - Initialize Nautobot
+  ansible.builtin.include_tasks: 04_initialize.yaml
+  tags:
+    - nautobot
+    - initialize
+    - phase4
+
+- name: Phase 5 - Verification
+  ansible.builtin.include_tasks: 05_verify.yaml
+  tags:
+    - nautobot
+    - verify
+    - phase5
+
+- name: Installation complete message
+  ansible.builtin.debug:
+    msg:
+      - ""
+      - "✅ Nautobot installation completed successfully!"
+      - ""
+      - "Next steps:"
+      - "  1. Log in to https://{{ nautobot_domain }}"
+      - "  2. Configure initial data (sites, VLANs, IP prefixes)"
+      - "  3. Set up SSoT plugin for Proxmox/OpenShift integration"
+      - "  4. Configure Golden Config plugin for network device backups"
+      - ""

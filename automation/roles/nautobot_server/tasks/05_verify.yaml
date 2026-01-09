@@ -1,0 +1,122 @@
+---
+# Phase 5: Verification
+# - Check container health
+# - Verify HTTP/HTTPS access
+# - Check NGINX status
+# - Display final access information
+
+- name: Check all container statuses
+  ansible.builtin.command: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml ps
+  args:
+    chdir: "{{ nautobot_base_dir }}"
+  register: container_status
+  changed_when: false
+
+- name: Display container status
+  ansible.builtin.debug:
+    var: container_status.stdout_lines
+
+- name: Verify PostgreSQL container health
+  ansible.builtin.command: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml exec -T postgres pg_isready -U {{ postgres_user }}
+  args:
+    chdir: "{{ nautobot_base_dir }}"
+  register: postgres_health
+  changed_when: false
+  failed_when: postgres_health.rc != 0
+
+- name: Verify Redis container health
+  ansible.builtin.command: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml exec -T redis redis-cli ping
+  args:
+    chdir: "{{ nautobot_base_dir }}"
+  register: redis_health
+  changed_when: false
+  failed_when: "'PONG' not in redis_health.stdout"
+
+- name: Check NGINX service status
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+  become: yes
+  check_mode: yes
+  register: nginx_status
+
+- name: Verify local HTTP access (port 8080)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ nautobot_web_port }}"
+    status_code: [200, 301, 302]
+    timeout: 10
+  register: local_http_check
+  retries: 3
+  delay: 5
+  until: local_http_check.status in [200, 301, 302]
+
+- name: Verify NGINX HTTP access
+  ansible.builtin.uri:
+    url: "http://{{ nautobot_domain }}"
+    status_code: [200, 301, 302]
+    timeout: 10
+    follow_redirects: none
+  register: nginx_http_check
+  retries: 3
+  delay: 5
+  until: nginx_http_check.status in [200, 301, 302]
+  ignore_errors: yes
+
+- name: Verify NGINX HTTPS access
+  ansible.builtin.uri:
+    url: "https://{{ nautobot_domain }}"
+    validate_certs: yes
+    status_code: [200, 301, 302]
+    timeout: 10
+  register: nginx_https_check
+  retries: 3
+  delay: 5
+  until: nginx_https_check.status in [200, 301, 302]
+  ignore_errors: yes
+
+- name: Check Nautobot logs for errors
+  ansible.builtin.command: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml logs --tail=50 nautobot
+  args:
+    chdir: "{{ nautobot_base_dir }}"
+  register: nautobot_logs
+  changed_when: false
+
+- name: Display recent Nautobot logs
+  ansible.builtin.debug:
+    var: nautobot_logs.stdout_lines
+
+- name: Generate deployment summary
+  ansible.builtin.set_fact:
+    deployment_summary:
+      - "=========================================="
+      - "Nautobot Deployment Complete!"
+      - "=========================================="
+      - "URL: https://{{ nautobot_domain }}"
+      - "Username: {{ nautobot_superuser_username }}"
+      - "Email: {{ nautobot_superuser_email }}"
+      - "Password: [Set via NAUTOBOT_SUPERUSER_PASSWORD]"
+      - ""
+      - "Container Status:"
+      - "  PostgreSQL: {{ 'HEALTHY' if postgres_health.rc == 0 else 'UNHEALTHY' }}"
+      - "  Redis: {{ 'HEALTHY' if 'PONG' in redis_health.stdout else 'UNHEALTHY' }}"
+      - "  Nautobot Web: {{ 'RUNNING' if local_http_check.status in [200, 301, 302] else 'ERROR' }}"
+      - ""
+      - "Access Tests:"
+      - "  Local HTTP (8080): {{ 'OK' if local_http_check.status in [200, 301, 302] else 'FAILED' }}"
+      - "  NGINX HTTP (80): {{ 'OK' if nginx_http_check.status in [200, 301, 302] else 'FAILED' }}"
+      - "  NGINX HTTPS (443): {{ 'OK' if nginx_https_check.status in [200, 301, 302] else 'FAILED' }}"
+      - ""
+      - "Configuration:"
+      - "  Base Directory: {{ nautobot_base_dir }}"
+      - "  Docker Compose: {{ nautobot_base_dir }}/docker-compose.yml"
+      - "  Environment: {{ nautobot_base_dir }}/.env"
+      - ""
+      - "Management Commands:"
+      - "  View logs: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml logs -f"
+      - "  Restart: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml restart"
+      - "  Shell access: docker compose -f {{ nautobot_base_dir }}/docker-compose.yml exec nautobot bash"
+      - "=========================================="
+
+- name: Display deployment summary
+  ansible.builtin.debug:
+    var: deployment_summary
