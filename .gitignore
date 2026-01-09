@@ -24,3 +24,54 @@ gitops-token
 zone.js
 SKILLS.md
 .pi/PROJECT-DESIGN-MEDIA-STACK-ARCHIVE.md
+
+# Capacity planning reports (generated, not committed)
+reports/
+*.capacity-report.md
+*-capacity-*.md
+
+# Clawdbot prompt files
+Clawdbot-*.md
+Clawdbot.md
+CLAWDBOT-*.md
+.cleanup-docs/
+
+# Ansible
+*.retry
+.ansible/
+facts.d/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+ENV/
+.venv/
+
+# Editors
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+.vscode/
+*.code-workspace
+.idea/
+
+# OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+.directory
+.Trash-*
+Thumbs.db
+Desktop.ini
+
+# Temporary Files
+*.bak
+*.backup
+*.orig
+.~*
