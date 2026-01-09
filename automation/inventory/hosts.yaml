@@ -3,7 +3,21 @@ all:
     wow-prox1:
       ansible_host: 172.16.110.101
       proxmox_api_host: 172.16.110.101
-    dns2:
-      ansible_host: 172.16.110.211
-      vmid: 211
-      proxmox_node: wow-prox1
+  children:
+    proxmox_vms:
+      hosts:
+        dns2:
+          ansible_host: 172.16.110.211
+          vmid: 211
+          proxmox_node: wow-prox1
+        wow-clawdbot:
+          ansible_host: 172.16.110.76  # DHCP-assigned IP
+          vmid: 300
+          proxmox_node: wow-prox1
+          use_dhcp: true
+        ipmgmt:
+          ansible_host: 172.16.110.213  # Static IP (DHCP conflict resolved)
+          vmid: 212
+          proxmox_node: wow-prox1
+          ansible_user: ubuntu
+          # Note: Previously referenced as 'wow-ubu-test' - consolidated to primary hostname 'ipmgmt'
