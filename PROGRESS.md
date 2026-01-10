@@ -192,3 +192,43 @@
     
     **RECOMMENDATION**: Use Option C (workaround) to unblock - fix OS detection in docker_host.yaml to use direct shell check instead of Ansible facts. This gets Traefik deployed NOW, then refactor fact gathering later.
 
+
+    **🔧 PROPER FIX STRATEGY (NO WORKAROUNDS)**:
+    
+    **Root Cause**: Ansible fact caching across delegated tasks causes localhost facts to bleed into container facts
+    
+    **The Complete Fix**:
+    1. **Separate plays for localhost vs container operations**
+       - Play 1: Provision LXC (delegates to localhost, gathers localhost facts)
+       - Play 2: Configure container (runs on container, gathers container facts only)
+       - This creates separate fact namespaces - no cache bleeding
+    
+    2. **Alternative: Use ansible_facts dict explicitly**
+       - Change all role references from `ansible_distribution` to `ansible_facts['distribution']`
+       - This bypasses the injected variable cache mechanism
+       - Requires updating post_provision and health_check roles
+    
+    3. **Alternative: Force fact refresh with meta**
+       - Add `meta: clear_facts` task after localhost fact gathering
+       - Re-gather facts immediately before post_provision role runs
+       - Ensure fresh facts for container operations
+    
+    **Implementation Plan**:
+    - [ ] Split deploy-traefik.yaml into two plays (recommended - cleanest separation)
+    - [ ] Test LXC provision + health checks complete (Play 1)
+    - [ ] Test Docker installation detects Ubuntu correctly (Play 2)
+    - [ ] Verify Traefik deployment completes end-to-end
+    - [ ] Deploy whoami test containers for ALL 7 domains
+    - [ ] Verify SSL certificates acquired for all domains
+    - [ ] Document final working playbook structure
+    
+    **Success Criteria**:
+    - ✅ LXC 210 created with Ubuntu 24.04
+    - ✅ Docker + Docker Compose installed via apt (not dnf)
+    - ✅ Traefik container running
+    - ✅ 7 wildcard certificates from Let's Encrypt
+    - ✅ Whoami accessible on all 7 domains with valid SSL
+    - ✅ Zero manual interventions required
+    
+    **Expected Timeline**: 1-2 hours to implement split-play architecture and test end-to-end
+
