@@ -39,7 +39,7 @@
     resource_size: "{{ lxc_size }}"
     os_template: "{{ lxc_template }}"
     network: "{{ network_profile }}"
-    enable_post_provision: "{{ post_provisioning_enabled }}"
+    enable_post_provision: true
     provision_profile: "{{ post_provisioning_profile }}"
     backup_policy: "{{ snapshot_policy }}"
     
@@ -92,6 +92,13 @@
     # Phase 1: Provision Infrastructure
     # ========================================
     
+    - name: "Phase 1: Gather facts for timestamp (localhost only)"
+      ansible.builtin.setup:
+        gather_subset:
+          - 'date_time'
+      delegate_to: localhost
+      run_once: true
+
     - name: "Phase 1: Pre-provisioning snapshot"
       ansible.builtin.include_role:
         name: snapshot_manager
@@ -99,11 +106,23 @@
         snapshot_operation: create
         snapshot_type: pre-provision
         resource_type: lxc
+        pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
+        pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
+        pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+        proxmox_api_defaults: "{{ lookup('vars', 'proxmox_api_defaults', default={}) }}"
       when: backup_policy != 'none'
 
     - name: "Phase 1: Provision LXC container"
       ansible.builtin.include_role:
         name: provision_lxc_generic
+      vars:
+        os_type: "{{ lxc_template }}"
+        tshirt_size: "{{ lxc_size }}"
+        lxc_features: "nesting=1"
+        health_check_enabled: true
+        health_check_profile: basic
+        post_provisioning_enabled: "{{ enable_post_provision }}"
+        post_provisioning_profile: "{{ provision_profile }}"
 
     - name: "Phase 1: Wait for SSH"
       ansible.builtin.wait_for:
@@ -112,12 +131,22 @@
         delay: 5
         timeout: 120
         msg: "SSH not available after 120 seconds"
+      delegate_to: localhost
+
+    - name: "Phase 1: Gather facts from new container"
+      ansible.builtin.setup:
+        fact_path: /tmp/ansible_facts
+      vars:
+        ansible_facts_parallel: false
 
     - name: "Phase 1: Basic health checks"
       ansible.builtin.include_role:
         name: health_check
       vars:
         health_check_profile: basic
+
+    - name: "Phase 1: Clear fact cache and re-gather"
+      ansible.builtin.setup:
 
     - name: "Phase 1: Install Docker"
       ansible.builtin.include_role:
@@ -347,6 +376,10 @@
         snapshot_operation: create
         snapshot_type: post-provision
         resource_type: lxc
+        pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
+        pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
+        pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+        proxmox_api_defaults: "{{ lookup('vars', 'proxmox_api_defaults', default={}) }}"
       when: backup_policy in ['standard', 'production']
 
     # ========================================

@@ -1,4 +1,4 @@
-# Project Progress (v1.7)
+# Project Progress (v1.8)
 
 - [2025-12-22]: Switched `rdt-client` provider to TorBox to resolve Zurg/Real-Debrid sync and symlink issues.
 - [2025-12-22]: Updated `zurg` configuration to improve compatibility with `rdt-client` (retain names, auto-delete RARs) for legacy library access.
@@ -71,3 +71,124 @@
     - **Integration**: Skills cross-reference and integrate with each other (e.g., sealed-secrets → gitops-workflow → argocd-ops)
     - **Quality**: All scripts tested, executable permissions set, includes validation (yamllint, kustomize, dry-run), and follows cluster conventions
     - **Repository**: Committed 90 files (25,774 lines) to `.pi/skills/` directory, archived planning document to `.pi/SKILLS-ARCHIVE.md`
+- [2026-01-09]: **ANSIBLE AUTOMATION REFACTOR: CATTLE NOT PETS (PHASES 1-3)**
+    - **Phase 1 - Resource Standardization**:
+        - Implemented T-shirt sizing system for VMs (small: 1C/1GB/20GB → xlarge: 8C/8GB/200GB) and LXC (small: 1C/512MB/8GB → xlarge: 8C/8GB/100GB)
+        - Created OS template registry with mappings for ubuntu22/24/25, fedora43, rhel9/10, debian12
+        - Built generic provisioning roles: `provision_vm_generic` and `provision_lxc_generic`
+        - All resource specs now parameterized via inventory, zero hardcoded values
+        - Safety checks: Fail if VMID/CTID already exists, protect running infrastructure
+        - **Result**: VMs provisioned from inventory in ~2 minutes, fully reproducible
+    - **Phase 2 - Network Profiles & Connection Defaults**:
+        - Discovered and documented IP allocations across all VLANs (172.16.100/110/130/160)
+        - Created network profiles: `apps` (native vmbr0, 172.16.100.0/24) and `proxmox-mgmt` (VLAN 110, restricted)
+        - Defined IP allocation strategy: static ranges, DHCP pools, MetalLB reservations, OpenShift VIPs
+        - Standardized SSH connection defaults and Proxmox API endpoints
+        - Added cloud-init defaults (timezone, NTP, packages) and provisioning timeouts
+        - Restricted network controls: `proxmox-mgmt` requires justification variable
+        - **Artifact**: Created `automation/IP-INVENTORY.md` documenting all active IPs for Nautobot import
+    - **Phase 3A - Health Checks & Verification**:
+        - Built standalone `health_check` role with profiles: `basic`, `docker`, `web`, `database`, `dns`
+        - Critical checks (SSH, disk space) fail on error; non-critical (cloud-init) warn only
+        - Automatic post-provision validation + standalone troubleshooting mode
+        - Validated: SSH, cloud-init completion, package manager locks, uptime, disk space
+        - Docker profile validates: service status, daemon response, compose availability, network, user permissions
+        - **Result**: Failed provisions caught immediately, no more "zombie" VMs
+    - **Phase 3B - Post-Provisioning Automation**:
+        - Created `post_provision` role with profiles: `docker_host`, `web_server`, `database`
+        - Docker host profile: Install Docker (official repo), Docker Compose v2, configure daemon, add user to group
+        - Web server profile: Install nginx + certbot, configure UFW firewall
+        - Database profile: Prepare Docker-based PostgreSQL (pull image, create dirs)
+        - Opt-in via `post_provisioning_enabled: true`, only runs if health checks pass
+        - Fully idempotent: skips already-installed components, safe to re-run
+        - **Result**: Docker host ready in 3 minutes after VM boot, zero manual steps
+    - **Phase 3C - Snapshot/Backup Policies**:
+        - Built `snapshot_manager` role with operations: create, delete, list, cleanup
+        - Snapshot policies: `none`, `default` (pre-provision 24hr), `standard` (pre+post 7 days), `production` (pre+post+cleanup 30 days)
+        - Automatic retention enforcement and cleanup based on snapshot type
+        - Naming convention: `{type}-{epoch}` (e.g., `pre-provision-1736464800`)
+        - Supports VMs and LXC via Proxmox API
+        - **Result**: Safety net for all provisioning, automatic cleanup prevents storage bloat
+    - **Cleanup**: Deleted pet roles `nautobot_server` and `technitium_dns` (monolithic, hardcoded everything)
+    - **Cleanup**: Deleted old playbooks: `deploy-nautobot.yaml`, `deploy-wow-clawdbot.yaml`, `deploy-wow-ubu-test.yaml`
+    - **Documentation**: Updated `SYSTEM.md` with comprehensive automation philosophy and anti-patterns guide
+    - **Next**: Deploy Nautobot using new cattle infrastructure for IPAM/DCIM source of truth
+
+- [2026-01-09]: **TRAEFIK v3.6 DEPLOYMENT - IN PROGRESS (90% COMPLETE)**
+    - **Goal**: Deploy centralized reverse proxy for all Proxmox LXC/VM workloads with automatic SSL for 7 domains
+    - **Managed Domains**: nixsysadmin.io, sigtom.com, sigtom.dev, sigtom.info, sigtom.io, sigtomtech.com, tecnixsystems.com
+    - **Architecture**: Dedicated LXC (210 @ 172.16.100.10) running Traefik v3.6 + Let's Encrypt DNS-01 via Cloudflare
+    
+    **✅ COMPLETED**:
+    - Full automation playbook: `automation/playbooks/deploy-traefik.yaml`
+    - LXC provisioning with correct network (apps profile, native vmbr0, gateway 172.16.100.1)
+    - Fixed provision_lxc_generic role to use network_profiles from group_vars
+    - Moved group_vars to `automation/inventory/group_vars/` (Ansible requirement)
+    - Fixed SSH key configuration (ansible.cfg: private_key_file = ~/.ssh/id_pfsense_sre)
+    - Fixed Jinja template syntax errors in snapshot_manager and post_provision roles
+    - Health checks pass (SSH, package manager, disk space, uptime)
+    - Container provisioning completes successfully (Ubuntu 24.04 LTS)
+    
+    **❌ CURRENT BLOCKER**:
+    - **Ansible fact gathering bug**: Container IS Ubuntu 24.04 (verified: `pct exec 210 -- cat /etc/os-release`)
+    - BUT Ansible detects it as "Fedora 43" during post_provision phase
+    - Root cause: Facts gathered on localhost (Fedora) are cached/bleeding into container fact gathering
+    - Docker installation fails because post_provision role runs Debian tasks (ansible_os_family should be "Debian" but shows "RedHat")
+    
+    **🔍 ROOT CAUSE ANALYSIS**:
+    1. Playbook gathers facts on `localhost` first (line 95-98) for timestamp → Gets Fedora facts
+    2. Later gathers facts on container (line 138) → Should get Ubuntu facts
+    3. post_provision role uses `ansible_distribution` and `ansible_os_family` → Uses CACHED Fedora facts instead of fresh Ubuntu facts
+    4. Result: Tries to run `dnf` commands on Ubuntu container (fails)
+    
+    **🛠️ ATTEMPTED FIXES** (all failed):
+    - Limited gather_subset to only date_time on localhost - didn't clear cache
+    - Re-gathered facts before post_provision role - cache persisted
+    - Used fact_path parameter - didn't help
+    
+    **✅ NEXT STEPS TO FIX**:
+    1. **Option A (Quick)**: Skip provision_lxc_generic role entirely, manually create container, start from Docker installation
+        ```bash
+        ssh root@172.16.110.101 "pct create 210 TSVMDS01:vztmpl/ubuntu-24.04-standard_24.04-2_amd64.tar.zst \
+          --hostname traefik --cores 1 --memory 512 --rootfs TSVMDS01:8 \
+          --net0 name=eth0,bridge=vmbr0,ip=172.16.100.10/24,gw=172.16.100.1 \
+          --features nesting=1 --unprivileged 1 --start 1"
+        # Then run playbook starting from Phase 2
+        ```
+    
+    2. **Option B (Proper Fix)**: Clear Ansible fact cache between gather operations
+        - Add `meta: clear_facts` task after localhost fact gathering
+        - OR use `ansible_facts` dict directly instead of `ansible_` variables (avoids cache)
+        - OR run post_provision as separate play with fresh fact gathering
+    
+    3. **Option C (Workaround)**: Force post_provision to detect OS correctly
+        - Modify `automation/roles/post_provision/tasks/profiles/docker_host.yaml`
+        - Replace `ansible_os_family == "Debian"` with explicit OS detection:
+        ```yaml
+        - name: Detect OS family directly
+          ansible.builtin.shell: "grep -qi ubuntu /etc/os-release && echo Debian || echo RedHat"
+          register: real_os_family
+        
+        - name: Install Docker prerequisites
+          when: real_os_family.stdout == "Debian"
+        ```
+    
+    **📁 KEY FILES**:
+    - Playbook: `automation/playbooks/deploy-traefik.yaml` (line 95-150 is problematic area)
+    - Post-provision role: `automation/roles/post_provision/tasks/profiles/docker_host.yaml`
+    - Traefik templates: `automation/templates/traefik/*` (ready to deploy once Docker works)
+    - Credentials in `.env`: Cloudflare token + Proxmox token already configured
+    
+    **⚠️ IMPORTANT CONTEXT**:
+    - Container 210 likely exists in failed state - DESTROY before next run: `ssh root@172.16.110.101 "pct stop 210 && pct destroy 210"`
+    - SSH known_hosts needs clearing after container recreation: `ssh-keygen -R 172.16.100.10`
+    - Environment vars needed: `CF_DNS_API_TOKEN` and `PROXMOX_SRE_BOT_API_TOKEN` (both in ~/wow-ocp/.env)
+    
+    **🎯 ONCE DOCKER INSTALLS SUCCESSFULLY**:
+    - Phase 2: Copy Traefik configs, generate BasicAuth, create .env
+    - Phase 3: Start Traefik, wait for certificate acquisition (2 min), verify 7 certs
+    - Phase 4: Deploy whoami test container, validate SSL
+    - Phase 5: Deploy Nautobot behind Traefik
+    
+    **RECOMMENDATION**: Use Option C (workaround) to unblock - fix OS detection in docker_host.yaml to use direct shell check instead of Ansible facts. This gets Traefik deployed NOW, then refactor fact gathering later.
+

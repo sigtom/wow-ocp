@@ -59,23 +59,31 @@
 
 - name: Display snapshot operation summary
   ansible.builtin.debug:
-    msg:
-      - ""
-      - "=========================================="
-      - "Snapshot Operation Summary"
-      - "=========================================="
-      - "Target: {{ inventory_hostname }}"
-      - "Operation: {{ snapshot_operation }}"
-      - ""
-      - "Results:"
-      - "  ✅ Completed: {{ snapshot_operations_completed | length }}"
-      - "  ❌ Failed: {{ snapshot_operations_failed | length }}"
-      - ""
-      - "{% if snapshot_operations_completed | length > 0 %}Completed operations:"
-      - "{% for op in snapshot_operations_completed %}  - {{ op }}{% endfor %}{% endif %}"
-      - "{% if snapshot_operations_failed | length > 0 %}Failed operations:"
-      - "{% for op in snapshot_operations_failed %}  - {{ op }}{% endfor %}{% endif %}"
-      - "=========================================="
+    msg: |
+      
+      ==========================================
+      Snapshot Operation Summary
+      ==========================================
+      Target: {{ inventory_hostname }}
+      Operation: {{ snapshot_operation }}
+      
+      Results:
+        ✅ Completed: {{ snapshot_operations_completed | length }}
+        ❌ Failed: {{ snapshot_operations_failed | length }}
+      
+      {% if snapshot_operations_completed | length > 0 %}
+      Completed operations:
+      {% for op in snapshot_operations_completed %}
+        - {{ op }}
+      {% endfor %}
+      {% endif %}
+      {% if snapshot_operations_failed | length > 0 %}
+      Failed operations:
+      {% for op in snapshot_operations_failed %}
+        - {{ op }}
+      {% endfor %}
+      {% endif %}
+      ==========================================
   when: snapshot_verbose
 
 - name: Fail if operations failed

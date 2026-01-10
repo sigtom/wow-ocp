@@ -98,7 +98,6 @@
     status_code: [200, 404, 500]
   register: lxc_check
   delegate_to: localhost
-  when: not skip_existing_check
 
 - name: Fail if LXC container already exists (safety check)
   ansible.builtin.fail:
@@ -128,6 +127,11 @@
   delegate_to: localhost
   when: lxc_check.status != 200
 
+- name: Set network configuration from profile
+  ansible.builtin.set_fact:
+    network_config: "{{ network_profiles[network_profile | default('apps')] }}"
+  when: network_profiles is defined
+
 - name: Create LXC container
   ansible.builtin.shell: |
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} << 'REMOTE'
@@ -137,9 +141,9 @@
       --memory {{ lxc_memory }} \
       --rootfs {{ lxc_storage_backend }}:{{ lxc_disk_size }} \
       {% if network_mode == 'dhcp' %}
-      --net0 name=eth0,bridge={{ lab_bridge }},tag={{ lab_vlan_mgmt }},ip=dhcp \
+      --net0 name=eth0,bridge={{ network_config.bridge | default('vmbr0') }}{% if network_config.vlan is not none %},tag={{ network_config.vlan }}{% endif %},ip=dhcp \
       {% else %}
-      --net0 name=eth0,bridge={{ lab_bridge }},tag={{ lab_vlan_mgmt }},ip={{ ansible_host }}/24,gw={{ lab_gw }} \
+      --net0 name=eth0,bridge={{ network_config.bridge | default('vmbr0') }}{% if network_config.vlan is not none %},tag={{ network_config.vlan }}{% endif %},ip={{ ansible_host }}/24,gw={{ network_config.gateway | default('172.16.100.1') }} \
       {% endif %}
       --features {{ lxc_features }} \
       --unprivileged {{ 1 if lxc_unprivileged else 0 }} \

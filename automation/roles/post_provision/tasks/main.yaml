@@ -42,26 +42,38 @@
 
 - name: Display post-provisioning summary
   ansible.builtin.debug:
-    msg:
-      - ""
-      - "=========================================="
-      - "Post-Provisioning Summary"
-      - "=========================================="
-      - "Target: {{ inventory_hostname }}"
-      - "Profile: {{ post_provisioning_profile }}"
-      - ""
-      - "Results:"
-      - "  ✅ Completed: {{ post_provision_tasks_completed | length }}"
-      - "  ⏭️  Skipped: {{ post_provision_tasks_skipped | length }}"
-      - "  ❌ Failed: {{ post_provision_tasks_failed | length }}"
-      - ""
-      - "{% if post_provision_tasks_completed | length > 0 %}Completed tasks:"
-      - "{% for task in post_provision_tasks_completed %}  - {{ task }}{% endfor %}{% endif %}"
-      - "{% if post_provision_tasks_skipped | length > 0 %}Skipped tasks:"
-      - "{% for task in post_provision_tasks_skipped %}  - {{ task }}{% endfor %}{% endif %}"
-      - "{% if post_provision_tasks_failed | length > 0 %}Failed tasks:"
-      - "{% for task in post_provision_tasks_failed %}  - {{ task }}{% endfor %}{% endif %}"
-      - "=========================================="
+    msg: |
+      
+      ==========================================
+      Post-Provisioning Summary
+      ==========================================
+      Target: {{ inventory_hostname }}
+      Profile: {{ post_provisioning_profile }}
+      
+      Results:
+        ✅ Completed: {{ post_provision_tasks_completed | length }}
+        ⏭️  Skipped: {{ post_provision_tasks_skipped | length }}
+        ❌ Failed: {{ post_provision_tasks_failed | length }}
+      
+      {% if post_provision_tasks_completed | length > 0 %}
+      Completed tasks:
+      {% for task in post_provision_tasks_completed %}
+        - {{ task }}
+      {% endfor %}
+      {% endif %}
+      {% if post_provision_tasks_skipped | length > 0 %}
+      Skipped tasks:
+      {% for task in post_provision_tasks_skipped %}
+        - {{ task }}
+      {% endfor %}
+      {% endif %}
+      {% if post_provision_tasks_failed | length > 0 %}
+      Failed tasks:
+      {% for task in post_provision_tasks_failed %}
+        - {{ task }}
+      {% endfor %}
+      {% endif %}
+      ==========================================
   when: 
     - post_provision_summary
     - post_provisioning_profile != 'none'
