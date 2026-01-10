@@ -423,3 +423,76 @@
         - Documentation (README, GETTING-STARTED)
     - **User Workflow**: Clone → Copy .example files → Edit with environment → Deploy
     - **Result**: Professional, shareable repository ready for public GitHub with zero environment-specific data exposed
+
+- [2026-01-10]: **NAUTOBOT IPAM/DCIM INTEGRATION PLANNING - 75% COMPLETE**
+    - **Context**: Deployed Nautobot production instance, now planning automated network discovery and IPAM integration
+    - **Physical Topology Documented**:
+        - Location: Tampa → WOW-DC → RACK 1 (42U)
+        - Network Layer (top of rack):
+            - U42 Front: pfSense (1U half-depth) - Firewall/router, OOB management
+            - U42 Rear: Cisco SG300-28 (1U) - 28-port gigabit switch, uplink to pfSense
+            - U41: MikroTik CRS317-1G-16S+ - Core switch, 16x 10G SFP+ ports, 2x uplinks to pfSense
+        - Compute Layer:
+            - U40: Empty
+            - U38-39: Dell FX2s Chassis with 4x FC630 blades:
+                - Slot 1: wow-prox1 (Proxmox VE standalone)
+                - Slot 2: wow-ocp-node2 (OpenShift)
+                - Slot 3: wow-ocp-node3 (OpenShift)
+                - Slot 4: wow-ocp-node4 (OpenShift)
+            - U36-37: wow-ts01 (TrueNAS Scale 25.10 - Supermicro 6028U-TR4T+)
+    - **Network Device Access Configured**:
+        - ✅ pfSense: sre-bot user with SSH key (id_pfsense_sre), read-only access
+        - ✅ Cisco SG300-28: sre-bot user created (IP: 172.16.100.50 via Cisco web UI at 10.1.1.2)
+            - Note: SSH key auth failed (SG300 doesn't support ED25519, RSA also rejected - firmware quirk)
+            - Fallback: Password authentication configured for sre-bot
+        - ✅ MikroTik CRS317: Accessible at http://172.16.100.50/ (RouterOS web UI)
+            - Access pending: Need to configure sre-bot user with API access
+    - **IP Inventory Analysis Complete**:
+        - Documented all 6 VLANs: 100 (Apps), 110 (Proxmox Mgmt), 120 (Reserved), 130 (Workload), 160 (Storage), 10.1.1.0/24 (pfSense Mgmt)
+        - ~40 active hosts across networks
+        - MetalLB pools identified and documented (must protect from manual allocation)
+        - 4 VMs on wrong network (VLAN 110) need migration to Apps network
+        - Unknown hosts discovered: 172.16.100.54, 55, 79 (DHCP clients)
+    - **Nautobot API Integration**:
+        - ✅ API token retrieved from Bitwarden (WOW_NB_API_TOKEN)
+        - ✅ DNS updated: ipmgmt.sigtom.dev → 172.16.100.10 (Traefik)
+        - ✅ HTTPS working through Traefik with valid SSL
+        - ⚠️ Python automation script created but hit API compatibility issues:
+            - Nautobot 3.x uses different API structure (locations vs sites)
+            - Device types require "model" as lookup field, not "name"
+            - Roles require content_types field
+            - Location hierarchy constraints (Datacenter can't have parent)
+            - Script needs refactoring for Nautobot 3.x API schema
+    - **Automation Strategy Defined**:
+        - **Phase 1 (Next Session)**: Physical hierarchy in Nautobot via web UI
+            - Create Tampa → WOW-DC → RACK 1
+            - Add all devices with correct rack positions
+            - Document Dell FX2s with 4 blades
+        - **Phase 2**: Network discovery automation
+            - pfSense: Pull DHCP leases, interface configs, ARP table via SSH
+            - Mikrotik: Query via RouterOS API for interface status, routing table
+            - Cisco: SSH scraping for interface status, MAC table (password auth)
+            - Sync to Nautobot automatically
+        - **Phase 3**: Proxmox/Ansible integration
+            - Modify provision_lxc_generic and provision_vm_generic roles
+            - Query Nautobot for next available IP before provisioning
+            - Auto-register new VMs/LXCs in Nautobot after creation
+            - Update Nautobot when VMs/LXCs are destroyed
+        - **Phase 4**: IP address import
+            - Parse automation/IP-INVENTORY.md
+            - Bulk import all known IPs into Nautobot
+            - Tag appropriately (dhcp, reserved, metallb, openshift, proxmox)
+            - Assign IPs to device interfaces
+    - **Files Created**:
+        - automation/cisco-ssh-user.png - Screenshot of SSH user config attempt
+        - automation/cisco-error.png - Screenshot of "Invalid key string" error
+        - /tmp/nautobot_setup_complete.py - Physical infrastructure setup script (needs API fixes)
+        - ~/.ssh/id_cisco_sre - RSA key for Cisco (rejected by SG300 firmware)
+    - **Next Session Tasks**:
+        1. Use Nautobot web UI to create physical hierarchy (faster than debugging API)
+        2. Configure MikroTik sre-bot user with API access
+        3. Test pfSense SSH access and pull interface/DHCP data
+        4. Create network interface objects on all devices
+        5. Document physical cable connections between devices
+        6. Begin IP address import from IP-INVENTORY.md
+
