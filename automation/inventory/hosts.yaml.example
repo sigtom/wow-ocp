@@ -69,9 +69,8 @@ all:
           post_provisioning_enabled: true
           post_provisioning_profile: docker_host
           snapshot_policy: production          # pre+post+cleanup, 30-day retention
-          # LXC-specific features for Docker
-          lxc_features:
-            - nesting=1                        # Required for Docker in LXC
+          # LXC-specific features for Docker (must be string, not list)
+          lxc_features: "nesting=1,keyctl=1"   # Required for Docker in LXC
           # Application metadata
           description: "Nautobot IPAM/DCIM - Network Source of Truth"
           services:

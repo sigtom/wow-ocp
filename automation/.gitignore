@@ -1,0 +1,32 @@
+# Automation Directory - Environment-Specific Files
+# 
+# This directory contains generic roles and templates for infrastructure automation.
+# Users should copy .example files and customize for their environment.
+
+# Inventory (environment-specific)
+inventory/hosts.yaml
+inventory/group_vars/*.yml
+!inventory/group_vars/.gitkeep
+
+# Playbooks (environment-specific deployments)
+playbooks/deploy-*.yaml
+playbooks/*-create-*.yaml
+!playbooks/*.example.yaml
+
+# Top-level deployment playbooks
+deploy_*.yaml
+
+# Documentation (environment-specific)
+*.md
+!README.md
+!GETTING-STARTED.md
+
+# Credentials and tokens
+.traefik-credentials
+*-credentials
+*.token
+
+# Temporary files
+*.retry
+.ansible/
+facts.d/

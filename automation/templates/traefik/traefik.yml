@@ -55,8 +55,10 @@ entryPoints:
 certificatesResolvers:
   cloudflare:
     acme:
-      email: "admin@sigtom.dev"  # CHANGE THIS to your email
+      email: "tec.thor@gmail.com"
       storage: /letsencrypt/acme.json
+      # Production Let's Encrypt certificates (fully trusted by browsers)
+      # For staging/testing, add: caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
       dnsChallenge:
         provider: cloudflare
         delayBeforeCheck: 30

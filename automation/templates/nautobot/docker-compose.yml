@@ -1,0 +1,78 @@
+services:
+  nautobot:
+    image: networktocode/nautobot:latest-py3.12
+    container_name: nautobot
+    restart: unless-stopped
+    user: "0:0"  # Run as root to avoid volume permission issues
+    ports:
+      - "8080:8080"
+    environment:
+      NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
+      NAUTOBOT_DB_HOST: postgres
+      NAUTOBOT_DB_PORT: 5432
+      NAUTOBOT_DB_NAME: nautobot
+      NAUTOBOT_DB_USER: nautobot
+      NAUTOBOT_DB_PASSWORD: ${NAUTOBOT_DB_PASSWORD}
+      NAUTOBOT_DB_TIMEOUT: 300
+      NAUTOBOT_REDIS_HOST: redis
+      NAUTOBOT_REDIS_PORT: 6379
+      NAUTOBOT_REDIS_PASSWORD: ""
+      NAUTOBOT_SECRET_KEY: ${NAUTOBOT_SECRET_KEY}
+      NAUTOBOT_ALLOWED_HOSTS: "*"
+      NAUTOBOT_SUPERUSER_NAME: admin
+      NAUTOBOT_SUPERUSER_EMAIL: admin@sigtom.dev
+      NAUTOBOT_SUPERUSER_PASSWORD: ${NAUTOBOT_SUPERUSER_PASSWORD}
+      NAUTOBOT_SUPERUSER_API_TOKEN: ${NAUTOBOT_SUPERUSER_API_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - nautobot-media:/opt/nautobot/media
+      - nautobot-static:/opt/nautobot/static
+    networks:
+      - nautobot-net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: nautobot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nautobot
+      POSTGRES_USER: nautobot
+      POSTGRES_PASSWORD: ${NAUTOBOT_DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - nautobot-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nautobot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nautobot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - nautobot-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  nautobot-media:
+  nautobot-static:
+  postgres-data:
+  redis-data:
+
+networks:
+  nautobot-net:
+    driver: bridge

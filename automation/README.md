@@ -1,6 +1,8 @@
 # WOW-OCP Ansible Automation
 
-Infrastructure-as-Code automation for the WOW-OCP homelab using Ansible.
+Infrastructure-as-Code automation for Proxmox-based infrastructure using Ansible.
+
+> **New to this project?** See [GETTING-STARTED.md](./GETTING-STARTED.md) for setup instructions.
 
 ## 🔐 Security-First Approach
 
@@ -38,9 +40,11 @@ automation/
 │   └── all.yml                 # Additional variables
 │
 ├── playbooks/
-│   ├── deploy-nautobot.yaml    # Deploy Nautobot IPAM server
-│   ├── deploy-wow-clawdbot.yaml # Deploy VM with Proxmox API
-│   └── deploy-wow-ubu-test.yaml # Test Ubuntu VM deployment
+│   ├── deploy-nautobot-app.yaml      # Deploy Nautobot application stack
+│   ├── deploy-traefik.yaml           # Deploy Traefik reverse proxy
+│   ├── deploy-vaultwarden.yaml       # Deploy Vaultwarden password manager
+│   ├── nautobot-create-superuser.yaml # Create/update Nautobot admin user
+│   └── health-check.yaml             # Standalone health check utility
 │
 ├── roles/
 │   ├── proxmox_vm/             # Provision VMs via Proxmox API
@@ -56,17 +60,20 @@ automation/
 
 ### Deploy Nautobot IPAM
 
-Deploys Nautobot with PostgreSQL, Redis, and NGINX with Let's Encrypt SSL:
+Deploys Nautobot with PostgreSQL, Redis, and Traefik SSL integration:
 
 ```bash
 # Unlock Bitwarden
 export BW_SESSION=$(bw unlock --raw)
 
-# Deploy
-ansible-playbook playbooks/deploy-nautobot.yaml
+# Deploy application stack (LXC 215 must exist with Docker installed)
+cd automation
+ansible-playbook -i inventory/hosts.yaml playbooks/deploy-nautobot-app.yaml
 ```
 
 Access at: https://ipmgmt.sigtom.dev
+
+**Note:** LXC provisioning uses generic cattle infrastructure roles. See deployed services section for details.
 
 ### Deploy DNS Server
 
@@ -308,9 +315,41 @@ When adding new playbooks or roles:
 5. Include example usage in role documentation
 6. Use `no_log: true` for sensitive operations
 
+## 🌐 Deployed Services
+
+### Traefik Reverse Proxy
+**LXC:** 210 @ 172.16.100.10  
+**Purpose:** Centralized reverse proxy with automatic SSL  
+**Domains:** *.sigtom.dev, *.sigtom.com, *.sigtom.io, *.nixsysadmin.io, *.tecnixsystems.com, *.sigtom.info, *.sigtomtech.com  
+**Dashboard:** https://traefik.sigtom.dev (BasicAuth)  
+**Docs:** [TRAEFIK.md](./TRAEFIK.md)
+
+### Nautobot IPAM/DCIM
+**LXC:** 215 @ 172.16.100.15  
+**Purpose:** Network source of truth and IP address management  
+**URL:** https://ipmgmt.sigtom.dev  
+**Playbooks:** `deploy-nautobot-app.yaml`, `nautobot-create-superuser.yaml`  
+**Stack:** Nautobot + PostgreSQL 15 + Redis 7  
+**Secrets:** Managed via Bitwarden (NAUTOBOT_SECRET_KEY, NAUTOBOT_DB_PASSWORD, NAUTOBOT_SUPERUSER_PASSWORD, NAUTOBOT_SUPERUSER_API_TOKEN)
+
+### Technitium DNS (HA Cluster)
+**Primary:** OpenShift VM @ 172.16.130.210  
+**Secondary:** Proxmox VM @ 172.16.110.211  
+**Purpose:** Authoritative DNS with ad-blocking  
+**Dashboard:** https://dns.sigtom.dev  
+**Integration:** User Workload Monitoring with Prometheus + Grafana
+
+### Vaultwarden
+**LXC:** 105 @ 172.16.110.105 (Proxmox, not OpenShift)  
+**Purpose:** Self-hosted password manager (Bitwarden-compatible)  
+**URL:** https://vault.sigtomtech.com  
+**Stack:** Vaultwarden + Caddy (standalone TLS)  
+**Docs:** [VAULTWARDEN.md](./VAULTWARDEN.md)
+
 ## 📖 Additional Documentation
 
-- 
+- [Traefik Operations](./TRAEFIK.md) - Reverse proxy configuration and service integration
+- [IP Inventory](./IP-INVENTORY.md) - Complete IP address allocation across VLANs
 - [Nautobot Role](./roles/nautobot_server/README.md) - Nautobot deployment details
 - [External Secrets Operator](../docs/architecture/external-secrets-bitwarden.md) - ESO for OpenShift
 

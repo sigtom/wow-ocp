@@ -121,7 +121,9 @@
   ansible.builtin.shell: |
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} << 'REMOTE'
     cat > /tmp/lxc_keys_{{ vmid }}.pub << 'EOF'
-    {{ global_ssh_keys | join('\n') }}
+{% for key in global_ssh_keys %}
+{{ key }}
+{% endfor %}
     EOF
     REMOTE
   delegate_to: localhost
