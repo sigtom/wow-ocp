@@ -1,0 +1,85 @@
+---
+# Delete Snapshot Task
+
+- name: Validate snapshot name for deletion
+  ansible.builtin.assert:
+    that:
+      - snapshot_name is defined
+      - snapshot_name != ''
+    fail_msg: "snapshot_name must be specified for delete operation"
+
+- name: Delete VM snapshot
+  block:
+    - name: Delete VM snapshot via Proxmox API
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot/{{ snapshot_name }}"
+        method: DELETE
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 500]
+      register: snapshot_delete
+      delegate_to: localhost
+    
+    - name: Check if snapshot deletion succeeded
+      ansible.builtin.fail:
+        msg: "Snapshot deletion failed: {{ snapshot_delete.json.data if snapshot_delete.status == 500 else 'Unknown error' }}"
+      when: snapshot_delete.status != 200
+    
+    - name: Record successful snapshot deletion
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Deleted VM snapshot: ' + snapshot_name] }}"
+    
+    - name: Display snapshot deletion result
+      ansible.builtin.debug:
+        msg: "✅ VM snapshot deleted: {{ snapshot_name }}"
+      when: snapshot_verbose
+  
+  rescue:
+    - name: Record snapshot deletion failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['VM snapshot deletion failed: ' + snapshot_name] }}"
+    
+    - name: Display failure
+      ansible.builtin.debug:
+        msg: "❌ VM snapshot deletion failed: {{ snapshot_name }}"
+  
+  when: not is_lxc
+
+- name: Delete LXC snapshot
+  block:
+    - name: Delete LXC snapshot via Proxmox API
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot/{{ snapshot_name }}"
+        method: DELETE
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 500]
+      register: snapshot_delete
+      delegate_to: localhost
+    
+    - name: Check if snapshot deletion succeeded
+      ansible.builtin.fail:
+        msg: "Snapshot deletion failed: {{ snapshot_delete.json.data if snapshot_delete.status == 500 else 'Unknown error' }}"
+      when: snapshot_delete.status != 200
+    
+    - name: Record successful snapshot deletion
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Deleted LXC snapshot: ' + snapshot_name] }}"
+    
+    - name: Display snapshot deletion result
+      ansible.builtin.debug:
+        msg: "✅ LXC snapshot deleted: {{ snapshot_name }}"
+      when: snapshot_verbose
+  
+  rescue:
+    - name: Record snapshot deletion failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['LXC snapshot deletion failed: ' + snapshot_name] }}"
+    
+    - name: Display failure
+      ansible.builtin.debug:
+        msg: "❌ LXC snapshot deletion failed: {{ snapshot_name }}"
+  
+  when: is_lxc

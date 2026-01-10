@@ -1,96 +1,123 @@
 ---
-# Nautobot IPAM Server Deployment Playbook
-# Deploys Nautobot on existing VM (ipmgmt/wow-ubu-test)
-# Uses Docker Compose with PostgreSQL, Redis, NGINX, and Let's Encrypt SSL
+# ============================================================================
+# Nautobot IPAM/DCIM Deployment Playbook
+# ============================================================================
+# Description: Deploy Nautobot using cattle automation framework
+# Target: Proxmox LXC container with Docker
+# Profile: medium (2C/2GB/20GB), ubuntu24, docker_host
 #
-# SECURITY: Secrets fetched from Bitwarden using native Ansible lookup plugin
-# Setup: export BW_SESSION=$(bw unlock --raw)
-# Run: ansible-playbook playbooks/deploy-nautobot.yaml
+# Usage:
+#   ansible-playbook -i inventory/hosts.yaml playbooks/deploy-nautobot.yaml
+#
+# ============================================================================
 
-- name: Deploy Nautobot IPAM Server
-  hosts: ipmgmt
-  gather_facts: yes
-  become: no
+- name: "Deploy Nautobot IPAM/DCIM Server"
+  hosts: nautobot
+  gather_facts: false
+  
   vars:
-    # Required Bitwarden items (create in vault first):
-    #   - nautobot-db-password
-    #   - nautobot-redis-password
-    #   - nautobot-secret-key
-    #   - nautobot-admin-password
+    # Deployment target
+    target_node: "{{ proxmox_node }}"
+    target_vmid: "{{ vmid }}"
+    target_ip: "{{ ansible_host }}"
+    target_hostname: "ipmgmt.sigtom.dev"
+    
+    # Resource allocation (from inventory)
+    resource_size: "{{ lxc_size }}"
+    os_template: "{{ lxc_template }}"
+    
+    # Networking (from inventory)
+    network: "{{ network_profile }}"
+    
+    # Post-provisioning
+    enable_post_provision: "{{ post_provisioning_enabled }}"
+    provision_profile: "{{ post_provisioning_profile }}"
+    
+    # Backup/snapshot
+    backup_policy: "{{ snapshot_policy }}"
 
-  pre_tasks:
-    - name: Check SSH connectivity
-      ansible.builtin.ping:
-
-    - name: Gather system facts
-      ansible.builtin.setup:
-
-    - name: Display target information
-      ansible.builtin.debug:
-        msg:
-          - "Target Host: {{ inventory_hostname }}"
-          - "IP Address: {{ ansible_host }}"
-          - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
-          - "Architecture: {{ ansible_architecture }}"
-          - "Python: {{ ansible_python_version }}"
-
-    - name: Verify Bitwarden session is available
-      ansible.builtin.assert:
-        that:
-          - lookup('env', 'BW_SESSION') != ""
-        fail_msg: |
-          ERROR: BW_SESSION environment variable not set
-          
-          This playbook requires access to Bitwarden vault.
-          
-          Setup:
-            1. Install Bitwarden CLI: https://bitwarden.com/help/cli/
-            2. Login: bw login
-            3. Unlock and export session:
-               export BW_SESSION=$(bw unlock --raw)
-          
-          Then run playbook:
-            ansible-playbook playbooks/deploy-nautobot.yaml
-          
-          Required Bitwarden items:
-            - nautobot-db-password
-            - nautobot-redis-password
-            - nautobot-secret-key
-            - nautobot-admin-password
-        success_msg: "Bitwarden session validated"
-
-  roles:
-    - role: nautobot_server
-
-  post_tasks:
-    - name: Final deployment summary
+  tasks:
+    - name: "Display deployment summary"
       ansible.builtin.debug:
         msg:
           - "=========================================="
-          - "🎉 Nautobot Deployment Complete!"
+          - "Nautobot Deployment Configuration"
+          - "=========================================="
+          - "Target Node: {{ target_node }}"
+          - "Container ID: {{ target_vmid }}"
+          - "IP Address: {{ target_ip }}"
+          - "Hostname: {{ target_hostname }}"
+          - "Size Profile: {{ resource_size }}"
+          - "OS Template: {{ os_template }}"
+          - "Network Profile: {{ network }}"
+          - "Post-Provision: {{ provision_profile if enable_post_provision else 'disabled' }}"
+          - "Snapshot Policy: {{ backup_policy }}"
+          - "=========================================="
+
+    - name: "Pre-provisioning snapshot (if enabled)"
+      ansible.builtin.include_role:
+        name: snapshot_manager
+      vars:
+        snapshot_operation: create
+        snapshot_type: pre-provision
+        resource_type: lxc
+      when: backup_policy != 'none'
+
+    - name: "Provision Nautobot LXC container"
+      ansible.builtin.include_role:
+        name: provision_lxc_generic
+
+    - name: "Wait for container to be ready"
+      ansible.builtin.wait_for:
+        host: "{{ target_ip }}"
+        port: 22
+        delay: 5
+        timeout: 120
+        msg: "SSH not available after 120 seconds"
+
+    - name: "Run health checks"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: basic
+
+    - name: "Post-provisioning configuration (Docker setup)"
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provision_profile: "{{ provision_profile }}"
+      when: enable_post_provision | bool
+
+    - name: "Re-run health checks (Docker profile)"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: docker
+      when: enable_post_provision | bool
+
+    - name: "Post-provisioning snapshot (if enabled)"
+      ansible.builtin.include_role:
+        name: snapshot_manager
+      vars:
+        snapshot_operation: create
+        snapshot_type: post-provision
+        resource_type: lxc
+      when: backup_policy in ['standard', 'production']
+
+    - name: "Deployment complete"
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "✅ Nautobot LXC Deployment Complete!"
+          - "=========================================="
+          - "Next Steps:"
+          - "1. SSH to container: ssh root@{{ target_ip }}"
+          - "2. Review Docker setup: docker --version && docker compose version"
+          - "3. Deploy Nautobot stack with Docker Compose"
+          - "4. Access Nautobot at: https://{{ target_hostname }}"
           - "=========================================="
           - ""
-          - "Access your Nautobot instance:"
-          - "  URL: https://ipmgmt.sigtom.dev"
-          - "  Username: sigtom"
-          - "  Password: [Your NAUTOBOT_SUPERUSER_PASSWORD]"
-          - ""
-          - "Useful commands on {{ inventory_hostname }}:"
-          - "  cd /opt/nautobot"
-          - "  docker compose logs -f            # View logs"
-          - "  docker compose ps                 # Check status"
-          - "  docker compose restart            # Restart services"
-          - "  docker compose exec nautobot bash # Shell access"
-          - ""
-          - "Configuration files:"
-          - "  /opt/nautobot/docker-compose.yml  # Container orchestration"
-          - "  /opt/nautobot/.env                # Secrets (mode 600)"
-          - "  /etc/nginx/sites-available/nautobot # NGINX config"
-          - "  /etc/letsencrypt/live/ipmgmt.sigtom.dev/ # SSL certificates"
-          - ""
-          - "Next steps:"
-          - "  1. Configure initial sites and VLANs"
-          - "  2. Set up Proxmox SSoT integration"
-          - "  3. Add OpenShift cluster"
-          - "  4. Configure network device backups (Golden Config)"
+          - "📚 Documentation:"
+          - "  - Nautobot docs: https://docs.nautobot.com/"
+          - "  - Docker deployment: https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/installation/docker/"
           - "=========================================="

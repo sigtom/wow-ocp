@@ -1,0 +1,90 @@
+---
+# ============================================================================
+# Traefik v3.6 Docker Compose Stack
+# ============================================================================
+# Purpose: Reverse proxy and SSL termination for Proxmox LXC/VM workloads
+# Managed Domains: 
+#   - *.nixsysadmin.io
+#   - *.sigtom.com
+#   - *.sigtom.dev
+#   - *.sigtom.info
+#   - *.sigtom.io
+#   - *.sigtomtech.com
+#   - *.tecnixsystems.com
+#
+# Prerequisites:
+#   1. Cloudflare API token with DNS edit permissions
+#   2. Ports 80/443 forwarded from pfSense to this LXC
+#   3. Wildcard DNS records pointing to this LXC IP
+#
+# Installation:
+#   1. Copy this file to /opt/traefik/ on the LXC
+#   2. Create .env file with Cloudflare credentials
+#   3. Run: docker compose up -d
+#
+# ============================================================================
+
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    
+    networks:
+      - traefik-proxy
+    
+    ports:
+      - "80:80"      # HTTP entrypoint
+      - "443:443"    # HTTPS entrypoint
+      - "8080:8080"  # Dashboard (optional, remove in production)
+    
+    environment:
+      - TZ=America/New_York
+      # Cloudflare API credentials for DNS-01 challenge
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    
+    volumes:
+      # Docker socket (read-only for service discovery)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      
+      # Traefik static configuration
+      - ./traefik.yml:/traefik.yml:ro
+      
+      # Dynamic configuration files
+      - ./config:/config:ro
+      
+      # Let's Encrypt certificates storage
+      - ./letsencrypt:/letsencrypt
+      
+      # Logs
+      - ./logs:/logs
+    
+    labels:
+      # Enable Traefik for itself (dashboard)
+      - "traefik.enable=true"
+      
+      # Dashboard router
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.sigtom.dev`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      
+      # Dashboard middleware (BasicAuth - optional)
+      - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
+      
+      # Redirect HTTP to HTTPS globally
+      - "traefik.http.routers.http-catchall.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+networks:
+  traefik-proxy:
+    name: traefik-proxy
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

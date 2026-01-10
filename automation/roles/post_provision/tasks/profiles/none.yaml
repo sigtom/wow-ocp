@@ -1,0 +1,7 @@
+---
+# None Profile - Placeholder
+# Does nothing - used when post_provisioning_profile is explicitly set to 'none'
+
+- name: No post-provisioning tasks
+  ansible.builtin.debug:
+    msg: "Profile 'none' selected - no post-provisioning tasks will run"

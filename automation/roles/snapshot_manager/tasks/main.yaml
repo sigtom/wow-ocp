@@ -1,0 +1,92 @@
+---
+# Snapshot Manager Role - Main Entry Point
+# Manages snapshots for Proxmox VMs and LXC containers
+
+- name: Initialize snapshot tracking
+  ansible.builtin.set_fact:
+    snapshot_operations_completed: []
+    snapshot_operations_failed: []
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - vmid is defined
+      - proxmox_node is defined
+      - snapshot_operation in ['create', 'delete', 'list', 'cleanup']
+    fail_msg: |
+      Missing required variables for snapshot operations!
+      
+      Required:
+        - vmid: Proxmox VM/LXC ID
+        - proxmox_node: Proxmox node name
+        - snapshot_operation: Operation type (create, delete, list, cleanup)
+    success_msg: "Snapshot operation variables validated"
+
+- name: Determine if target is VM or LXC
+  ansible.builtin.set_fact:
+    is_lxc: "{{ groups['proxmox_lxc'] is defined and inventory_hostname in groups['proxmox_lxc'] }}"
+    is_vm: "{{ groups['proxmox_vms'] is defined and inventory_hostname in groups['proxmox_vms'] }}"
+
+- name: Display snapshot operation header
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Snapshot Manager"
+      - "=========================================="
+      - "Target: {{ inventory_hostname }} ({{ 'LXC' if is_lxc else 'VM' }})"
+      - "VMID: {{ vmid }}"
+      - "Node: {{ proxmox_node }}"
+      - "Operation: {{ snapshot_operation }}"
+      - "Type: {{ snapshot_type }}"
+      - "=========================================="
+  when: snapshot_verbose
+
+- name: Create snapshot
+  ansible.builtin.include_tasks: create_snapshot.yaml
+  when: snapshot_operation == 'create'
+
+- name: Delete snapshot
+  ansible.builtin.include_tasks: delete_snapshot.yaml
+  when: snapshot_operation == 'delete'
+
+- name: List snapshots
+  ansible.builtin.include_tasks: list_snapshots.yaml
+  when: snapshot_operation == 'list'
+
+- name: Cleanup old snapshots
+  ansible.builtin.include_tasks: cleanup_snapshots.yaml
+  when: snapshot_operation == 'cleanup'
+
+- name: Display snapshot operation summary
+  ansible.builtin.debug:
+    msg:
+      - ""
+      - "=========================================="
+      - "Snapshot Operation Summary"
+      - "=========================================="
+      - "Target: {{ inventory_hostname }}"
+      - "Operation: {{ snapshot_operation }}"
+      - ""
+      - "Results:"
+      - "  ✅ Completed: {{ snapshot_operations_completed | length }}"
+      - "  ❌ Failed: {{ snapshot_operations_failed | length }}"
+      - ""
+      - "{% if snapshot_operations_completed | length > 0 %}Completed operations:"
+      - "{% for op in snapshot_operations_completed %}  - {{ op }}{% endfor %}{% endif %}"
+      - "{% if snapshot_operations_failed | length > 0 %}Failed operations:"
+      - "{% for op in snapshot_operations_failed %}  - {{ op }}{% endfor %}{% endif %}"
+      - "=========================================="
+  when: snapshot_verbose
+
+- name: Fail if operations failed
+  ansible.builtin.fail:
+    msg: |
+      ❌ Snapshot operation FAILED!
+      
+      {{ snapshot_operations_failed | length }} operation(s) failed:
+      {% for op in snapshot_operations_failed %}
+        - {{ op }}
+      {% endfor %}
+  when:
+    - snapshot_fail_on_error
+    - snapshot_operations_failed | length > 0

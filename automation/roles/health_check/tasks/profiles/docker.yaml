@@ -1,0 +1,159 @@
+---
+# Docker Health Check Profile
+# Inherits basic checks + Docker-specific validation
+
+- name: Include basic health checks
+  ansible.builtin.include_tasks: basic.yaml
+
+- name: "CHECK: Docker service status"
+  block:
+    - name: Get Docker service status
+      ansible.builtin.systemd:
+        name: docker
+      register: docker_service
+    
+    - name: Verify Docker is active
+      ansible.builtin.assert:
+        that:
+          - docker_service.status.ActiveState == "active"
+          - docker_service.status.SubState == "running"
+        fail_msg: "Docker service is {{ docker_service.status.ActiveState }}/{{ docker_service.status.SubState }}"
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker service: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Docker service: PASS (active/running)"
+      when: health_check_verbose
+  rescue:
+    - name: Check if Docker is installed
+      ansible.builtin.command: which docker
+      changed_when: false
+      register: docker_exists
+      ignore_errors: true
+    
+    - name: Record as failure (critical for docker profile)
+      ansible.builtin.set_fact:
+        health_check_failures: "{{ health_check_failures + ['Docker service not running or not installed'] }}"
+    
+    - name: Display failure
+      ansible.builtin.debug:
+        msg: "❌ Docker service: FAIL - {{ 'Not installed' if docker_exists.rc != 0 else 'Not running' }}"
+
+- name: "CHECK: Docker daemon responding"
+  block:
+    - name: Run docker info
+      ansible.builtin.command: docker info
+      changed_when: false
+      timeout: "{{ health_check_default_timeout }}"
+      register: docker_info
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker daemon: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Docker daemon: PASS (responding to commands)"
+      when: health_check_verbose
+  rescue:
+    - name: Record as failure (critical)
+      ansible.builtin.set_fact:
+        health_check_failures: "{{ health_check_failures + ['Docker daemon not responding'] }}"
+    
+    - name: Display failure
+      ansible.builtin.debug:
+        msg: "❌ Docker daemon: FAIL - Not responding to 'docker info'"
+
+- name: "CHECK: Docker Compose availability"
+  block:
+    - name: Check for Docker Compose (plugin)
+      ansible.builtin.command: docker compose version
+      changed_when: false
+      register: compose_version
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker Compose: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Docker Compose: PASS ({{ compose_version.stdout }})"
+      when: health_check_verbose
+  rescue:
+    - name: Check for standalone docker-compose
+      ansible.builtin.command: docker-compose version
+      changed_when: false
+      register: compose_standalone
+      ignore_errors: true
+    
+    - name: Record success if standalone found
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker Compose: PASS (standalone)'] }}"
+      when: compose_standalone.rc == 0
+    
+    - name: Record as warning (non-critical)
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Docker Compose not installed'] }}"
+      when: compose_standalone.rc != 0
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "{{ '✅ Docker Compose: PASS (standalone)' if compose_standalone.rc == 0 else '⚠️  Docker Compose: WARN - Not installed' }}"
+
+- name: "CHECK: Docker network connectivity"
+  block:
+    - name: Test Docker network by pulling hello-world image
+      ansible.builtin.command: docker pull hello-world:latest
+      changed_when: false
+      timeout: 60
+      register: docker_pull
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker network: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Docker network: PASS (can pull images)"
+      when: health_check_verbose
+  rescue:
+    - name: Record as warning (non-critical, might be intentional air-gap)
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Docker cannot pull images (network issue or air-gapped?)'] }}"
+    
+    - name: Display warning
+      ansible.builtin.debug:
+        msg: "⚠️  Docker network: WARN - Cannot pull images from Docker Hub"
+
+- name: "CHECK: Docker user permissions"
+  block:
+    - name: Check if ansible_user is in docker group
+      ansible.builtin.command: groups {{ ansible_user }}
+      changed_when: false
+      register: user_groups
+    
+    - name: Verify docker group membership
+      ansible.builtin.assert:
+        that:
+          - "'docker' in user_groups.stdout"
+        fail_msg: "User {{ ansible_user }} not in docker group"
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Docker permissions: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Docker permissions: PASS ({{ ansible_user }} in docker group)"
+      when: health_check_verbose
+  rescue:
+    - name: Record as warning
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['User ' + ansible_user + ' not in docker group (will need sudo)'] }}"
+    
+    - name: Display warning
+      ansible.builtin.debug:
+        msg: "⚠️  Docker permissions: WARN - {{ ansible_user }} not in docker group"

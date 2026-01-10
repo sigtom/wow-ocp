@@ -1,0 +1,113 @@
+---
+# Web Server Profile
+# Installs nginx and certbot for standalone web hosting
+# Note: Most web apps should use docker_host profile instead
+
+- name: Gather facts if needed
+  ansible.builtin.setup:
+  when: ansible_distribution is not defined
+
+- name: Install nginx and certbot
+  block:
+    - name: Install nginx and certbot (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Install nginx and certbot (Fedora)
+      ansible.builtin.dnf:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+        state: present
+      become: yes
+      when: ansible_distribution == "Fedora"
+    
+    - name: Record nginx installation
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Nginx and certbot installed'] }}"
+  rescue:
+    - name: Record installation failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Nginx installation failed'] }}"
+
+- name: Configure UFW firewall
+  block:
+    - name: Install UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Allow SSH
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+      become: yes
+    
+    - name: Allow HTTP
+      community.general.ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+      become: yes
+    
+    - name: Allow HTTPS
+      community.general.ufw:
+        rule: allow
+        port: '443'
+        proto: tcp
+      become: yes
+    
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: deny
+      become: yes
+    
+    - name: Record firewall configuration
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['UFW firewall configured'] }}"
+  rescue:
+    - name: Record firewall failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['UFW configuration failed'] }}"
+
+- name: Start and enable nginx
+  block:
+    - name: Ensure nginx is started and enabled
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+      become: yes
+    
+    - name: Record nginx service status
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Nginx service started'] }}"
+  rescue:
+    - name: Record nginx service failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Nginx service failed'] }}"
+
+- name: Display web server info
+  ansible.builtin.debug:
+    msg:
+      - "✅ Web server configured:"
+      - "  Nginx installed and running"
+      - "  Certbot available for Let's Encrypt"
+      - "  Firewall configured (SSH, HTTP, HTTPS)"
+      - ""
+      - "Next steps:"
+      - "  1. Configure nginx site in /etc/nginx/sites-available/"
+      - "  2. Run: certbot --nginx -d yourdomain.com"
+  when: post_provision_verbose

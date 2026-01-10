@@ -1,0 +1,206 @@
+---
+# Docker Host Profile
+# Installs Docker Engine and Docker Compose, configures for production use
+
+- name: Gather facts if needed
+  ansible.builtin.setup:
+  when: ansible_distribution is not defined
+
+- name: Check if Docker is already installed
+  ansible.builtin.command: docker --version
+  register: docker_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker (official repository)
+  block:
+    - name: Install Docker prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Install Docker prerequisites (RedHat/Fedora)
+      ansible.builtin.dnf:
+        name:
+          - dnf-plugins-core
+        state: present
+      become: yes
+      when: ansible_os_family == "RedHat"
+    
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Add Docker GPG key (Ubuntu/Debian)
+      ansible.builtin.shell: |
+        curl -fsSL https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Add Docker repository (Ubuntu/Debian)
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Add Docker repository (Fedora)
+      ansible.builtin.shell: |
+        dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+      become: yes
+      when: ansible_distribution == "Fedora"
+    
+    - name: Install Docker Engine (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+      become: yes
+      when: ansible_os_family == "Debian"
+    
+    - name: Install Docker Engine (Fedora)
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      become: yes
+      when: ansible_distribution == "Fedora"
+    
+    - name: Record Docker installation
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker Engine installed'] }}"
+  
+  when: docker_check.rc != 0 or post_provision_force_reinstall
+  rescue:
+    - name: Record Docker installation failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Docker Engine installation failed'] }}"
+
+- name: Skip Docker installation (already installed)
+  ansible.builtin.set_fact:
+    post_provision_tasks_skipped: "{{ post_provision_tasks_skipped + ['Docker already installed'] }}"
+  when: docker_check.rc == 0 and not post_provision_force_reinstall
+
+- name: Configure Docker daemon
+  block:
+    - name: Create Docker daemon.json
+      ansible.builtin.copy:
+        content: "{{ docker_daemon_config | to_nice_json }}"
+        dest: /etc/docker/daemon.json
+        mode: '0644'
+      become: yes
+      register: docker_daemon_config_result
+    
+    - name: Reload Docker daemon if config changed
+      ansible.builtin.systemd:
+        name: docker
+        state: reloaded
+        daemon_reload: yes
+      become: yes
+      when: docker_daemon_config_result.changed
+    
+    - name: Record Docker daemon configuration
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker daemon configured'] }}"
+  rescue:
+    - name: Record Docker daemon configuration failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Docker daemon configuration failed'] }}"
+
+- name: Start and enable Docker service
+  block:
+    - name: Ensure Docker service is started and enabled
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+    
+    - name: Record Docker service status
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker service started and enabled'] }}"
+  rescue:
+    - name: Record Docker service failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Docker service start/enable failed'] }}"
+
+- name: Add user to docker group
+  block:
+    - name: Add {{ ansible_user }} to docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      become: yes
+    
+    - name: Record user group addition
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['User added to docker group'] }}"
+    
+    - name: Display group change notice
+      ansible.builtin.debug:
+        msg: "⚠️  User {{ ansible_user }} added to docker group - may need to re-login for group to take effect"
+  rescue:
+    - name: Record user group failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['User group addition failed'] }}"
+
+- name: Verify Docker installation
+  block:
+    - name: Get Docker version
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+    
+    - name: Get Docker Compose version
+      ansible.builtin.command: docker compose version
+      register: docker_compose_version
+      changed_when: false
+    
+    - name: Test Docker functionality
+      ansible.builtin.command: docker run --rm hello-world
+      register: docker_test
+      changed_when: false
+      become: yes
+    
+    - name: Record Docker verification
+      ansible.builtin.set_fact:
+        post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker verification passed'] }}"
+    
+    - name: Display Docker versions
+      ansible.builtin.debug:
+        msg:
+          - "✅ Docker installed and verified:"
+          - "  Docker: {{ docker_version.stdout }}"
+          - "  Docker Compose: {{ docker_compose_version.stdout }}"
+      when: post_provision_verbose
+  rescue:
+    - name: Record Docker verification failure
+      ansible.builtin.set_fact:
+        post_provision_tasks_failed: "{{ post_provision_tasks_failed + ['Docker verification failed'] }}"

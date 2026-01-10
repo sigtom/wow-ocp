@@ -1,0 +1,86 @@
+---
+# Health Check Role - Main Entry Point
+# Runs health checks against VMs, LXC containers, or existing hosts
+
+- name: Initialize health check tracking
+  ansible.builtin.set_fact:
+    health_check_results: []
+    health_check_failures: []
+    health_check_warnings: []
+
+- name: Display health check header
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Health Check: {{ health_check_profile }}"
+      - "=========================================="
+      - "Target: {{ inventory_hostname }}"
+      - "Profile: {{ health_check_profile }}"
+      - "Fail on critical errors: {{ health_check_fail_on_error }}"
+      - "Allow failures: {{ health_check_allow_failures }}"
+      - "=========================================="
+  when: health_check_verbose
+
+- name: Validate health check profile exists
+  ansible.builtin.assert:
+    that:
+      - health_check_profile is defined
+      - health_check_profile in ['basic', 'docker', 'web', 'database', 'dns', 'custom']
+    fail_msg: |
+      Invalid health check profile: {{ health_check_profile | default('NOT SET') }}
+      
+      Available profiles: basic, docker, web, database, dns, custom
+    success_msg: "Health check profile '{{ health_check_profile }}' validated"
+
+- name: Run health check profile
+  ansible.builtin.include_tasks: "profiles/{{ health_check_profile }}.yaml"
+
+- name: Build warning lines
+  ansible.builtin.set_fact:
+    warning_lines: "{{ health_check_warnings | map('regex_replace', '^(.*)$', '  - \\1') | list }}"
+  when: health_check_warnings | length > 0
+
+- name: Build failure lines
+  ansible.builtin.set_fact:
+    failure_lines: "{{ health_check_failures | map('regex_replace', '^(.*)$', '  - \\1') | list }}"
+  when: health_check_failures | length > 0
+
+- name: Display health check summary
+  ansible.builtin.debug:
+    msg: >-
+      {{
+        [
+          '',
+          '==========================================',
+          'Health Check Summary',
+          '==========================================',
+          'Target: ' + inventory_hostname,
+          'Profile: ' + health_check_profile,
+          '',
+          'Results:',
+          '  ✅ Passed: ' + ((health_check_results | length) - (health_check_failures | length) - (health_check_warnings | length)) | string,
+          '  ⚠️  Warnings: ' + (health_check_warnings | length) | string,
+          '  ❌ Failures: ' + (health_check_failures | length) | string,
+          ''
+        ] +
+        (['Warning checks:'] + warning_lines + [''] if health_check_warnings | length > 0 else []) +
+        (['Failed checks:'] + failure_lines + [''] if health_check_failures | length > 0 else []) +
+        ['==========================================']
+      }}
+  when: health_check_summary
+
+- name: Fail if critical checks failed
+  ansible.builtin.fail:
+    msg: |
+      ❌ Health check FAILED!
+      
+      {{ health_check_failures | length }} critical check(s) failed:
+      {% for check in health_check_failures %}
+        - {{ check }}
+      {% endfor %}
+      
+      See output above for details.
+  when:
+    - health_check_fail_on_error
+    - not health_check_allow_failures
+    - health_check_failures | length > 0

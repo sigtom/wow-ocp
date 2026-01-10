@@ -1,0 +1,188 @@
+---
+# Basic Health Check Profile
+# Verifies SSH connectivity, cloud-init completion, and system readiness
+
+- name: "CHECK: SSH connectivity"
+  block:
+    - name: Test SSH connection
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        timeout: "{{ health_check_ssh_timeout }}"
+      delegate_to: localhost
+      
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['SSH connectivity: PASS'] }}"
+      
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ SSH connectivity: PASS"
+      when: health_check_verbose
+  rescue:
+    - name: Record failure
+      ansible.builtin.set_fact:
+        health_check_failures: "{{ health_check_failures + ['SSH connectivity'] }}"
+    
+    - name: Display failure
+      ansible.builtin.debug:
+        msg: "❌ SSH connectivity: FAIL - Unable to connect to {{ ansible_host }}:22"
+
+- name: "CHECK: Cloud-init completion"
+  block:
+    - name: Wait for cloud-init to complete
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+      timeout: "{{ health_check_cloudinit_timeout }}"
+      register: cloudinit_status
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Cloud-init completion: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Cloud-init completion: PASS ({{ cloudinit_status.stdout }})"
+      when: health_check_verbose
+  rescue:
+    - name: Check if cloud-init exists
+      ansible.builtin.command: which cloud-init
+      changed_when: false
+      register: cloudinit_exists
+      ignore_errors: true
+    
+    - name: Record as warning if cloud-init not installed
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Cloud-init not installed'] }}"
+      when: cloudinit_exists.rc != 0
+    
+    - name: Record as failure if cloud-init timed out
+      ansible.builtin.set_fact:
+        health_check_failures: "{{ health_check_failures + ['Cloud-init completion'] }}"
+      when: cloudinit_exists.rc == 0
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "{{ '⚠️  Cloud-init: WARN - Not installed' if cloudinit_exists.rc != 0 else '❌ Cloud-init: FAIL - Timed out or errored' }}"
+
+- name: "CHECK: Package manager availability"
+  block:
+    - name: Gather facts if not already gathered
+      ansible.builtin.setup:
+      when: ansible_os_family is not defined
+    
+    - name: Check for dpkg locks (Debian/Ubuntu)
+      ansible.builtin.shell: |
+        for lock in /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock; do
+          if fuser "$lock" >/dev/null 2>&1; then
+            echo "LOCKED: $lock"
+            exit 1
+          fi
+        done
+        echo "AVAILABLE"
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: dpkg_locks
+      when: ansible_os_family == "Debian"
+      retries: "{{ health_check_retry_count }}"
+      delay: "{{ health_check_retry_delay }}"
+      until: dpkg_locks.stdout == "AVAILABLE"
+    
+    - name: Check for yum locks (RedHat/Fedora)
+      ansible.builtin.shell: |
+        if fuser /var/run/yum.pid >/dev/null 2>&1; then
+          echo "LOCKED"
+          exit 1
+        fi
+        echo "AVAILABLE"
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: yum_locks
+      when: ansible_os_family == "RedHat"
+      retries: "{{ health_check_retry_count }}"
+      delay: "{{ health_check_retry_delay }}"
+      until: yum_locks.stdout == "AVAILABLE"
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Package manager availability: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ Package manager availability: PASS"
+      when: health_check_verbose
+  rescue:
+    - name: Record as warning (non-critical)
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Package manager still locked (may be updating)'] }}"
+    
+    - name: Display warning
+      ansible.builtin.debug:
+        msg: "⚠️  Package manager: WARN - Locked (may still be running updates)"
+
+- name: "CHECK: System uptime"
+  block:
+    - name: Get system uptime
+      ansible.builtin.command: uptime -p
+      changed_when: false
+      register: system_uptime
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['System uptime: PASS'] }}"
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "✅ System uptime: {{ system_uptime.stdout }}"
+      when: health_check_verbose
+  rescue:
+    - name: Record warning
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Could not determine uptime'] }}"
+
+- name: "CHECK: Disk space availability"
+  block:
+    - name: Check root filesystem space
+      ansible.builtin.shell: |
+        usage=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+        if [ "$usage" -gt 90 ]; then
+          echo "CRITICAL: ${usage}% used"
+          exit 2
+        elif [ "$usage" -gt 80 ]; then
+          echo "WARNING: ${usage}% used"
+          exit 1
+        else
+          echo "OK: ${usage}% used"
+          exit 0
+        fi
+      args:
+        executable: /bin/bash
+      changed_when: false
+      register: disk_space
+      ignore_errors: true
+    
+    - name: Record result based on disk usage
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Root filesystem: ' + disk_space.stdout] }}"
+      when: disk_space.rc == 1
+    
+    - name: Record critical failure
+      ansible.builtin.set_fact:
+        health_check_failures: "{{ health_check_failures + ['Root filesystem critically full'] }}"
+      when: disk_space.rc == 2
+    
+    - name: Record success
+      ansible.builtin.set_fact:
+        health_check_results: "{{ health_check_results + ['Disk space: PASS'] }}"
+      when: disk_space.rc == 0
+    
+    - name: Display result
+      ansible.builtin.debug:
+        msg: "{{ '✅' if disk_space.rc == 0 else ('⚠️ ' if disk_space.rc == 1 else '❌') }} Disk space: {{ disk_space.stdout }}"
+      when: health_check_verbose
+  rescue:
+    - name: Record warning
+      ansible.builtin.set_fact:
+        health_check_warnings: "{{ health_check_warnings + ['Could not check disk space'] }}"

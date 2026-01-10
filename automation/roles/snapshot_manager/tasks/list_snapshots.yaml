@@ -1,0 +1,76 @@
+---
+# List Snapshots Task
+
+- name: List VM snapshots
+  block:
+    - name: Get VM snapshot list
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+      register: snapshot_list
+      delegate_to: localhost
+    
+    - name: Parse snapshot list
+      ansible.builtin.set_fact:
+        snapshots: "{{ snapshot_list.json.data | selectattr('name', 'ne', 'current') | list }}"
+    
+    - name: Display VM snapshots
+      ansible.builtin.debug:
+        msg:
+          - "VM Snapshots for {{ inventory_hostname }} ({{ vmid }}):"
+          - "{% for snap in snapshots %}"
+          - "  - {{ snap.name }} ({{ snap.description | default('No description') }})"
+          - "    Date: {{ snap.snaptime | default('Unknown') | int | ansible.builtin.to_datetime }}"
+          - "{% endfor %}"
+          - "Total: {{ snapshots | length }} snapshot(s)"
+    
+    - name: Record snapshot list operation
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Listed ' + (snapshots | length | string) + ' VM snapshots'] }}"
+  
+  rescue:
+    - name: Record list failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['Failed to list VM snapshots'] }}"
+  
+  when: not is_lxc
+
+- name: List LXC snapshots
+  block:
+    - name: Get LXC snapshot list
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+      register: snapshot_list
+      delegate_to: localhost
+    
+    - name: Parse snapshot list
+      ansible.builtin.set_fact:
+        snapshots: "{{ snapshot_list.json.data | selectattr('name', 'ne', 'current') | list }}"
+    
+    - name: Display LXC snapshots
+      ansible.builtin.debug:
+        msg:
+          - "LXC Snapshots for {{ inventory_hostname }} ({{ vmid }}):"
+          - "{% for snap in snapshots %}"
+          - "  - {{ snap.name }} ({{ snap.description | default('No description') }})"
+          - "    Date: {{ snap.snaptime | default('Unknown') | int | ansible.builtin.to_datetime }}"
+          - "{% endfor %}"
+          - "Total: {{ snapshots | length }} snapshot(s)"
+    
+    - name: Record snapshot list operation
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Listed ' + (snapshots | length | string) + ' LXC snapshots'] }}"
+  
+  rescue:
+    - name: Record list failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['Failed to list LXC snapshots'] }}"
+  
+  when: is_lxc

@@ -1,0 +1,80 @@
+---
+# Post-Provisioning Role - Main Entry Point
+# Prepares VMs/LXC containers for specific workloads
+
+- name: Initialize post-provisioning tracking
+  ansible.builtin.set_fact:
+    post_provision_tasks_completed: []
+    post_provision_tasks_skipped: []
+    post_provision_tasks_failed: []
+
+- name: Display post-provisioning header
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "Post-Provisioning: {{ post_provisioning_profile }}"
+      - "=========================================="
+      - "Target: {{ inventory_hostname }}"
+      - "Profile: {{ post_provisioning_profile }}"
+      - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "=========================================="
+  when: post_provision_verbose
+
+- name: Validate post-provisioning profile
+  ansible.builtin.assert:
+    that:
+      - post_provisioning_profile is defined
+      - post_provisioning_profile in ['none', 'docker_host', 'web_server', 'database']
+    fail_msg: |
+      Invalid post-provisioning profile: {{ post_provisioning_profile | default('NOT SET') }}
+      
+      Available profiles: none, docker_host, web_server, database
+    success_msg: "Post-provisioning profile '{{ post_provisioning_profile }}' validated"
+
+- name: Skip if profile is 'none'
+  ansible.builtin.debug:
+    msg: "Post-provisioning profile is 'none' - skipping all tasks"
+  when: post_provisioning_profile == 'none'
+
+- name: Run post-provisioning profile
+  ansible.builtin.include_tasks: "profiles/{{ post_provisioning_profile }}.yaml"
+  when: post_provisioning_profile != 'none'
+
+- name: Display post-provisioning summary
+  ansible.builtin.debug:
+    msg:
+      - ""
+      - "=========================================="
+      - "Post-Provisioning Summary"
+      - "=========================================="
+      - "Target: {{ inventory_hostname }}"
+      - "Profile: {{ post_provisioning_profile }}"
+      - ""
+      - "Results:"
+      - "  ✅ Completed: {{ post_provision_tasks_completed | length }}"
+      - "  ⏭️  Skipped: {{ post_provision_tasks_skipped | length }}"
+      - "  ❌ Failed: {{ post_provision_tasks_failed | length }}"
+      - ""
+      - "{% if post_provision_tasks_completed | length > 0 %}Completed tasks:"
+      - "{% for task in post_provision_tasks_completed %}  - {{ task }}{% endfor %}{% endif %}"
+      - "{% if post_provision_tasks_skipped | length > 0 %}Skipped tasks:"
+      - "{% for task in post_provision_tasks_skipped %}  - {{ task }}{% endfor %}{% endif %}"
+      - "{% if post_provision_tasks_failed | length > 0 %}Failed tasks:"
+      - "{% for task in post_provision_tasks_failed %}  - {{ task }}{% endfor %}{% endif %}"
+      - "=========================================="
+  when: 
+    - post_provision_summary
+    - post_provisioning_profile != 'none'
+
+- name: Fail if tasks failed
+  ansible.builtin.fail:
+    msg: |
+      ❌ Post-provisioning FAILED!
+      
+      {{ post_provision_tasks_failed | length }} task(s) failed:
+      {% for task in post_provision_tasks_failed %}
+        - {{ task }}
+      {% endfor %}
+  when:
+    - post_provision_fail_on_error
+    - post_provision_tasks_failed | length > 0

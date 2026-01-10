@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  author: sigtom
+  description: Generic VM provisioning role for Proxmox VE - DRY cattle approach
+  company: WOW-OCP Homelab
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Proxmox
+      versions:
+        - all
+
+dependencies: []

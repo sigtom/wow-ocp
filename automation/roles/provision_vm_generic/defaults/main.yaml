@@ -1,0 +1,59 @@
+---
+# Default variables for provision_vm_generic role
+# These can be overridden in inventory or playbook vars
+
+# VM provisioning mode
+vm_state: present  # present, absent, started, stopped
+
+# OS selection (required - must be defined in vm_templates)
+# os_type: ubuntu24  # Must be set by user
+
+# T-shirt size selection (required - must be defined in vm_tshirt_sizes)
+# tshirt_size: medium  # Must be set by user
+
+# Network configuration
+network_profile: apps  # Network profile from network_profiles (default: apps)
+network_mode: static  # static or dhcp
+# For static mode, ansible_host must be defined in inventory
+# For dhcp mode, IP will be discovered after boot
+
+# Justification required for restricted networks
+network_justification: null  # Required when using proxmox-mgmt network
+
+# Clone type
+clone_full: false  # true = full clone (independent disk), false = linked clone (faster)
+
+# Wait times (seconds) - defaults from provisioning_timeouts, can be overridden
+clone_wait_time: "{{ provisioning_timeouts.vm_clone_wait | default(10) }}"
+boot_wait_time: "{{ provisioning_timeouts.vm_boot_wait | default(30) }}"
+ssh_wait_timeout: "{{ provisioning_timeouts.ssh_ready_timeout | default(120) }}"
+
+# Storage backend (defaults to node's default from group_vars)
+# vm_storage: "TSVMDS01"  # Override if needed
+
+# Start VM after provisioning
+start_vm: true
+
+# Cloud-init customization
+enable_qemu_agent: true
+package_upgrade: false
+
+# Safety checks
+skip_existing_check: false  # Set to true to skip "VM exists" check (dangerous!)
+
+# Health checks (Phase 3A)
+health_check_enabled: true  # Run health checks after provisioning
+health_check_profile: basic  # Health check profile to run (basic, docker, web, database, dns)
+health_check_fail_on_error: true  # Fail playbook if critical checks fail
+health_check_allow_failures: false  # Override to make all checks non-critical
+
+# Post-provisioning (Phase 3B)
+post_provisioning_enabled: false  # Opt-in: Set to true to run post-provisioning
+post_provisioning_profile: none  # Profile to run (none, docker_host, web_server, database)
+post_provision_fail_on_error: true  # Fail if post-provisioning errors
+
+# Snapshots (Phase 3C)
+snapshot_policy: default  # Snapshot policy (none, default, standard, production)
+snapshot_enabled: true  # Enable snapshot support
+snapshot_pre_provision: true  # Take snapshot before provisioning
+snapshot_post_provision: false  # Take snapshot after successful provisioning

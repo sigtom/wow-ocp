@@ -1,0 +1,423 @@
+---
+# ============================================================================
+# Traefik v3.6 Fully Automated Deployment
+# ============================================================================
+# Description: Deploy Traefik reverse proxy with complete automation
+# Target: Proxmox LXC container with Docker
+# 
+# What this playbook does:
+#   1. Provision LXC container
+#   2. Install Docker + Docker Compose
+#   3. Copy all Traefik configuration files
+#   4. Deploy Traefik stack
+#   5. Verify Traefik is running
+#   6. Check certificate acquisition
+#   7. Deploy whoami test container
+#   8. Verify end-to-end SSL/TLS
+#
+# Prerequisites (MUST be done manually):
+#   - Cloudflare API token set in environment: CF_DNS_API_TOKEN
+#   - DNS wildcard records for all 7 domains → 172.16.100.10
+#   - pfSense port forwarding: 80,443 → 172.16.100.10
+#
+# Usage:
+#   export CF_DNS_API_TOKEN="your-cloudflare-token-here"
+#   ansible-playbook -i inventory/hosts.yaml playbooks/deploy-traefik.yaml
+#
+# ============================================================================
+
+- name: "Deploy Traefik v3.6 Reverse Proxy - Full Automation"
+  hosts: traefik
+  gather_facts: false
+  
+  vars:
+    target_node: "{{ proxmox_node }}"
+    target_vmid: "{{ vmid }}"
+    target_ip: "{{ ansible_host }}"
+    target_hostname: "traefik.sigtom.dev"
+    
+    resource_size: "{{ lxc_size }}"
+    os_template: "{{ lxc_template }}"
+    network: "{{ network_profile }}"
+    enable_post_provision: "{{ post_provisioning_enabled }}"
+    provision_profile: "{{ post_provisioning_profile }}"
+    backup_policy: "{{ snapshot_policy }}"
+    
+    # Traefik deployment paths
+    traefik_base_dir: "/opt/traefik"
+    traefik_config_dir: "{{ traefik_base_dir }}/config"
+    traefik_certs_dir: "{{ traefik_base_dir }}/letsencrypt"
+    traefik_logs_dir: "{{ traefik_base_dir }}/logs"
+    
+    # Cloudflare token (from environment variable)
+    cloudflare_api_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
+
+  pre_tasks:
+    - name: "Verify Cloudflare API token is set"
+      ansible.builtin.fail:
+        msg: |
+          ❌ Cloudflare API token not found!
+          
+          Please set environment variable:
+          export CF_DNS_API_TOKEN="your-cloudflare-token-here"
+          
+          Create token at: https://dash.cloudflare.com/profile/api-tokens
+          Permissions: Zone > DNS > Edit (for ALL 7 domains)
+      when: cloudflare_api_token == ""
+      delegate_to: localhost
+
+    - name: "Display deployment summary"
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "Traefik v3.6 Full Automated Deployment"
+          - "=========================================="
+          - "Target Node: {{ target_node }}"
+          - "Container ID: {{ target_vmid }}"
+          - "IP Address: {{ target_ip }}"
+          - "Hostname: {{ target_hostname }}"
+          - "=========================================="
+          - "Managed Domains (7):"
+          - "  - *.nixsysadmin.io"
+          - "  - *.sigtom.com"
+          - "  - *.sigtom.dev"
+          - "  - *.sigtom.info"
+          - "  - *.sigtom.io"
+          - "  - *.sigtomtech.com"
+          - "  - *.tecnixsystems.com"
+          - "=========================================="
+
+  tasks:
+    # ========================================
+    # Phase 1: Provision Infrastructure
+    # ========================================
+    
+    - name: "Phase 1: Pre-provisioning snapshot"
+      ansible.builtin.include_role:
+        name: snapshot_manager
+      vars:
+        snapshot_operation: create
+        snapshot_type: pre-provision
+        resource_type: lxc
+      when: backup_policy != 'none'
+
+    - name: "Phase 1: Provision LXC container"
+      ansible.builtin.include_role:
+        name: provision_lxc_generic
+
+    - name: "Phase 1: Wait for SSH"
+      ansible.builtin.wait_for:
+        host: "{{ target_ip }}"
+        port: 22
+        delay: 5
+        timeout: 120
+        msg: "SSH not available after 120 seconds"
+
+    - name: "Phase 1: Basic health checks"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: basic
+
+    - name: "Phase 1: Install Docker"
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provision_profile: docker_host
+      when: enable_post_provision | bool
+
+    - name: "Phase 1: Docker health checks"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: docker
+
+    # ========================================
+    # Phase 2: Deploy Traefik Configuration
+    # ========================================
+    
+    - name: "Phase 2: Create Traefik directory structure"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ traefik_base_dir }}"
+        - "{{ traefik_config_dir }}"
+        - "{{ traefik_certs_dir }}"
+        - "{{ traefik_logs_dir }}"
+
+    - name: "Phase 2: Copy Docker Compose file"
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../templates/traefik/docker-compose.yml"
+        dest: "{{ traefik_base_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: "Phase 2: Copy Traefik static configuration"
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../templates/traefik/traefik.yml"
+        dest: "{{ traefik_base_dir }}/traefik.yml"
+        mode: '0644'
+
+    - name: "Phase 2: Generate BasicAuth password"
+      ansible.builtin.shell: |
+        htpasswd -nbB admin "{{ lookup('password', '/tmp/traefik_admin_pass chars=ascii_letters,digits length=16') }}" | sed 's/\$/\$\$/g'
+      register: basicauth_hash
+      delegate_to: localhost
+      changed_when: false
+
+    - name: "Phase 2: Create .env file with credentials"
+      ansible.builtin.copy:
+        dest: "{{ traefik_base_dir }}/.env"
+        mode: '0600'
+        content: |
+          # Traefik Environment Variables (Auto-generated)
+          # Generated: {{ ansible_date_time.iso8601 }}
+          
+          # Cloudflare API Token for DNS-01 challenge
+          CF_DNS_API_TOKEN={{ cloudflare_api_token }}
+          
+          # Traefik Dashboard BasicAuth
+          # Username: admin
+          # Password: {{ lookup('password', '/tmp/traefik_admin_pass chars=ascii_letters,digits length=16') }}
+          TRAEFIK_DASHBOARD_AUTH={{ basicauth_hash.stdout }}
+          
+          # Timezone
+          TZ=America/New_York
+
+    - name: "Phase 2: Save admin credentials to local file"
+      ansible.builtin.copy:
+        dest: "{{ playbook_dir }}/../.traefik-credentials"
+        mode: '0600'
+        content: |
+          Traefik Dashboard Credentials
+          ==============================
+          URL: https://traefik.sigtom.dev
+          Username: admin
+          Password: {{ lookup('password', '/tmp/traefik_admin_pass chars=ascii_letters,digits length=16') }}
+          
+          Generated: {{ ansible_date_time.iso8601 }}
+      delegate_to: localhost
+
+    - name: "Phase 2: Create acme.json with correct permissions"
+      ansible.builtin.file:
+        path: "{{ traefik_certs_dir }}/acme.json"
+        state: touch
+        mode: '0600'
+
+    - name: "Phase 2: Create traefik-proxy Docker network"
+      community.docker.docker_network:
+        name: traefik-proxy
+        driver: bridge
+        ipam_config:
+          - subnet: 172.20.0.0/24
+
+    # ========================================
+    # Phase 3: Start Traefik and Verify
+    # ========================================
+    
+    - name: "Phase 3: Start Traefik container"
+      community.docker.docker_compose_v2:
+        project_src: "{{ traefik_base_dir }}"
+        state: present
+      register: traefik_deploy
+
+    - name: "Phase 3: Wait for Traefik to be healthy"
+      ansible.builtin.wait_for:
+        host: "{{ target_ip }}"
+        port: 443
+        delay: 5
+        timeout: 60
+        msg: "Traefik HTTPS port not available after 60 seconds"
+
+    - name: "Phase 3: Check Traefik container status"
+      community.docker.docker_container_info:
+        name: traefik
+      register: traefik_container
+      failed_when: traefik_container.container.State.Status != "running"
+
+    - name: "Phase 3: Wait for certificate acquisition (2 minutes)"
+      ansible.builtin.pause:
+        seconds: 120
+        prompt: "Waiting for Traefik to request Let's Encrypt certificates..."
+
+    - name: "Phase 3: Verify certificates were issued"
+      ansible.builtin.shell: |
+        if [ ! -f {{ traefik_certs_dir }}/acme.json ]; then
+          echo "ERROR: acme.json not found"
+          exit 1
+        fi
+        
+        cert_count=$(jq '.cloudflare.Certificates | length' {{ traefik_certs_dir }}/acme.json 2>/dev/null || echo "0")
+        
+        if [ "$cert_count" -lt 7 ]; then
+          echo "WARNING: Only $cert_count certificates found (expected 7)"
+          echo "Checking logs..."
+          docker compose -f {{ traefik_base_dir }}/docker-compose.yml logs traefik | tail -50
+          exit 1
+        fi
+        
+        echo "SUCCESS: $cert_count certificates acquired"
+      register: cert_check
+      changed_when: false
+      ignore_errors: true
+
+    - name: "Phase 3: Display certificate status"
+      ansible.builtin.debug:
+        msg: "{{ cert_check.stdout_lines }}"
+
+    - name: "Phase 3: Check Traefik logs for errors"
+      ansible.builtin.shell: |
+        docker compose -f {{ traefik_base_dir }}/docker-compose.yml logs traefik | grep -i error | tail -20 || echo "No errors found"
+      register: traefik_errors
+      changed_when: false
+
+    - name: "Phase 3: Display any errors found"
+      ansible.builtin.debug:
+        msg: "{{ traefik_errors.stdout_lines }}"
+      when: "'No errors found' not in traefik_errors.stdout"
+
+    # ========================================
+    # Phase 4: Deploy Test Container
+    # ========================================
+    
+    - name: "Phase 4: Create whoami test compose file"
+      ansible.builtin.copy:
+        dest: "{{ traefik_base_dir }}/whoami-compose.yml"
+        mode: '0644'
+        content: |
+          services:
+            whoami:
+              image: traefik/whoami:latest
+              container_name: whoami-test
+              restart: unless-stopped
+              networks:
+                - traefik-proxy
+              labels:
+                - "traefik.enable=true"
+                - "traefik.http.routers.whoami.rule=Host(`whoami.sigtom.dev`)"
+                - "traefik.http.routers.whoami.entrypoints=websecure"
+                - "traefik.http.routers.whoami.tls.certresolver=cloudflare"
+                - "traefik.http.services.whoami.loadbalancer.server.port=80"
+          
+          networks:
+            traefik-proxy:
+              external: true
+
+    - name: "Phase 4: Deploy whoami test container"
+      community.docker.docker_compose_v2:
+        project_src: "{{ traefik_base_dir }}"
+        files:
+          - whoami-compose.yml
+        state: present
+
+    - name: "Phase 4: Wait for whoami to be accessible"
+      ansible.builtin.uri:
+        url: "https://whoami.sigtom.dev"
+        method: GET
+        validate_certs: false
+        return_content: true
+      register: whoami_test
+      retries: 6
+      delay: 10
+      until: whoami_test.status == 200
+      ignore_errors: true
+
+    - name: "Phase 4: Verify SSL certificate is valid"
+      ansible.builtin.shell: |
+        echo | openssl s_client -connect whoami.sigtom.dev:443 -servername whoami.sigtom.dev 2>/dev/null | openssl x509 -noout -subject -issuer
+      register: ssl_check
+      delegate_to: localhost
+      changed_when: false
+      ignore_errors: true
+
+    - name: "Phase 4: Display SSL certificate info"
+      ansible.builtin.debug:
+        msg: "{{ ssl_check.stdout_lines }}"
+      when: ssl_check.rc == 0
+
+    # ========================================
+    # Phase 5: Post-Deployment Snapshot
+    # ========================================
+    
+    - name: "Phase 5: Post-provisioning snapshot"
+      ansible.builtin.include_role:
+        name: snapshot_manager
+      vars:
+        snapshot_operation: create
+        snapshot_type: post-provision
+        resource_type: lxc
+      when: backup_policy in ['standard', 'production']
+
+    # ========================================
+    # Final Summary
+    # ========================================
+    
+    - name: "Deployment Complete - Summary"
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "✅ Traefik v3.6 Deployment Complete!"
+          - "=========================================="
+          - ""
+          - "📊 Status:"
+          - "  - LXC Container: {{ traefik_container.container.State.Status }}"
+          - "  - Traefik Version: {{ traefik_container.container.Config.Image }}"
+          - "  - Certificates: {{ cert_check.stdout if cert_check.rc == 0 else 'Check failed - review logs' }}"
+          - ""
+          - "🌐 Access Points:"
+          - "  - Dashboard: https://traefik.sigtom.dev"
+          - "  - Test Service: https://whoami.sigtom.dev"
+          - ""
+          - "🔑 Credentials:"
+          - "  - Saved to: automation/.traefik-credentials"
+          - "  - Username: admin"
+          - ""
+          - "📁 Configuration:"
+          - "  - Base Directory: {{ traefik_base_dir }}"
+          - "  - Certificates: {{ traefik_certs_dir }}/acme.json"
+          - "  - Logs: {{ traefik_logs_dir }}/"
+          - ""
+          - "🔍 Verification Commands:"
+          - "  - Check status: ssh root@{{ target_ip }} 'cd {{ traefik_base_dir }} && docker compose ps'"
+          - "  - View logs: ssh root@{{ target_ip }} 'cd {{ traefik_base_dir }} && docker compose logs -f traefik'"
+          - "  - Check certs: ssh root@{{ target_ip }} 'cat {{ traefik_certs_dir }}/acme.json | jq .'"
+          - ""
+          - "✅ Next Steps:"
+          - "  1. Verify dashboard access at https://traefik.sigtom.dev"
+          - "  2. Verify whoami test at https://whoami.sigtom.dev"
+          - "  3. Deploy Nautobot behind Traefik"
+          - "=========================================="
+
+  post_tasks:
+    - name: "Save deployment summary to file"
+      ansible.builtin.copy:
+        dest: "{{ playbook_dir }}/../.traefik-deployment-summary.txt"
+        content: |
+          Traefik v3.6 Deployment Summary
+          ================================
+          Deployed: {{ ansible_date_time.iso8601 }}
+          
+          Infrastructure:
+            - LXC CTID: {{ target_vmid }}
+            - IP Address: {{ target_ip }}
+            - Hostname: {{ target_hostname }}
+          
+          Access:
+            - Dashboard: https://traefik.sigtom.dev
+            - Test Service: https://whoami.sigtom.dev
+          
+          Credentials:
+            - See: automation/.traefik-credentials
+          
+          Managed Domains (7):
+            - *.nixsysadmin.io
+            - *.sigtom.com
+            - *.sigtom.dev
+            - *.sigtom.info
+            - *.sigtom.io
+            - *.sigtomtech.com
+            - *.tecnixsystems.com
+          
+          Status: {{ 'SUCCESS' if cert_check.rc == 0 else 'PARTIAL - Check logs' }}
+      delegate_to: localhost

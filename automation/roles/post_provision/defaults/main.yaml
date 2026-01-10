@@ -1,0 +1,32 @@
+---
+# Post-Provisioning Role - Default Variables
+
+# Post-provisioning profile to run (none, docker_host, web_server, database)
+post_provisioning_profile: none
+
+# Global behavior
+post_provision_fail_on_error: true  # Fail if tasks error
+post_provision_force_reinstall: false  # Force reinstall even if already installed
+
+# Docker configuration
+docker_install_method: official_repo  # official_repo, distro_package
+docker_compose_version: "latest"  # Specific version or "latest"
+docker_daemon_config:
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+  storage-driver: "overlay2"
+
+# Web server configuration
+nginx_enable_ssl: true
+nginx_create_default_site: false
+
+# Database configuration
+postgresql_version: "15"  # PostgreSQL version to install
+postgresql_listen_addresses: "'localhost'"  # Listen on localhost by default
+postgresql_max_connections: 100
+
+# Display options
+post_provision_verbose: true
+post_provision_summary: true

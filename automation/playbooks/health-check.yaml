@@ -1,0 +1,56 @@
+---
+# Standalone Health Check Playbook
+# Run health checks against existing VMs, LXC containers, or any host
+#
+# Usage:
+#   # Check a single host with basic profile
+#   ansible-playbook -i inventory/hosts.yaml playbooks/health-check.yaml -e target=vaultwarden
+#
+#   # Check multiple hosts with docker profile
+#   ansible-playbook -i inventory/hosts.yaml playbooks/health-check.yaml -e target=docker_hosts -e health_check_profile=docker
+#
+#   # Check with lenient mode (don't fail on errors)
+#   ansible-playbook -i inventory/hosts.yaml playbooks/health-check.yaml -e target=myhost -e health_check_allow_failures=true
+
+- name: Health Check - Standalone
+  hosts: "{{ target | default('all') }}"
+  gather_facts: yes
+  
+  pre_tasks:
+    - name: Load group variables explicitly
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../group_vars/all.yml"
+      when: not (hostvars[inventory_hostname].vm_templates is defined)
+    
+    - name: Display health check plan
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "Standalone Health Check"
+          - "=========================================="
+          - "Targets: {{ ansible_play_hosts | join(', ') }}"
+          - "Profile: {{ health_check_profile | default('basic') }}"
+          - "Fail on error: {{ health_check_fail_on_error | default(true) }}"
+          - "=========================================="
+      run_once: true
+  
+  roles:
+    - role: health_check
+      vars:
+        health_check_profile: "{{ health_check_profile | default('basic') }}"
+        health_check_fail_on_error: "{{ health_check_fail_on_error | default(true) }}"
+        health_check_allow_failures: "{{ health_check_allow_failures | default(false) }}"
+  
+  post_tasks:
+    - name: Overall health check completion
+      ansible.builtin.debug:
+        msg:
+          - ""
+          - "=========================================="
+          - "Health Check Complete"
+          - "=========================================="
+          - "Checked {{ ansible_play_hosts | length }} host(s)"
+          - ""
+          - "Review output above for individual host results."
+          - "=========================================="
+      run_once: true

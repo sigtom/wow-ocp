@@ -1,0 +1,341 @@
+---
+# Vaultwarden LXC Deployment Playbook
+# Deploys Vaultwarden password manager in an LXC container with Docker
+#
+# Prerequisites:
+# 1. Set PROXMOX_SRE_BOT_API_TOKEN environment variable:
+#    export PROXMOX_SRE_BOT_API_TOKEN="your-token-here"
+#
+# 2. Ensure SSH key exists: ~/.ssh/id_pfsense_sre
+#
+# Usage:
+#   cd automation
+#   ansible-playbook -i inventory/hosts.yaml playbooks/deploy-vaultwarden.yaml
+
+- name: Create Vaultwarden LXC Container
+  hosts: vaultwarden
+  gather_facts: no
+  
+  vars:
+    lxc_cores: 2
+    lxc_memory: 2048
+    lxc_rootfs_size: 20
+    lxc_features: "nesting=1,keyctl=1"
+    lxc_template: "ubuntu-24.04-standard_24.04-2_amd64.tar.zst"
+    # Proxmox API credentials
+    pve_api_user: "sre-bot@pve"
+    pve_api_token_id: "sre-token"
+    pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+    # Networking
+    lab_vlan_mgmt: 110
+    lab_bridge: "vmbr0"
+    lab_gw: "172.16.110.1"
+    # SSH keys
+    global_ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILPyc7oAxzmaymnrZWblYRbTH/hOd+OPaQStsMNi/3bU sigtom@localhost.localdomain"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
+  
+  tasks:
+    - name: Check if LXC container already exists
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host | default(hostvars[proxmox_node].ansible_host) }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/status/current"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 404, 500]
+      register: lxc_check
+      delegate_to: localhost
+
+    - name: Upload SSH keys to Proxmox host
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ hostvars[proxmox_node].ansible_host }} << 'REMOTE'
+        cat > /tmp/lxc_keys_{{ vmid }}.pub << 'EOF'
+        {{ global_ssh_keys | join('\n') }}
+        EOF
+        REMOTE
+      delegate_to: localhost
+      when: lxc_check.status != 200
+
+    - name: Create LXC container
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ hostvars[proxmox_node].ansible_host }} << 'REMOTE'
+        pct create {{ vmid }} TSVMDS01:vztmpl/{{ lxc_template }} \
+          --hostname {{ inventory_hostname }} \
+          --cores {{ lxc_cores }} \
+          --memory {{ lxc_memory }} \
+          --rootfs TSVMDS01:{{ lxc_rootfs_size }} \
+          --net0 name=eth0,bridge={{ lab_bridge }},tag={{ lab_vlan_mgmt }},ip={{ ansible_host }}/24,gw={{ lab_gw }} \
+          --features {{ lxc_features }} \
+          --unprivileged 1 \
+          --ssh-public-keys /tmp/lxc_keys_{{ vmid }}.pub \
+          --start 1
+        REMOTE
+      delegate_to: localhost
+      when: lxc_check.status != 200
+      vars:
+        ansible_ssh_pipelining: yes
+      register: lxc_create
+
+
+
+    - name: Wait for LXC to boot
+      ansible.builtin.pause:
+        seconds: 20
+
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        delay: 5
+        timeout: 120
+      delegate_to: localhost
+
+- name: Install Docker and Vaultwarden
+  hosts: vaultwarden
+  gather_facts: yes
+  
+  vars:
+    vaultwarden_data_dir: "/opt/vaultwarden"
+    vaultwarden_version: "latest"
+  
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Create directory for Docker GPG key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      ansible.builtin.shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      ansible.builtin.shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: Update apt cache after adding Docker repo
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create Vaultwarden data directory
+      ansible.builtin.file:
+        path: "{{ vaultwarden_data_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Create environment file for sensitive data
+      ansible.builtin.copy:
+        dest: "{{ vaultwarden_data_dir }}/.env"
+        mode: '0600'
+        content: |
+          # Cloudflare credentials for Let's Encrypt DNS-01 challenge
+          CLOUDFLARE_API_TOKEN=***REDACTED_TOKEN***
+          ACME_EMAIL=tec.thor@gmail.com
+
+    - name: Create Dockerfile for Caddy with Cloudflare plugin
+      ansible.builtin.copy:
+        dest: "{{ vaultwarden_data_dir }}/Dockerfile.caddy"
+        mode: '0644'
+        content: |
+          FROM caddy:2-builder AS builder
+          
+          RUN xcaddy build \
+              --with github.com/caddy-dns/cloudflare
+          
+          FROM caddy:2-alpine
+          
+          COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+    - name: Build custom Caddy image with Cloudflare DNS plugin
+      ansible.builtin.shell: |
+        cd {{ vaultwarden_data_dir }}
+        docker build -t caddy-cloudflare:latest -f Dockerfile.caddy .
+      args:
+        creates: "{{ vaultwarden_data_dir }}/.caddy-image-built"
+
+    - name: Mark Caddy image as built
+      ansible.builtin.file:
+        path: "{{ vaultwarden_data_dir }}/.caddy-image-built"
+        state: touch
+        mode: '0644'
+
+    - name: Create Caddyfile
+      ansible.builtin.copy:
+        dest: "{{ vaultwarden_data_dir }}/Caddyfile"
+        mode: '0644'
+        content: |
+          {
+            email {$ACME_EMAIL}
+            acme_dns cloudflare {$CLOUDFLARE_API_TOKEN}
+          }
+          
+          vault.sigtom.dev {
+            reverse_proxy vaultwarden:80
+            
+            # Security headers
+            header {
+              Strict-Transport-Security "max-age=31536000; includeSubDomains"
+              X-Content-Type-Options "nosniff"
+              X-Frame-Options "DENY"
+              Referrer-Policy "same-origin"
+            }
+            
+            # Logging
+            log {
+              output file /data/access.log
+              format json
+            }
+          }
+
+    - name: Create Docker Compose file for Vaultwarden
+      ansible.builtin.copy:
+        dest: "{{ vaultwarden_data_dir }}/docker-compose.yaml"
+        mode: '0644'
+        content: |
+          services:
+            caddy:
+              image: caddy-cloudflare:latest
+              container_name: caddy
+              restart: unless-stopped
+              ports:
+                - "80:80"
+                - "443:443"
+                - "443:443/udp"  # HTTP/3
+              environment:
+                - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+                - ACME_EMAIL=${ACME_EMAIL}
+              env_file:
+                - .env
+              volumes:
+                - ./Caddyfile:/etc/caddy/Caddyfile:ro
+                - ./caddy-data:/data
+                - ./caddy-config:/config
+              networks:
+                - vaultwarden-net
+              depends_on:
+                - vaultwarden
+            
+            vaultwarden:
+              image: vaultwarden/server:{{ vaultwarden_version }}
+              container_name: vaultwarden
+              restart: unless-stopped
+              environment:
+                - DOMAIN=https://vault.sigtom.dev
+                - SIGNUPS_ALLOWED=true  # Change to false after initial setup
+                - INVITATIONS_ALLOWED=true
+                - SHOW_PASSWORD_HINT=false
+                - LOG_LEVEL=info
+                - EXTENDED_LOGGING=true
+                - TZ=America/New_York
+              volumes:
+                - ./vaultwarden-data:/data
+              networks:
+                - vaultwarden-net
+              # No ports exposed - only accessible via Caddy
+          
+          networks:
+            vaultwarden-net:
+              driver: bridge
+
+    - name: Create systemd service for Vaultwarden
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/vaultwarden.service
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Vaultwarden Password Manager
+          Requires=docker.service
+          After=docker.service
+          
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory={{ vaultwarden_data_dir }}
+          ExecStart=/usr/bin/docker compose up -d
+          ExecStop=/usr/bin/docker compose down
+          
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Enable and start Vaultwarden service
+      ansible.builtin.systemd:
+        name: vaultwarden
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Wait for Caddy HTTPS to be ready
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 443
+        delay: 10
+        timeout: 120
+
+    - name: Display deployment info
+      ansible.builtin.debug:
+        msg: |
+          ═══════════════════════════════════════════════════════════
+          Vaultwarden has been successfully deployed!
+          ═══════════════════════════════════════════════════════════
+          
+          Access URL: https://vault.sigtom.dev
+          IP Address: {{ ansible_host }}
+          Data Directory: {{ vaultwarden_data_dir }}/vaultwarden-data
+          
+          TLS Status:
+          - Let's Encrypt certificate via Cloudflare DNS-01
+          - Auto-renewal enabled (Caddy handles this automatically)
+          - Certificate stored in: {{ vaultwarden_data_dir }}/caddy-data
+          
+          Next Steps:
+          1. Ensure DNS record exists: vault.sigtomtech.com → {{ ansible_host }}
+          2. Wait 30-60 seconds for initial cert provisioning
+          3. Access https://vault.sigtomtech.com and create admin account
+          4. Disable signups: Edit docker-compose.yaml, set SIGNUPS_ALLOWED=false
+          5. Set up backups for {{ vaultwarden_data_dir }}/vaultwarden-data
+          
+          Management Commands:
+          - View Vaultwarden logs: docker logs -f vaultwarden
+          - View Caddy logs: docker logs -f caddy
+          - Restart all: systemctl restart vaultwarden
+          - Stop all: systemctl stop vaultwarden
+          - Check cert status: docker exec caddy caddy trust list
+          - Backup: tar -czf vaultwarden-backup.tar.gz {{ vaultwarden_data_dir }}/vaultwarden-data
+          
+          SSH Access: ssh root@{{ ansible_host }}
+          ═══════════════════════════════════════════════════════════

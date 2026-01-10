@@ -1,0 +1,350 @@
+---
+# Generic VM Provisioning Role - Main Tasks
+# Provisions VMs as cattle, not pets - fully parameterized
+
+- name: Validate vm_templates is loaded
+  ansible.builtin.assert:
+    that:
+      - vm_templates is defined
+      - vm_tshirt_sizes is defined
+    fail_msg: |
+      Critical error: vm_templates and vm_tshirt_sizes not defined!
+      
+      These should be loaded from group_vars/all.yml
+      Check that the file exists and is valid YAML.
+    success_msg: "Template registry loaded"
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - os_type is defined
+      - os_type in vm_templates
+      - tshirt_size is defined
+      - tshirt_size in vm_tshirt_sizes
+      - vmid is defined
+      - proxmox_node is defined
+      - inventory_hostname is defined
+    fail_msg: |
+      Missing required variables for VM provisioning!
+      
+      Required:
+        - os_type: Must be one of {{ vm_templates.keys() | list }}
+        - tshirt_size: Must be one of {{ vm_tshirt_sizes.keys() | list }}
+        - vmid: Proxmox VM ID (e.g., 350)
+        - proxmox_node: Proxmox node name (e.g., wow-prox1)
+        - inventory_hostname: VM hostname
+      
+      Current values:
+        os_type: {{ os_type | default('NOT SET') }}
+        tshirt_size: {{ tshirt_size | default('NOT SET') }}
+        vmid: {{ vmid | default('NOT SET') }}
+        proxmox_node: {{ proxmox_node | default('NOT SET') }}
+    success_msg: "All required variables validated"
+
+- name: Validate network profile exists
+  ansible.builtin.assert:
+    that:
+      - network_profile is defined
+      - network_profile in network_profiles
+    fail_msg: |
+      Invalid network profile: {{ network_profile | default('NOT SET') }}
+      
+      Available profiles: {{ network_profiles.keys() | list }}
+    success_msg: "Network profile '{{ network_profile }}' validated"
+
+- name: Check for restricted network usage
+  ansible.builtin.assert:
+    that:
+      - network_justification is defined
+      - network_justification != null
+      - network_justification | length > 10
+    fail_msg: |
+      {{ network_profiles[network_profile].warning }}
+      
+      The '{{ network_profile }}' network is RESTRICTED.
+      You must provide a justification (minimum 10 characters).
+      
+      Set in inventory or playbook:
+        network_justification: "Reason why this VM needs to be on {{ network_profile }}"
+      
+      Example:
+        network_justification: "Monitoring system that must remain operational if apps network fails"
+    success_msg: "Justification provided: {{ network_justification }}"
+  when:
+    - network_profiles[network_profile].restricted is defined
+    - network_profiles[network_profile].restricted
+
+- name: Display restricted network warning
+  ansible.builtin.debug:
+    msg:
+      - "⚠️ ⚠️ ⚠️  WARNING ⚠️ ⚠️ ⚠️"
+      - "{{ network_profiles[network_profile].warning }}"
+      - ""
+      - "Justification: {{ network_justification }}"
+      - ""
+      - "This deployment will be logged and reviewed."
+  when:
+    - network_profiles[network_profile].restricted is defined
+    - network_profiles[network_profile].restricted
+
+- name: Validate network configuration for static mode
+  ansible.builtin.assert:
+    that:
+      - ansible_host is defined
+    fail_msg: |
+      Static network mode requires ansible_host to be defined in inventory!
+      
+      Either:
+        1. Set ansible_host in inventory, OR
+        2. Set network_mode: dhcp (IP will be discovered after boot)
+    success_msg: "Static IP configuration validated: {{ ansible_host }}"
+  when: network_mode == 'static'
+
+- name: Set facts from templates, sizes, and network profile
+  ansible.builtin.set_fact:
+    template_vmid: "{{ vm_templates[os_type].vmid }}"
+    template_name: "{{ vm_templates[os_type].name }}"
+    vm_default_user: "{{ vm_templates[os_type].default_user }}"
+    vm_cores: "{{ vm_tshirt_sizes[tshirt_size].cores }}"
+    vm_memory: "{{ vm_tshirt_sizes[tshirt_size].memory }}"
+    vm_disk_size: "{{ vm_tshirt_sizes[tshirt_size].disk }}"
+    size_description: "{{ vm_tshirt_sizes[tshirt_size].description }}"
+    proxmox_api_host: "{{ hostvars[proxmox_node].ansible_host }}"
+    vm_storage_backend: "{{ vm_storage | default(proxmox_storage_backends[proxmox_node].vm_storage) }}"
+    # Network profile settings
+    network_bridge: "{{ network_profiles[network_profile].bridge }}"
+    network_vlan: "{{ network_profiles[network_profile].vlan }}"
+    network_gateway: "{{ network_profiles[network_profile].gateway }}"
+    network_dns: "{{ network_profiles[network_profile].dns_servers | join(',') }}"
+    network_description: "{{ network_profiles[network_profile].description }}"
+
+- name: Display provisioning plan
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "VM Provisioning Plan"
+      - "=========================================="
+      - "Hostname: {{ inventory_hostname }}"
+      - "VMID: {{ vmid }}"
+      - "Proxmox Node: {{ proxmox_node }}"
+      - ""
+      - "OS: {{ os_type }} ({{ vm_templates[os_type].description }})"
+      - "Template VMID: {{ template_vmid }}"
+      - ""
+      - "Size: {{ tshirt_size }} ({{ size_description }})"
+      - "  CPU Cores: {{ vm_cores }}"
+      - "  Memory: {{ vm_memory }}MB"
+      - "  Disk: {{ vm_disk_size }}GB"
+      - ""
+      - "Network Profile: {{ network_profile }}"
+      - "  Description: {{ network_description }}"
+      - "  Bridge: {{ network_bridge }}{{ ('.'+network_vlan|string) if network_vlan else ' (native)' }}"
+      - "  Subnet: {{ network_profiles[network_profile].subnet }}"
+      - "  Gateway: {{ network_gateway }}"
+      - "  DNS: {{ network_dns }}"
+      - "  Mode: {{ network_mode }}"
+      - "  IP: {{ ansible_host if network_mode == 'static' else 'DHCP (will be discovered)' }}"
+      - ""
+      - "Storage: {{ vm_storage_backend }}"
+      - "Clone Type: {{ 'Full' if clone_full else 'Linked' }}"
+      - "Default User: {{ vm_default_user }}"
+      - "=========================================="
+
+- name: Check if VM already exists
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    validate_certs: no
+    status_code: [200, 404, 500]
+  register: vm_check
+  delegate_to: localhost
+  when: not skip_existing_check
+
+- name: Fail if VM already exists (safety check)
+  ansible.builtin.fail:
+    msg: |
+      ⚠️  SAFETY CHECK FAILED ⚠️
+      
+      VM with VMID {{ vmid }} already exists on {{ proxmox_node }}!
+      
+      This role is designed to provision NEW VMs only.
+      To manage existing VMs, use a different approach.
+      
+      If you really want to proceed (dangerous!), set:
+        skip_existing_check: true
+      
+      Current VM status: {{ vm_check.json.data.status if vm_check.status == 200 else 'unknown' }}
+  when:
+    - not skip_existing_check
+    - vm_check.status == 200
+
+- name: Clone VM from template
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ template_vmid }}/clone"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    body_format: form-urlencoded
+    body:
+      newid: "{{ vmid }}"
+      name: "{{ inventory_hostname }}"
+      full: "{{ 1 if clone_full else 0 }}"
+      storage: "{{ vm_storage_backend if clone_full else omit }}"
+    validate_certs: no
+    status_code: 200
+  when: vm_check.status != 200
+  delegate_to: localhost
+  register: clone_job
+
+- name: Wait for clone to finish
+  ansible.builtin.pause:
+    seconds: "{{ clone_wait_time }}"
+  when: vm_check.status != 200
+
+- name: Configure VM resources and network via qm
+  ansible.builtin.shell: |
+    ssh {{ ssh_connection_defaults.options | map('regex_replace', '^(.*)$', '-o \1') | join(' ') }} -i {{ ssh_connection_defaults.key_file }} {{ ssh_connection_defaults.user }}@{{ proxmox_api_host }} << 'REMOTE'
+    # Set SSH keys
+    cat > /tmp/keys_{{ vmid }}.pub << 'EOF'
+    {{ global_ssh_keys | join('\n') }}
+    EOF
+    qm set {{ vmid }} --sshkeys /tmp/keys_{{ vmid }}.pub
+    
+    # Set resources
+    qm set {{ vmid }} --cores {{ vm_cores }}
+    qm set {{ vmid }} --memory {{ vm_memory }}
+    
+    # Resize disk
+    qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G
+    
+    # Configure network bridge and VLAN
+    {% if network_vlan %}
+    qm set {{ vmid }} --net0 virtio,bridge={{ network_bridge }},tag={{ network_vlan }}
+    {% else %}
+    qm set {{ vmid }} --net0 virtio,bridge={{ network_bridge }}
+    {% endif %}
+    
+    # Configure IP addressing
+    {% if network_mode == 'dhcp' %}
+    qm set {{ vmid }} --ipconfig0 "ip=dhcp"
+    {% else %}
+    qm set {{ vmid }} --ipconfig0 "ip={{ ansible_host }}/24,gw={{ network_gateway }}"
+    {% endif %}
+    
+    # Enable QEMU guest agent
+    {% if enable_qemu_agent %}
+    qm set {{ vmid }} --agent enabled=1
+    {% endif %}
+    
+    # Cleanup
+    rm /tmp/keys_{{ vmid }}.pub
+    REMOTE
+  delegate_to: localhost
+  when: vm_check.status != 200
+
+- name: Start VM
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/start"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    validate_certs: no
+    status_code: 200
+  delegate_to: localhost
+  when:
+    - vm_check.status != 200
+    - start_vm
+
+- name: Wait for VM to boot
+  ansible.builtin.pause:
+    seconds: "{{ boot_wait_time }}"
+  when:
+    - vm_check.status != 200
+    - start_vm
+
+- name: Get VM IP address (DHCP mode)
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} \
+    "qm agent {{ vmid }} network-get-interfaces | jq -r '.result[] | select(.name==\"eth0\" or .name==\"ens18\") | .[\"ip-addresses\"][] | select(.\"ip-address-type\"==\"ipv4\") | .[\"ip-address\"]' | grep -v '^127'"
+  register: discovered_ip
+  delegate_to: localhost
+  retries: 10
+  delay: 10
+  until: discovered_ip.stdout != ""
+  when:
+    - vm_check.status != 200
+    - start_vm
+    - network_mode == 'dhcp'
+
+- name: Display discovered IP (DHCP mode)
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "DHCP IP Address Discovered"
+      - "=========================================="
+      - "VM: {{ inventory_hostname }}"
+      - "IP: {{ discovered_ip.stdout }}"
+      - ""
+      - "Update inventory with:"
+      - "  ansible_host: {{ discovered_ip.stdout }}"
+      - "=========================================="
+  when:
+    - vm_check.status != 200
+    - start_vm
+    - network_mode == 'dhcp'
+
+- name: Wait for SSH to be ready (static IP mode)
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 22
+    delay: 5
+    timeout: "{{ ssh_wait_timeout }}"
+  delegate_to: localhost
+  when:
+    - vm_check.status != 200
+    - start_vm
+    - network_mode == 'static'
+
+- name: Display provisioning summary
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "✅ VM Provisioning Complete!"
+      - "=========================================="
+      - "Hostname: {{ inventory_hostname }}"
+      - "VMID: {{ vmid }}"
+      - "IP Address: {{ ansible_host if network_mode == 'static' else discovered_ip.stdout }}"
+      - "OS: {{ os_type }} ({{ vm_default_user }}@...)"
+      - "Size: {{ tshirt_size }} - {{ vm_cores }}C / {{ vm_memory }}MB / {{ vm_disk_size }}GB"
+      - ""
+      - "SSH Access:"
+      - "  ssh {{ vm_default_user }}@{{ ansible_host if network_mode == 'static' else discovered_ip.stdout }}"
+      - ""
+      - "Proxmox Console:"
+      - "  https://{{ proxmox_api_host }}:8006/#v1:0:={{ proxmox_node }}%2Fqemu%2F{{ vmid }}"
+      - "=========================================="
+  when: vm_check.status != 200
+
+- name: Run health checks
+  ansible.builtin.include_role:
+    name: health_check
+  vars:
+    health_check_profile: "{{ hostvars[inventory_hostname].health_check_profile | default('basic') }}"
+    health_check_fail_on_error: "{{ hostvars[inventory_hostname].health_check_fail_on_error | default(true) }}"
+    health_check_allow_failures: "{{ hostvars[inventory_hostname].health_check_allow_failures | default(false) }}"
+  when:
+    - vm_check.status != 200
+    - health_check_enabled
+
+- name: Run post-provisioning
+  ansible.builtin.include_role:
+    name: post_provision
+  vars:
+    post_provisioning_profile: "{{ hostvars[inventory_hostname].post_provisioning_profile | default('none') }}"
+    post_provision_fail_on_error: "{{ hostvars[inventory_hostname].post_provision_fail_on_error | default(true) }}"
+  when:
+    - vm_check.status != 200
+    - post_provisioning_enabled
+    - health_check_failures | default([]) | length == 0  # Only run if health checks passed

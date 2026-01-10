@@ -1,0 +1,246 @@
+---
+# Generic LXC Container Provisioning Role - Main Tasks
+# Provisions LXC containers as cattle, not pets - fully parameterized
+
+- name: Validate lxc_templates is loaded
+  ansible.builtin.assert:
+    that:
+      - lxc_templates is defined
+      - lxc_tshirt_sizes is defined
+    fail_msg: |
+      Critical error: lxc_templates and lxc_tshirt_sizes not defined!
+      
+      These should be loaded from group_vars/all.yml
+      Check that the file exists and is valid YAML.
+    success_msg: "Template registry loaded"
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - os_type is defined
+      - os_type in lxc_templates
+      - tshirt_size is defined
+      - tshirt_size in lxc_tshirt_sizes
+      - vmid is defined
+      - proxmox_node is defined
+      - inventory_hostname is defined
+    fail_msg: |
+      Missing required variables for LXC provisioning!
+      
+      Required:
+        - os_type: Must be one of {{ lxc_templates.keys() | list }}
+        - tshirt_size: Must be one of {{ lxc_tshirt_sizes.keys() | list }}
+        - vmid: Proxmox container ID (e.g., 350)
+        - proxmox_node: Proxmox node name (e.g., wow-prox1)
+        - inventory_hostname: Container hostname
+      
+      Current values:
+        os_type: {{ os_type | default('NOT SET') }}
+        tshirt_size: {{ tshirt_size | default('NOT SET') }}
+        vmid: {{ vmid | default('NOT SET') }}
+        proxmox_node: {{ proxmox_node | default('NOT SET') }}
+    success_msg: "All required variables validated"
+
+- name: Validate network configuration for static mode
+  ansible.builtin.assert:
+    that:
+      - ansible_host is defined
+    fail_msg: |
+      Static network mode requires ansible_host to be defined in inventory!
+      
+      Either:
+        1. Set ansible_host in inventory, OR
+        2. Set network_mode: dhcp (IP will be discovered after boot)
+    success_msg: "Static IP configuration validated: {{ ansible_host }}"
+  when: network_mode == 'static'
+
+- name: Set facts from templates and sizes
+  ansible.builtin.set_fact:
+    template_filename: "{{ lxc_templates[os_type].filename }}"
+    lxc_default_user: "{{ lxc_templates[os_type].default_user }}"
+    lxc_cores: "{{ lxc_tshirt_sizes[tshirt_size].cores }}"
+    lxc_memory: "{{ lxc_tshirt_sizes[tshirt_size].memory }}"
+    lxc_disk_size: "{{ lxc_tshirt_sizes[tshirt_size].disk }}"
+    size_description: "{{ lxc_tshirt_sizes[tshirt_size].description }}"
+    proxmox_api_host: "{{ hostvars[proxmox_node].ansible_host }}"
+    lxc_storage_backend: "{{ lxc_storage | default(proxmox_storage_backends[proxmox_node].lxc_storage) }}"
+
+- name: Display provisioning plan
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "LXC Container Provisioning Plan"
+      - "=========================================="
+      - "Hostname: {{ inventory_hostname }}"
+      - "CTID: {{ vmid }}"
+      - "Proxmox Node: {{ proxmox_node }}"
+      - "OS: {{ os_type }} ({{ lxc_templates[os_type].description }})"
+      - "Template: {{ template_filename }}"
+      - "Size: {{ tshirt_size }} ({{ size_description }})"
+      - "  CPU Cores: {{ lxc_cores }}"
+      - "  Memory: {{ lxc_memory }}MB"
+      - "  Disk: {{ lxc_disk_size }}GB"
+      - "Network: {{ network_mode }}"
+      - "IP Address: {{ ansible_host if network_mode == 'static' else 'DHCP (will be discovered)' }}"
+      - "Storage: {{ lxc_storage_backend }}"
+      - "Features: {{ lxc_features }}"
+      - "Unprivileged: {{ lxc_unprivileged }}"
+      - "Default User: {{ lxc_default_user }}"
+      - "=========================================="
+
+- name: Check if LXC container already exists
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/status/current"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+    validate_certs: no
+    status_code: [200, 404, 500]
+  register: lxc_check
+  delegate_to: localhost
+  when: not skip_existing_check
+
+- name: Fail if LXC container already exists (safety check)
+  ansible.builtin.fail:
+    msg: |
+      ⚠️  SAFETY CHECK FAILED ⚠️
+      
+      LXC container with CTID {{ vmid }} already exists on {{ proxmox_node }}!
+      
+      This role is designed to provision NEW containers only.
+      To manage existing containers, use a different approach.
+      
+      If you really want to proceed (dangerous!), set:
+        skip_existing_check: true
+      
+      Current container status: {{ lxc_check.json.data.status if lxc_check.status == 200 else 'unknown' }}
+  when:
+    - not skip_existing_check
+    - lxc_check.status == 200
+
+- name: Upload SSH keys to Proxmox host
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} << 'REMOTE'
+    cat > /tmp/lxc_keys_{{ vmid }}.pub << 'EOF'
+    {{ global_ssh_keys | join('\n') }}
+    EOF
+    REMOTE
+  delegate_to: localhost
+  when: lxc_check.status != 200
+
+- name: Create LXC container
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} << 'REMOTE'
+    pct create {{ vmid }} {{ lxc_storage_backend }}:vztmpl/{{ template_filename }} \
+      --hostname {{ inventory_hostname }} \
+      --cores {{ lxc_cores }} \
+      --memory {{ lxc_memory }} \
+      --rootfs {{ lxc_storage_backend }}:{{ lxc_disk_size }} \
+      {% if network_mode == 'dhcp' %}
+      --net0 name=eth0,bridge={{ lab_bridge }},tag={{ lab_vlan_mgmt }},ip=dhcp \
+      {% else %}
+      --net0 name=eth0,bridge={{ lab_bridge }},tag={{ lab_vlan_mgmt }},ip={{ ansible_host }}/24,gw={{ lab_gw }} \
+      {% endif %}
+      --features {{ lxc_features }} \
+      --unprivileged {{ 1 if lxc_unprivileged else 0 }} \
+      --ssh-public-keys /tmp/lxc_keys_{{ vmid }}.pub \
+      {% if start_lxc %}--start 1{% endif %}
+    
+    rm /tmp/lxc_keys_{{ vmid }}.pub
+    REMOTE
+  delegate_to: localhost
+  when: lxc_check.status != 200
+  register: lxc_create
+
+- name: Wait for LXC to boot
+  ansible.builtin.pause:
+    seconds: "{{ boot_wait_time }}"
+  when:
+    - lxc_check.status != 200
+    - start_lxc
+
+- name: Get LXC IP address (DHCP mode)
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} \
+    "pct exec {{ vmid }} -- ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'"
+  register: discovered_ip
+  delegate_to: localhost
+  retries: 10
+  delay: 10
+  until: discovered_ip.stdout != "" and not discovered_ip.stdout.startswith("127.")
+  when:
+    - lxc_check.status != 200
+    - start_lxc
+    - network_mode == 'dhcp'
+
+- name: Display discovered IP (DHCP mode)
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "DHCP IP Address Discovered"
+      - "=========================================="
+      - "Container: {{ inventory_hostname }}"
+      - "IP: {{ discovered_ip.stdout }}"
+      - ""
+      - "Update inventory with:"
+      - "  ansible_host: {{ discovered_ip.stdout }}"
+      - "=========================================="
+  when:
+    - lxc_check.status != 200
+    - start_lxc
+    - network_mode == 'dhcp'
+
+- name: Wait for SSH to be ready (static IP mode)
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 22
+    delay: 5
+    timeout: "{{ ssh_wait_timeout }}"
+  delegate_to: localhost
+  when:
+    - lxc_check.status != 200
+    - start_lxc
+    - network_mode == 'static'
+
+- name: Display provisioning summary
+  ansible.builtin.debug:
+    msg:
+      - "=========================================="
+      - "✅ LXC Container Provisioning Complete!"
+      - "=========================================="
+      - "Hostname: {{ inventory_hostname }}"
+      - "CTID: {{ vmid }}"
+      - "IP Address: {{ ansible_host if network_mode == 'static' else discovered_ip.stdout }}"
+      - "OS: {{ os_type }} ({{ lxc_default_user }}@...)"
+      - "Size: {{ tshirt_size }} - {{ lxc_cores }}C / {{ lxc_memory }}MB / {{ lxc_disk_size }}GB"
+      - "Features: {{ lxc_features }}"
+      - ""
+      - "SSH Access:"
+      - "  ssh {{ lxc_default_user }}@{{ ansible_host if network_mode == 'static' else discovered_ip.stdout }}"
+      - ""
+      - "Proxmox Console:"
+      - "  https://{{ proxmox_api_host }}:8006/#v1:0:={{ proxmox_node }}%2Flxc%2F{{ vmid }}"
+      - "=========================================="
+  when: lxc_check.status != 200
+
+- name: Run health checks
+  ansible.builtin.include_role:
+    name: health_check
+  vars:
+    health_check_profile: "{{ hostvars[inventory_hostname].health_check_profile | default('basic') }}"
+    health_check_fail_on_error: "{{ hostvars[inventory_hostname].health_check_fail_on_error | default(true) }}"
+    health_check_allow_failures: "{{ hostvars[inventory_hostname].health_check_allow_failures | default(false) }}"
+  when:
+    - lxc_check.status != 200
+    - health_check_enabled
+
+- name: Run post-provisioning
+  ansible.builtin.include_role:
+    name: post_provision
+  vars:
+    post_provisioning_profile: "{{ hostvars[inventory_hostname].post_provisioning_profile | default('none') }}"
+    post_provision_fail_on_error: "{{ hostvars[inventory_hostname].post_provision_fail_on_error | default(true) }}"
+  when:
+    - lxc_check.status != 200
+    - post_provisioning_enabled
+    - health_check_failures | default([]) | length == 0  # Only run if health checks passed

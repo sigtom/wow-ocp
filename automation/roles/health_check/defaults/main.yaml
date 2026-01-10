@@ -1,0 +1,23 @@
+---
+# Health Check Role - Default Variables
+
+# Health check profile to run (basic, docker, web, database, dns)
+health_check_profile: basic
+
+# Global failure behavior
+health_check_fail_on_error: true  # Fail playbook if critical checks fail
+health_check_allow_failures: false  # Override to make ALL checks non-critical
+
+# Individual check timeouts (can be overridden per-check)
+health_check_default_timeout: 30
+health_check_ssh_timeout: 120
+health_check_cloudinit_timeout: 300
+health_check_port_timeout: 60
+
+# Retry behavior
+health_check_retry_count: 3
+health_check_retry_delay: 10
+
+# Display options
+health_check_verbose: true  # Show detailed output
+health_check_summary: true  # Show summary at end

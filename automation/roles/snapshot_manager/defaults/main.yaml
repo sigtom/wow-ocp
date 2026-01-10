@@ -1,0 +1,32 @@
+---
+# Snapshot Manager Role - Default Variables
+
+# Snapshot operation type
+snapshot_operation: create  # create, delete, list, cleanup
+
+# Snapshot naming
+snapshot_name: "{{ snapshot_type | default('manual') }}-{{ ansible_date_time.epoch }}"
+snapshot_description: "Automated snapshot created by Ansible"
+
+# Snapshot type (used for naming and retention)
+snapshot_type: manual  # manual, pre-provision, post-provision, scheduled
+
+# Snapshot options
+snapshot_vmstate: false  # Include RAM state (slower, larger)
+snapshot_compress: false  # Compress snapshot (slower but saves space)
+
+# Retention policies (in hours unless specified)
+snapshot_retention_policies:
+  manual: 168  # 7 days
+  pre-provision: 24  # 1 day
+  post-provision: 168  # 7 days
+  scheduled-daily: 168  # 7 days
+  scheduled-weekly: 720  # 30 days
+
+# Cleanup behavior
+snapshot_auto_cleanup: true  # Automatically delete old snapshots
+snapshot_cleanup_dry_run: false  # Show what would be deleted without deleting
+
+# Error handling
+snapshot_fail_on_error: true  # Fail playbook if snapshot operations fail
+snapshot_verbose: true  # Show detailed output

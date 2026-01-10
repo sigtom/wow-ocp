@@ -1,0 +1,45 @@
+---
+# Default variables for provision_lxc_generic role
+# These can be overridden in inventory or playbook vars
+
+# LXC provisioning mode
+lxc_state: present  # present, absent, started, stopped
+
+# OS selection (required - must be defined in lxc_templates)
+# os_type: ubuntu24  # Must be set by user
+
+# T-shirt size selection (required - must be defined in lxc_tshirt_sizes)
+# tshirt_size: medium  # Must be set by user
+
+# Network configuration
+network_mode: static  # static or dhcp
+# For static mode, ansible_host must be defined in inventory
+
+# LXC features
+lxc_features: "nesting=1,keyctl=1"  # Default for Docker support
+lxc_unprivileged: true  # Unprivileged containers are safer
+
+# Wait times (seconds)
+create_wait_time: 20
+boot_wait_time: 15
+ssh_wait_timeout: 120
+
+# Storage backend (defaults to node's default from group_vars)
+# lxc_storage: "TSVMDS01"  # Override if needed
+
+# Start LXC after provisioning
+start_lxc: true
+
+# Safety checks
+skip_existing_check: false  # Set to true to skip "LXC exists" check (dangerous!)
+
+# Health checks (Phase 3A)
+health_check_enabled: true  # Run health checks after provisioning
+health_check_profile: basic  # Health check profile to run (basic, docker, web, database, dns)
+health_check_fail_on_error: true  # Fail playbook if critical checks fail
+health_check_allow_failures: false  # Override to make all checks non-critical
+
+# Post-provisioning (Phase 3B)
+post_provisioning_enabled: false  # Opt-in: Set to true to run post-provisioning
+post_provisioning_profile: none  # Profile to run (none, docker_host, web_server, database)
+post_provision_fail_on_error: true  # Fail if post-provisioning errors

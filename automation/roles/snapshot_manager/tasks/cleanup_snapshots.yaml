@@ -1,0 +1,177 @@
+---
+# Cleanup Old Snapshots Task
+# Deletes snapshots older than their retention policy
+
+- name: Get current timestamp
+  ansible.builtin.set_fact:
+    current_epoch: "{{ ansible_date_time.epoch | int }}"
+
+- name: Cleanup VM snapshots
+  block:
+    - name: Get VM snapshot list
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+      register: snapshot_list
+      delegate_to: localhost
+    
+    - name: Parse snapshots and determine which to delete
+      ansible.builtin.set_fact:
+        snapshots_to_delete: []
+        snapshots_to_keep: []
+    
+    - name: Check each snapshot for expiration
+      ansible.builtin.set_fact:
+        snapshots_to_delete: >-
+          {{
+            snapshots_to_delete + [item.name]
+            if (
+              item.name != 'current' and
+              item.snaptime is defined and
+              (current_epoch | int) - (item.snaptime | int) > (snapshot_retention_policies[item.name.split('-')[0]] | default(168) * 3600)
+            )
+            else snapshots_to_delete
+          }}
+        snapshots_to_keep: >-
+          {{
+            snapshots_to_keep + [item.name]
+            if (
+              item.name != 'current' and
+              (
+                item.snaptime is not defined or
+                (current_epoch | int) - (item.snaptime | int) <= (snapshot_retention_policies[item.name.split('-')[0]] | default(168) * 3600)
+              )
+            )
+            else snapshots_to_keep
+          }}
+      loop: "{{ snapshot_list.json.data }}"
+      loop_control:
+        label: "{{ item.name }}"
+    
+    - name: Display cleanup plan
+      ansible.builtin.debug:
+        msg:
+          - "Snapshot Cleanup Plan for {{ inventory_hostname }}:"
+          - "  To delete: {{ snapshots_to_delete | length }} snapshot(s)"
+          - "  To keep: {{ snapshots_to_keep | length }} snapshot(s)"
+          - "{% if snapshots_to_delete | length > 0 %}  Will delete:"
+          - "{% for snap in snapshots_to_delete %}    - {{ snap }}{% endfor %}{% endif %}"
+      when: snapshot_verbose
+    
+    - name: Delete expired snapshots (dry run)
+      ansible.builtin.debug:
+        msg: "DRY RUN: Would delete snapshot {{ item }}"
+      loop: "{{ snapshots_to_delete }}"
+      when: snapshot_cleanup_dry_run
+    
+    - name: Delete expired snapshots (actual)
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot/{{ item }}"
+        method: DELETE
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 500]
+      loop: "{{ snapshots_to_delete }}"
+      register: delete_results
+      delegate_to: localhost
+      when: not snapshot_cleanup_dry_run
+    
+    - name: Record cleanup operation
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Cleaned up ' + (snapshots_to_delete | length | string) + ' VM snapshot(s)'] }}"
+  
+  rescue:
+    - name: Record cleanup failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['VM snapshot cleanup failed'] }}"
+  
+  when: not is_lxc
+
+- name: Cleanup LXC snapshots
+  block:
+    - name: Get LXC snapshot list
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+      register: snapshot_list
+      delegate_to: localhost
+    
+    - name: Parse snapshots and determine which to delete
+      ansible.builtin.set_fact:
+        snapshots_to_delete: []
+        snapshots_to_keep: []
+    
+    - name: Check each snapshot for expiration
+      ansible.builtin.set_fact:
+        snapshots_to_delete: >-
+          {{
+            snapshots_to_delete + [item.name]
+            if (
+              item.name != 'current' and
+              item.snaptime is defined and
+              (current_epoch | int) - (item.snaptime | int) > (snapshot_retention_policies[item.name.split('-')[0]] | default(168) * 3600)
+            )
+            else snapshots_to_delete
+          }}
+        snapshots_to_keep: >-
+          {{
+            snapshots_to_keep + [item.name]
+            if (
+              item.name != 'current' and
+              (
+                item.snaptime is not defined or
+                (current_epoch | int) - (item.snaptime | int) <= (snapshot_retention_policies[item.name.split('-')[0]] | default(168) * 3600)
+              )
+            )
+            else snapshots_to_keep
+          }}
+      loop: "{{ snapshot_list.json.data }}"
+      loop_control:
+        label: "{{ item.name }}"
+    
+    - name: Display cleanup plan
+      ansible.builtin.debug:
+        msg:
+          - "Snapshot Cleanup Plan for {{ inventory_hostname }}:"
+          - "  To delete: {{ snapshots_to_delete | length }} snapshot(s)"
+          - "  To keep: {{ snapshots_to_keep | length }} snapshot(s)"
+          - "{% if snapshots_to_delete | length > 0 %}  Will delete:"
+          - "{% for snap in snapshots_to_delete %}    - {{ snap }}{% endfor %}{% endif %}"
+      when: snapshot_verbose
+    
+    - name: Delete expired snapshots (dry run)
+      ansible.builtin.debug:
+        msg: "DRY RUN: Would delete snapshot {{ item }}"
+      loop: "{{ snapshots_to_delete }}"
+      when: snapshot_cleanup_dry_run
+    
+    - name: Delete expired snapshots (actual)
+      ansible.builtin.uri:
+        url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot/{{ item }}"
+        method: DELETE
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 500]
+      loop: "{{ snapshots_to_delete }}"
+      register: delete_results
+      delegate_to: localhost
+      when: not snapshot_cleanup_dry_run
+    
+    - name: Record cleanup operation
+      ansible.builtin.set_fact:
+        snapshot_operations_completed: "{{ snapshot_operations_completed + ['Cleaned up ' + (snapshots_to_delete | length | string) + ' LXC snapshot(s)'] }}"
+  
+  rescue:
+    - name: Record cleanup failure
+      ansible.builtin.set_fact:
+        snapshot_operations_failed: "{{ snapshot_operations_failed + ['LXC snapshot cleanup failed'] }}"
+  
+  when: is_lxc
