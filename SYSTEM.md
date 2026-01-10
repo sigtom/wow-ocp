@@ -1666,3 +1666,711 @@ livenessProbe:
   initialDelaySeconds: 30
   periodSeconds: 10
 ```
+
+---
+
+## 10. ANSIBLE AUTOMATION PHILOSOPHY (CATTLE, NOT PETS)
+
+**META: Added 2026-01-09 - Phase 1-3 Automation Refactor**
+
+### A. Core Principles
+
+**Cattle, Not Pets:**
+- VMs/LXC containers are disposable and reproducible
+- No hardcoded values in playbooks - everything parameterized
+- Same playbook provisions test, dev, and prod environments
+- Configuration lives in inventory, not in playbooks
+
+**DRY (Don't Repeat Yourself):**
+- Reusable roles over monolithic playbooks
+- Shared defaults in `group_vars/all.yml`
+- Template registries for OS images, network configs, resource profiles
+- If you're copy-pasting, you're doing it wrong
+
+**Idempotency:**
+- Safe to re-run any playbook multiple times
+- Checks for existing state before creating
+- Skips completed tasks, doesn't fail on "already exists"
+- Post-provisioning roles verify and skip installed components
+
+**Modularity:**
+- Small, focused roles with single responsibility
+- Compose complex deployments from simple building blocks
+- Roles work standalone OR as part of provisioning pipeline
+- Easy to test, easy to debug
+
+### B. Provisioning Architecture (Phases 1-3)
+
+**Phase 1: Resource Standardization**
+- T-shirt sizes: `small`, `medium`, `large`, `xlarge` (VMs and LXC)
+- OS template registry: `ubuntu24`, `fedora43`, `rhel9`, `rhel10`, etc.
+- Storage backend mapping per Proxmox node
+- Example: `tshirt_size: medium` → 2C/2GB/50GB (VM) or 2C/2GB/20GB (LXC)
+
+**Phase 2: Network Abstraction**
+- Network profiles: `apps` (172.16.100.0/24), `proxmox-mgmt` (172.16.110.0/24 - restricted)
+- IP allocation strategy (static ranges, DHCP pools, reserved ranges)
+- DNS/NTP/gateway per profile
+- Restricted networks require justification
+
+**Phase 3A: Health Checks**
+- Profiles: `basic`, `docker`, `web`, `database`, `dns`
+- Critical checks (SSH, disk space) fail on error
+- Non-critical checks (cloud-init) warn only
+- Runs automatically post-provision OR standalone for troubleshooting
+
+**Phase 3B: Post-Provisioning**
+- Profiles: `docker_host`, `web_server`, `database`
+- Opt-in: set `post_provisioning_enabled: true` per-host
+- Only runs if health checks pass
+- Prepares VM (install Docker), app deployment is separate role
+
+**Phase 3C: Snapshots**
+- Policies: `none`, `default` (pre-provision only), `standard`, `production`
+- Automatic retention cleanup
+- Pre-provision snapshots = safety net (24hr retention)
+- Post-provision snapshots = clean baseline (7-30 day retention)
+
+### C. Role Design Patterns
+
+**Generic Provisioning Roles:**
+- `provision_vm_generic`: Provisions VMs from templates
+- `provision_lxc_generic`: Provisions LXC containers
+- Take parameters from inventory, not hardcoded in role
+- Safety checks: fail if VMID/CTID already exists
+- Network profile integration, health checks, post-provisioning hooks
+
+**Specialized Roles:**
+- `health_check`: Standalone health verification (reusable)
+- `post_provision`: Prepare VMs for workloads (reusable)
+- `snapshot_manager`: Snapshot operations (reusable)
+- Each role has clear defaults, validates inputs, handles errors gracefully
+
+**Application Deployment Roles:**
+- Separate from provisioning (e.g., deploy Nautobot AFTER VM ready)
+- Assume Docker is installed (via `docker_host` post-provision)
+- Use docker-compose for multi-container apps
+- Secrets via Bitwarden lookup, never hardcoded
+
+### D. Inventory-Driven Configuration
+
+**Bad (Pet):**
+```yaml
+# Hardcoded in playbook
+vars:
+  vm_cores: 2
+  vm_memory: 2048
+  template_vmid: 9024  # What OS is this?
+```
+
+**Good (Cattle):**
+```yaml
+# In inventory/hosts.yaml
+nautobot:
+  ansible_host: 172.16.100.15
+  vmid: 215
+  proxmox_node: wow-prox1
+  os_type: ubuntu24              # Clear what OS
+  tshirt_size: large             # Standardized sizing
+  network_profile: apps          # Network abstraction
+  post_provisioning_enabled: true
+  post_provisioning_profile: docker_host
+  health_check_profile: docker
+  snapshot_policy: production
+```
+
+**Then playbook is just:**
+```yaml
+- hosts: nautobot
+  roles:
+    - provision_vm_generic
+```
+
+### E. Variable Hierarchy (Precedence)
+
+1. **Extra vars** (`-e` on command line) - highest priority
+2. **Inventory host_vars** - host-specific overrides
+3. **Inventory group_vars** - group-level defaults
+4. **Role defaults** - fallback values
+5. **Group vars `all.yml`** - global defaults - lowest priority
+
+**Use this hierarchy:**
+- Global standards in `group_vars/all.yml` (OS templates, t-shirt sizes, network profiles)
+- Host-specific in inventory (IP, VMID, size selection)
+- Temporary overrides via `-e` (testing different sizes, skip health checks)
+
+### F. File Organization
+
+```
+automation/
+├── group_vars/
+│   └── all.yml              # Global standards (templates, sizes, networks)
+├── inventory/
+│   └── hosts.yaml           # Declarative host definitions
+├── playbooks/
+│   ├── deploy-{app}.yaml    # App-specific deployment
+│   └── health-check.yaml    # Standalone troubleshooting
+└── roles/
+    ├── provision_vm_generic/    # Generic VM provisioning
+    ├── provision_lxc_generic/   # Generic LXC provisioning
+    ├── health_check/            # Health verification
+    ├── post_provision/          # Post-provision automation
+    ├── snapshot_manager/        # Snapshot operations
+    └── {app}_deploy/            # App-specific deployment roles
+```
+
+**Do NOT create:**
+- Roles named after specific hosts (e.g., `nautobot_vm_setup`)
+- Playbooks with hardcoded IPs, credentials, or resource specs
+- Roles that do provisioning + app deployment in one (split them)
+
+### G. Testing & Safety
+
+**Safety Checks Built-In:**
+- `skip_existing_check: false` - Fail if VMID already exists
+- `health_check_fail_on_error: true` - Fail if VM unhealthy
+- `snapshot_enabled: true` - Pre-provision safety net
+- Network profile validation before provisioning
+
+**Testing Approach:**
+- Use unused VMID range (350+) for testing
+- Test with `--check` (dry-run) first
+- Use `snapshot_cleanup_dry_run: true` to preview deletions
+- Test roles standalone before integrating into provisioning pipeline
+
+**Cleanup After Testing:**
+```bash
+# On Proxmox host
+qm stop 350 && qm destroy 350     # VM
+pct stop 350 && pct destroy 350   # LXC
+```
+
+### H. Common Anti-Patterns to Avoid
+
+**❌ Bad:**
+```yaml
+# Playbook named after specific host
+playbooks/deploy-nautobot-vm-212.yaml
+
+# Hardcoded everything
+- name: Create Nautobot VM
+  hosts: localhost
+  tasks:
+    - name: Clone from template 9024
+      proxmox_kvm:
+        name: nautobot
+        vmid: 212
+        cores: 4
+        memory: 8192
+        # ... 100 more lines of hardcoded config
+```
+
+**✅ Good:**
+```yaml
+# Generic playbook
+playbooks/deploy-vm.yaml
+
+# Inventory-driven
+hosts:
+  nautobot:
+    vmid: 212
+    os_type: ubuntu24
+    tshirt_size: large
+
+# Playbook just invokes role
+- hosts: nautobot
+  roles:
+    - provision_vm_generic
+```
+
+**❌ Bad:**
+- Roles that install Docker AND deploy the app
+- Secrets in vars files
+- Per-host playbooks
+
+**✅ Good:**
+- `post_provision: docker_host` prepares VM
+- Separate app deployment role/playbook
+- Bitwarden lookup for secrets
+- One generic playbook, host selection via `-e target=`
+
+### I. Migration Path for Existing "Pet" Roles
+
+**If you find old pet roles:**
+1. **Identify what they do** - provisioning + config + app deployment?
+2. **Split responsibilities:**
+   - Provisioning → Use `provision_vm_generic`
+   - System prep (Docker) → Use `post_provision: docker_host`
+   - App deployment → Keep as separate focused role
+3. **Extract hardcoded values** → Move to inventory or group_vars
+4. **Delete the monolithic role** - Don't leave it to tempt copy-paste
+
+**Example: `nautobot_server` role was deleted because:**
+- It did VM setup (now `provision_vm_generic`)
+- It installed Docker (now `post_provision: docker_host`)
+- It deployed Nautobot (will become `deploy_nautobot` role)
+- 5 separate task files, impossible to reuse
+
+### J. Quick Reference: Provisioning a New VM/LXC
+
+**1. Add to inventory:**
+```yaml
+my-new-app:
+  ansible_host: 172.16.100.40
+  vmid: 240
+  proxmox_node: wow-prox1
+  os_type: ubuntu24
+  tshirt_size: medium
+  network_profile: apps
+  ansible_user: ubuntu
+  post_provisioning_enabled: true
+  post_provisioning_profile: docker_host
+  health_check_profile: docker
+```
+
+**2. Provision:**
+```bash
+cd automation
+export PROXMOX_SRE_BOT_API_TOKEN=$(grep PROXMOX_SRE_BOT_API_TOKEN ../.env | cut -d= -f2)
+ansible-playbook -i inventory/hosts.yaml playbooks/provision-vm.yaml -e target=my-new-app
+```
+
+**3. Deploy app (separate playbook):**
+```bash
+ansible-playbook -i inventory/hosts.yaml playbooks/deploy-my-app.yaml -e target=my-new-app
+```
+
+**Result:** VM is provisioned, Docker installed, health checked, and ready for app deployment in ~2 minutes.
+
+
+---
+
+## K. Playbook Execution Reference
+
+**Location**: `docs/PLAYBOOK-COMMANDS.md` (git-ignored)
+
+**Purpose**: Central reference for exact commands to run each playbook manually
+
+**When to Update**: EVERY time you create or modify a playbook, add/update the entry in `PLAYBOOK-COMMANDS.md`
+
+**Required Information**:
+- Playbook name and purpose
+- File path
+- Exact command with environment variables
+- Expected duration
+- What gets created (outputs)
+- Verification commands
+- Cleanup commands (if applicable)
+
+**Why Git-Ignored**: Contains environment-specific values (API tokens, IPs, credentials paths)
+
+**Example Entry**:
+```markdown
+## Traefik Deployment
+
+**Purpose**: Deploy Traefik reverse proxy with automatic SSL
+
+**Playbook**: `automation/playbooks/deploy-traefik.yaml`
+
+**Command**:
+```bash
+cd ~/wow-ocp/automation
+export CF_DNS_API_TOKEN=...
+export PROXMOX_SRE_BOT_API_TOKEN=...
+ansible-playbook -i inventory/hosts.yaml playbooks/deploy-traefik.yaml
+```
+
+**Expected Duration**: ~5 minutes
+
+**Output**:
+- LXC 210 @ 172.16.100.10
+- Dashboard: https://traefik.sigtom.dev
+- Credentials: automation/.traefik-credentials
+```
+
+**Agent Behavior**: When creating/modifying playbooks, automatically update `docs/PLAYBOOK-COMMANDS.md` with the manual execution commands and relevant details.
+
+
+---
+
+## 13. SECRETS MANAGEMENT PATTERN (BITWARDEN + ANSIBLE)
+
+### A. Overview
+
+**Philosophy:** Secrets NEVER live in Git. They are fetched at runtime from Bitwarden and injected into deployments.
+
+**Tools:**
+- **Bitwarden CLI (`bw`):** Fetch secrets from personal Bitwarden vault
+- **Bitwarden Secrets Manager (`bws`):** For machine-to-machine secrets (future)
+- **Ansible:** Orchestrates secret fetching and deployment
+
+**Benefits:**
+- ✅ No secrets in Git (safe to commit playbooks)
+- ✅ Audit trail (Bitwarden logs who accessed what)
+- ✅ Rotation friendly (change secret in BW, redeploy)
+- ✅ Shared across team (everyone uses same BW org)
+
+---
+
+### B. Bitwarden CLI Setup (One-Time)
+
+**Install (if not present):**
+```bash
+# Check if installed
+which bw && bw --version
+
+# If not installed
+npm install -g @bitwarden/cli
+```
+
+**Login and Unlock:**
+```bash
+# Login (one time per machine)
+bw login
+
+# Unlock (start of each session)
+export BW_SESSION=$(bw unlock --raw)
+
+# Verify
+bw list items --search "NAUTOBOT" | jq -r '.[].name'
+```
+
+**Session Management:**
+```bash
+# Check if session is valid
+bw sync --session "$BW_SESSION"
+
+# Lock vault
+bw lock
+
+# Session expires after 1 hour of inactivity
+```
+
+---
+
+### C. Storing Secrets in Bitwarden
+
+**Standard Format for Ansible Playbooks:**
+
+1. **Item Type:** Login (simplest, works with `bw get item`)
+2. **Item Name:** Same as environment variable (e.g., `NAUTOBOT_SECRET_KEY`)
+3. **Password Field:** The actual secret value
+4. **URI:** Optional (e.g., `https://ipmgmt.sigtom.dev` for context)
+5. **Notes:** Document what uses this secret
+
+**Example:**
+```
+Item Name: NAUTOBOT_DB_PASSWORD
+Type: Login
+Username: (leave empty or "nautobot")
+Password: ujIVMFDd8ainCZVM//IKl9zwvOHYTd1S
+URI: http://172.16.100.15:8080
+Notes: PostgreSQL password for Nautobot IPAM database
+Folder: Infrastructure Secrets
+```
+
+**Generating Secrets:**
+```bash
+# Strong random password (32 chars)
+openssl rand -base64 24
+
+# Django secret key (60 chars)
+openssl rand -base64 45
+
+# API token (40 hex chars)
+openssl rand -hex 20
+
+# UUID format
+uuidgen
+```
+
+---
+
+### D. Ansible Playbook Pattern
+
+**Play Structure:**
+```yaml
+# Play 1: Fetch secrets from Bitwarden
+- name: "Fetch Secrets from Bitwarden"
+  hosts: localhost
+  gather_facts: false
+  
+  vars:
+    bw_session: "{{ lookup('env', 'BW_SESSION') }}"
+  
+  tasks:
+    - name: "Check BW_SESSION is set"
+      ansible.builtin.fail:
+        msg: "BW_SESSION not set. Run: export BW_SESSION=$(bw unlock --raw)"
+      when: bw_session | length == 0
+
+    - name: "Fetch SECRET_NAME from Bitwarden"
+      ansible.builtin.shell: |
+        bw get item "SECRET_NAME" --session "{{ bw_session }}" | jq -r '.login.password'
+      register: secret_result
+      no_log: true  # Don't log secret values
+      changed_when: false
+
+    - name: "Set fact from Bitwarden"
+      ansible.builtin.set_fact:
+        my_secret: "{{ secret_result.stdout }}"
+      no_log: true
+
+    - name: "Validate secret is not empty"
+      ansible.builtin.assert:
+        that:
+          - my_secret | length > 10
+        fail_msg: "Secret is too short or empty"
+
+# Play 2: Use secrets in deployment
+- name: "Deploy Application"
+  hosts: target_host
+  gather_facts: true
+  
+  vars:
+    my_secret: "{{ hostvars['localhost']['my_secret'] }}"  # Pass from Play 1
+  
+  tasks:
+    - name: "Create .env file with secret"
+      ansible.builtin.template:
+        src: templates/app/.env.j2
+        dest: /opt/app/.env
+        mode: '0600'
+      no_log: true  # Don't log file content
+```
+
+**Key Points:**
+- Use `no_log: true` on tasks that handle secrets
+- `changed_when: false` on fetch tasks (reading isn't changing)
+- Validate secrets before use (`length > X`, `regex match`, etc.)
+- Pass secrets via `hostvars` between plays
+
+---
+
+### E. Template Pattern (Docker Compose + .env)
+
+**docker-compose.yml Template:**
+```yaml
+# templates/app/docker-compose.yml
+services:
+  app:
+    image: myapp:latest
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}  # References .env file
+      API_KEY: ${API_KEY}
+      SECRET_KEY: ${SECRET_KEY}
+```
+
+**.env.j2 Template:**
+```jinja2
+# templates/app/.env.j2
+# Generated by Ansible on {{ ansible_date_time.iso8601 }}
+# Secrets fetched from Bitwarden
+
+DB_PASSWORD={{ db_password }}
+API_KEY={{ api_key }}
+SECRET_KEY={{ secret_key }}
+```
+
+**Why This Works:**
+1. Ansible template renders `.env.j2` → `.env` with actual secret values
+2. Docker Compose reads `.env` automatically (no `env_file:` needed)
+3. `${VARIABLE}` syntax in compose file substitutes from `.env`
+4. `.env` file is mode `0600` (only root can read)
+5. `.env` is in `.gitignore` (never committed)
+
+---
+
+### F. Complete Example (Nautobot Deployment)
+
+**Bitwarden Items Required:**
+- `NAUTOBOT_SECRET_KEY` (Django secret, 60 chars)
+- `NAUTOBOT_DB_PASSWORD` (PostgreSQL password, 32 chars)
+- `NAUTOBOT_SUPERUSER_PASSWORD` (Admin password, 20 chars)
+- `NAUTOBOT_SUPERUSER_API_TOKEN` (API token, 40 hex chars)
+
+**Playbook Usage:**
+```bash
+# 1. Unlock Bitwarden
+export BW_SESSION=$(bw unlock --raw)
+
+# 2. Run playbook (fetches secrets automatically)
+cd ~/wow-ocp/automation
+ansible-playbook -i inventory/hosts.yaml playbooks/deploy-nautobot-app.yaml
+
+# Secrets are fetched → validated → templated → deployed
+# Zero manual input required!
+```
+
+**What Happens:**
+1. Playbook checks `BW_SESSION` is set
+2. Runs `bw get item "NAUTOBOT_SECRET_KEY"` for each secret
+3. Validates secrets (length checks)
+4. Renders `templates/nautobot/.env.j2` → `/opt/nautobot/.env`
+5. Copies `templates/nautobot/docker-compose.yml` → `/opt/nautobot/`
+6. Runs `docker compose up -d` (reads `.env` automatically)
+7. Application starts with secrets injected
+
+---
+
+### G. Security Best Practices
+
+**DO:**
+- ✅ Use `no_log: true` on secret-handling tasks
+- ✅ Set file mode `0600` on .env files (root-only readable)
+- ✅ Add `.env` to `.gitignore`
+- ✅ Use `BW_SESSION` (expires after inactivity)
+- ✅ Lock Bitwarden when done: `bw lock`
+- ✅ Validate secrets before use (length, format)
+- ✅ Use Bitwarden folders for organization
+
+**DON'T:**
+- ❌ Log secret values (even in debug output)
+- ❌ Commit `.env` files to Git
+- ❌ Hardcode `BW_SESSION` in scripts
+- ❌ Store `BW_SESSION` in shell history (use `export`)
+- ❌ Use plain variables in playbooks (use templates)
+- ❌ Run playbooks without `BW_SESSION` set
+
+---
+
+### H. Troubleshooting
+
+**Issue: "BW_SESSION not set"**
+```bash
+# Solution: Unlock Bitwarden
+export BW_SESSION=$(bw unlock --raw)
+```
+
+**Issue: "Item not found"**
+```bash
+# List all items
+bw list items | jq -r '.[].name'
+
+# Search for specific item
+bw list items --search "NAUTOBOT" | jq -r '.[].name'
+
+# Check exact name matches
+bw get item "NAUTOBOT_SECRET_KEY"
+```
+
+**Issue: "Session invalid"**
+```bash
+# Session expired, unlock again
+bw lock
+export BW_SESSION=$(bw unlock --raw)
+```
+
+**Issue: "Secret is empty"**
+```bash
+# Verify item exists and has password field
+bw get item "SECRET_NAME" | jq '.login.password'
+
+# If null, add password in Bitwarden web vault
+```
+
+**Issue: Docker can't read .env variables**
+```bash
+# Check .env file exists and has content
+ssh root@TARGET "cat /opt/app/.env"
+
+# Verify docker-compose.yml uses ${VARIABLE} syntax
+ssh root@TARGET "grep '\${' /opt/app/docker-compose.yml"
+
+# Test variable substitution
+ssh root@TARGET "cd /opt/app && docker compose config | grep PASSWORD"
+```
+
+---
+
+### I. Migration from Manual Secrets
+
+**Old Way (INSECURE):**
+```yaml
+# ❌ Hardcoded in playbook
+vars:
+  db_password: "supersecretpassword"  # NEVER DO THIS
+
+# ❌ Prompted at runtime
+vars_prompt:
+  - name: db_password
+    prompt: "Enter database password"  # Manual intervention required
+```
+
+**New Way (SECURE):**
+```yaml
+# ✅ Fetched from Bitwarden
+- name: "Fetch DB password"
+  ansible.builtin.shell: |
+    bw get item "DB_PASSWORD" --session "{{ bw_session }}" | jq -r '.login.password'
+  register: db_password_result
+  no_log: true
+```
+
+**Migration Steps:**
+1. Create Bitwarden items for all secrets
+2. Update playbook to fetch from Bitwarden
+3. Test deployment with `BW_SESSION` set
+4. Remove hardcoded secrets from playbooks
+5. Commit cleaned playbooks to Git
+
+---
+
+### J. Future Enhancements
+
+**Bitwarden Secrets Manager (bws):**
+```bash
+# For machine-to-machine secrets (no interactive unlock)
+export BWS_ACCESS_TOKEN="your-machine-token"
+bws secret list
+bws secret get secret-id
+```
+
+**Ansible Vault (Layer 2):**
+```bash
+# Encrypt BW_SESSION for CI/CD pipelines
+ansible-vault encrypt_string "$BW_SESSION" --name bw_session
+```
+
+**Sealed Secrets (OpenShift):**
+```bash
+# Generate SealedSecret from Bitwarden
+bw get item "SECRET" | jq -r '.login.password' | \
+  kubectl create secret generic my-secret --dry-run=client -o yaml --from-file=key=/dev/stdin | \
+  kubeseal -o yaml > sealedsecret.yaml
+```
+
+---
+
+### K. Quick Reference
+
+**Common Commands:**
+```bash
+# Unlock Bitwarden
+export BW_SESSION=$(bw unlock --raw)
+
+# List secret items
+bw list items --search "SECRET" | jq -r '.[].name'
+
+# Get secret value
+bw get item "SECRET_NAME" --session "$BW_SESSION" | jq -r '.login.password'
+
+# Run playbook with secrets
+ansible-playbook -i inventory/hosts.yaml playbooks/deploy-app.yaml
+
+# Lock vault when done
+bw lock
+```
+
+**Playbook Template:**
+```yaml
+- hosts: localhost
+  tasks:
+    - shell: bw get item "SECRET" --session "{{ lookup('env', 'BW_SESSION') }}" | jq -r '.login.password'
+      register: secret
+      no_log: true
+    - set_fact:
+        my_secret: "{{ secret.stdout }}"
+      no_log: true
+```
+

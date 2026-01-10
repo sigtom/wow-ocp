@@ -3,6 +3,7 @@
 .env
 bin/
 # Secret Protection
+vaultwarden-operations.md
 *-raw.json
 *-raw.yaml
 secrets/
@@ -35,6 +36,9 @@ Clawdbot-*.md
 Clawdbot.md
 CLAWDBOT-*.md
 .cleanup-docs/
+
+# Playbook execution commands (contains environment-specific values)
+docs/PLAYBOOK-COMMANDS.md
 
 # Ansible
 *.retry
@@ -75,3 +79,29 @@ Desktop.ini
 *.backup
 *.orig
 .~*
+
+
+simplehomelab-docs/
+
+RAEFIK-CONTAINER-INTEGRATION.md
+TRAEFIK-NETWORK-FLOW.md
+TRAEFIK-DOCKER-SWARM-PROPOSAL.md
+TRAEFIK-DECISION-MATRIX.md
+SESSION-HANDOFF-SUMMARY.txt
+automation/TRAEFIK-CHECKLIST.md
+automation/TRAEFIK-IMPLEMENTATION-SUMMARY.md
+automation/TRAEFIK-README.md
+automation/TRAEFIK-SECURITY-STACK-PLAN.md
+docs/NEXT-INSTANCE-PRIMER.md
+docs/NEXT-SESSION-PROMPT.md
+docs/NEXT-SESSION-TRAEFIK.md
+.gitignore
+docs/TRAEFIK-CONTAINER-INTEGRATION.md
+automation/.traefik-docs-summary.txt
+.gitignore
+automation/.traefik-deployment-summary.txt
+automation/.traefik-credentials
+bitwarden-placement-analysis.md
+external-secrets-bitwarden.md
+docs/*
+docs/
