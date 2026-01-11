@@ -1,0 +1,224 @@
+---
+# Source: bitwarden-eso-provider/templates/network-policy.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: external-secret-2-bitwarden-provider
+  namespace: external-secrets
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: bitwarden-provider
+      app.kubernetes.io/name: bitwarden-provider
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            app.kubernetes.io/name: external-secrets
+---
+# Source: bitwarden-eso-provider/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bitwarden-provider-bitwarden-eso-provider
+  labels:
+    helm.sh/chart: bitwarden-eso-provider-1.2.0
+    app.kubernetes.io/name: bitwarden-eso-provider
+    app.kubernetes.io/instance: bitwarden-provider
+    app.kubernetes.io/version: "1.5.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: bitwarden-eso-provider/templates/tests/test-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-connection
+  namespace: external-secrets
+data:
+  curl_script.sh: |
+    curl http://bitwarden-provider.external-secrets.svc.cluster.local:8087/status
+---
+# Source: bitwarden-eso-provider/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitwarden-provider
+  namespace: external-secrets
+  labels:
+    helm.sh/chart: bitwarden-eso-provider-1.2.0
+    app.kubernetes.io/name: bitwarden-eso-provider
+    app.kubernetes.io/instance: bitwarden-provider
+    app.kubernetes.io/version: "1.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8087
+      targetPort: 8087
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: bitwarden-eso-provider
+    app.kubernetes.io/instance: bitwarden-provider
+---
+# Source: bitwarden-eso-provider/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bitwarden-provider-bitwarden-eso-provider
+  namespace: external-secrets
+  labels:
+    helm.sh/chart: bitwarden-eso-provider-1.2.0
+    app.kubernetes.io/name: bitwarden-eso-provider
+    app.kubernetes.io/instance: bitwarden-provider
+    app.kubernetes.io/version: "1.5.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bitwarden-eso-provider
+      app.kubernetes.io/instance: bitwarden-provider
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bitwarden-eso-provider
+        app.kubernetes.io/instance: bitwarden-provider
+    spec:
+      serviceAccountName: bitwarden-provider-bitwarden-eso-provider
+      securityContext:
+        enabled: false
+      containers:
+        - name: bitwarden-eso-provider
+          securityContext:
+            runAsUser: null
+          image: "jessebot/bweso:1.5.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BW_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "bitwarden-provider-creds"
+                  key: BW_HOST
+            - name: BW_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: "bitwarden-provider-creds"
+                  key: BW_CLIENTID
+            - name: BW_CLIENTSECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "bitwarden-provider-creds"
+                  key: BW_CLIENTSECRET
+            - name: BW_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "bitwarden-provider-creds"
+                  key: BW_PASSWORD
+            - name: BW_APPID
+              valueFrom:
+                secretKeyRef:
+                  name: "bitwarden-provider-creds"
+                  key: BW_APPID
+          ports:
+            - name: http
+              containerPort: 8087
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -q
+                - http://127.0.0.1:8087/sync
+                - --post-data=''
+            initialDelaySeconds: 20
+            failureThreshold: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8087
+            initialDelaySeconds: 20
+            failureThreshold: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+          startupProbe:
+            tcpSocket:
+              port: 8087
+            initialDelaySeconds: 20
+            failureThreshold: 30
+            timeoutSeconds: 1
+            periodSeconds: 10
+          resources:
+            {}
+---
+# Source: bitwarden-eso-provider/templates/cluster-secret-stores.yaml
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: bitwarden-login
+spec:
+  provider:
+    webhook:
+      url: "http://bitwarden-provider.external-secrets.svc.cluster.local.:8087/list/object/items?search={{ .remoteRef.key }}"
+      headers:
+        Content-Type: application/json
+      result:
+        jsonPath: "$.data.data[0].login.{{ .remoteRef.property }}"
+---
+# Source: bitwarden-eso-provider/templates/cluster-secret-stores.yaml
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: bitwarden-fields
+spec:
+  provider:
+    webhook:
+      url: "http://bitwarden-provider.external-secrets.svc.cluster.local:8087/list/object/items?search={{ .remoteRef.key }}"
+      result:
+        jsonPath: "$.data.data[0].fields[?(@.name==\"{{ .remoteRef.property }}\")].value"
+---
+# Source: bitwarden-eso-provider/templates/cluster-secret-stores.yaml
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: bitwarden-notes
+spec:
+  provider:
+    webhook:
+      url: "http://bitwarden-provider.external-secrets.svc.cluster.local:8087/list/object/items?search={{ .remoteRef.key }}"
+      result:
+        jsonPath: "$.data.data[0].notes"
+---
+# Source: bitwarden-eso-provider/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "bitwarden-provider-bitwarden-eso-provider-test-connection"
+  namespace: external-secrets
+  labels:
+    helm.sh/chart: bitwarden-eso-provider-1.2.0
+    app.kubernetes.io/name: bitwarden-eso-provider
+    app.kubernetes.io/instance: bitwarden-provider
+    app.kubernetes.io/version: "1.5.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: curl
+      image: curlimages/curl
+      command: ['/bin/sh']
+      args:
+        - "-c"
+        - "/testing/curl_script.sh"
+      volumeMounts:
+        - name: curl-script
+          mountPath: "/testing"
+          readOnly: false
+  volumes:
+    - name: curl-script
+      configMap:
+        name: test-connection
+        defaultMode: 0777
+  restartPolicy: OnFailure
