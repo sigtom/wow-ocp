@@ -5,8 +5,13 @@ metadata:
   namespace: ansible-automation-platform
 spec:
   replicas: 1
-  route_tls_termination_mechanism: Edge
+  
+  # Network - Managed by Operator
   ingress_type: Route
+  route_host: aap.apps.ossus.sigtomtech.com
+  route_tls_termination_mechanism: Edge
+  
+  # Config
   loadbalancer_port: 80
   admin_password_secret: aap-controller-secrets
   secret_key_secret: aap-controller-secrets
