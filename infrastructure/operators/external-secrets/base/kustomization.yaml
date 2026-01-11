@@ -2,8 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../upstream/bundle.yaml
-  - ../upstream/provider-all.yaml
+  - upstream/bundle.yaml
+  - upstream/provider-all.yaml
   - bitwarden-api-creds-sealed.yaml
   - cluster-secret-store.yaml
 
