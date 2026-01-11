@@ -10,7 +10,9 @@ kind: OperatorGroup
 metadata:
   name: external-secrets-operator-group
   namespace: external-secrets
-spec: {} # Empty spec = AllNamespaces
+spec:
+  targetNamespaces:
+  - external-secrets
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -18,8 +20,8 @@ metadata:
   name: external-secrets-operator
   namespace: external-secrets
 spec:
-  channel: stable-v1
+  channel: stable
   installPlanApproval: Automatic
-  name: openshift-external-secrets-operator
-  source: redhat-operators
+  name: external-secrets-operator
+  source: community-operators
   sourceNamespace: openshift-marketplace
