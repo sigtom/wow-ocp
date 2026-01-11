@@ -7,7 +7,7 @@
     - infra.controller_configuration
 
   vars:
-    controller_host: "http://aap-controller-web-svc.ansible-automation-platform.svc.cluster.local:8052"
+    controller_host: "http://aap-controller-service.ansible-automation-platform.svc.cluster.local"
     # Authenticate using the admin password injected via env var
     controller_username: "admin"
     controller_password: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
