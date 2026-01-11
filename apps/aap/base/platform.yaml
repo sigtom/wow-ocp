@@ -1,0 +1,30 @@
+apiVersion: aap.ansible.com/v1alpha1
+kind: AnsibleAutomationPlatform
+metadata:
+  name: aap
+  namespace: ansible-automation-platform
+spec:
+  # Platform Network
+  ingress_type: Route
+  route_host: aap.apps.ossus.sigtomtech.com
+  route_tls_termination_mechanism: Edge
+  
+  # Shared Secrets
+  admin_password_secret: aap-controller-secrets
+  
+  # Automation Controller Component
+  controller:
+    name: aap-controller
+    replicas: 1
+    ingress_type: none # Platform Gateway handles ingress
+    admin_password_secret: aap-controller-secrets
+    secret_key_secret: aap-controller-secrets
+    
+    postgres_storage_class: lvms-vg1
+    postgres_storage_requirements:
+      requests:
+        storage: 10Gi
+        
+    projects_storage_class: truenas-nfs
+    projects_storage_size: 10Gi
+    projects_persistence: true
