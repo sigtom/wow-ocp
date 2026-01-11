@@ -6,4 +6,5 @@ resources:
   - certificate.yaml
   - sidekick.yaml
   - bitwarden-api-creds-sealed.yaml
+  - cluster-secret-store.yaml
 # We'll add cluster-secret-store.yaml in the next step once the operator is up
