@@ -4,3 +4,5 @@ resources:
   - install.yaml
   - provider-install.yaml
   - bitwarden-provider-creds-sealed.yaml
+  - cluster-secret-store.yaml
+  - cluster-secret-store-fields.yaml
