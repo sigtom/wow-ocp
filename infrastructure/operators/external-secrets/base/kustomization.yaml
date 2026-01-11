@@ -1,10 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Pull the full upstream manifests (includes all providers)
 resources:
-  - https://github.com/external-secrets/external-secrets//deploy/crds/bundle.yaml?ref=v0.11.0
-  - https://github.com/external-secrets/external-secrets//deploy/static/provider-all.yaml?ref=v0.11.0
+  - upstream/bundle.yaml
+  - upstream/provider-all.yaml
   - bitwarden-api-creds-sealed.yaml
   - cluster-secret-store.yaml
 
