@@ -19,6 +19,16 @@ spec:
             - |
               set -e
               export HOME=/tmp
+              
+              # Fix UID lookup for OpenShift
+              if ! whoami &> /dev/null; then
+                if [ -w /etc/passwd ]; then
+                  echo "default:x:$(id -u):0:default user:${HOME}:/bin/bash" >> /etc/passwd
+                else
+                  echo "WARNING: /etc/passwd is not writable, git might fail."
+                fi
+              fi
+              
               echo "----------------------------------------"
               echo "AAP Seeder Job Starting (User: $(whoami))"
               echo "----------------------------------------"
