@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   route_tls_termination_mechanism: Edge
-  ingress_type: none
+  ingress_type: Route
   loadbalancer_port: 80
   admin_password_secret: aap-controller-secrets
   secret_key_secret: aap-controller-secrets
