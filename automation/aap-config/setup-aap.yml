@@ -1,0 +1,201 @@
+---
+- name: Configure Ansible Automation Platform (Config as Code)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  collections:
+    - infra.controller_configuration
+
+  vars:
+    controller_host: "http://aap-controller-web-svc.ansible-automation-platform.svc.cluster.local:8052"
+    # Authenticate using the admin password injected via env var
+    controller_username: "admin"
+    controller_password: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
+    
+    # Configuration Data
+    aap_organization: "Default"
+    
+    # Secrets injected from K8s Secret
+    proxmox_url: "https://172.16.110.101:8006"
+    proxmox_user: "{{ lookup('env', 'PROXMOX_USER') | default('sre-bot@pve') }}"
+    proxmox_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') | default('sre-token') }}"
+    proxmox_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+    
+    cloudflare_token: "{{ lookup('env', 'CLOUDFLARE_TOKEN') }}"
+    
+    ssh_private_key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
+    
+    # Image we just built
+    ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
+
+  tasks:
+    - name: Wait for AAP to be ready
+      uri:
+        url: "{{ controller_host }}/api/v2/ping/"
+        method: GET
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        force_basic_auth: yes
+        validate_certs: no
+      register: result
+      until: result.status == 200
+      retries: 60
+      delay: 5
+
+    # -------------------------------------------------------
+    # 1. Credential Types
+    # -------------------------------------------------------
+    - name: Create Proxmox Credential Type
+      credential_type:
+        name: "Proxmox VE"
+        description: "Proxmox API Token authentication"
+        kind: cloud
+        inputs:
+          fields:
+            - id: host
+              label: Proxmox Host URL
+              type: string
+            - id: username
+              label: API User (user@realm)
+              type: string
+            - id: token_id
+              label: Token ID
+              type: string
+            - id: token_secret
+              label: Token Secret
+              type: string
+              secret: true
+          required:
+            - host
+            - username
+            - token_id
+            - token_secret
+        injectors:
+          env:
+            PROXMOX_URL: "{% raw %}{{ host }}{% endraw %}"
+            PROXMOX_USER: "{% raw %}{{ username }}{% endraw %}"
+            PROXMOX_TOKEN_ID: "{% raw %}{{ token_id }}{% endraw %}"
+            PROXMOX_TOKEN_SECRET: "{% raw %}{{ token_secret }}{% endraw %}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Cloudflare Credential Type
+      credential_type:
+        name: "Cloudflare API"
+        description: "Cloudflare DNS API Token"
+        kind: cloud
+        inputs:
+          fields:
+            - id: api_token
+              label: API Token
+              type: string
+              secret: true
+          required:
+            - api_token
+        injectors:
+          env:
+            CF_DNS_API_TOKEN: "{% raw %}{{ api_token }}{% endraw %}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    # -------------------------------------------------------
+    # 2. Execution Environments
+    # -------------------------------------------------------
+    - name: Create Custom HomeLab EE
+      execution_environment:
+        name: "HomeLab EE"
+        description: "Custom EE with Proxmox, Docker, and AAP Config collections"
+        image: "{{ ee_image }}"
+        pull: always
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    # -------------------------------------------------------
+    # 3. Credentials
+    # -------------------------------------------------------
+    - name: Create Proxmox Credential
+      credential:
+        name: "Proxmox Production"
+        organization: "{{ aap_organization }}"
+        credential_type: "Proxmox VE"
+        inputs:
+          host: "{{ proxmox_url }}"
+          username: "{{ proxmox_user }}"
+          token_id: "{{ proxmox_token_id }}"
+          token_secret: "{{ proxmox_token_secret }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Cloudflare Credential
+      credential:
+        name: "Cloudflare DNS"
+        organization: "{{ aap_organization }}"
+        credential_type: "Cloudflare API"
+        inputs:
+          api_token: "{{ cloudflare_token }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create AAP SSH Key
+      credential:
+        name: "AAP Executor SSH"
+        organization: "{{ aap_organization }}"
+        credential_type: "Machine"
+        inputs:
+          username: "root"
+          ssh_key_data: "{{ ssh_private_key }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Git Read-Only Credential
+      credential:
+        name: "Git Read-Only"
+        organization: "{{ aap_organization }}"
+        credential_type: "Source Control"
+        inputs:
+          ssh_key_data: "{{ ssh_private_key }}" # Reusing same key for simplicity, ideally separate
+          username: "git"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    # -------------------------------------------------------
+    # 4. Project
+    # -------------------------------------------------------
+    - name: Create HomeLab Project
+      project:
+        name: "HomeLab Ops"
+        organization: "{{ aap_organization }}"
+        scm_type: git
+        scm_url: "git@github.com:sigtom/wow-ocp.git"
+        scm_branch: "main"
+        scm_clean: true
+        scm_delete_on_update: true
+        credential: "Git Read-Only"
+        default_environment: "HomeLab EE"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no

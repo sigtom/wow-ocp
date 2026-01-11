@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aap-seeder
+  namespace: ansible-automation-platform
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: seeder
+          image: image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest
+          imagePullPolicy: Always
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "----------------------------------------"
+              echo "AAP Seeder Job Starting"
+              echo "----------------------------------------"
+              
+              echo "1. Configuring SSH..."
+              mkdir -p ~/.ssh
+              echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
+              ssh-keyscan github.com >> ~/.ssh/known_hosts
+              
+              echo "2. Cloning Repository..."
+              rm -rf /tmp/repo
+              git clone git@github.com:sigtom/wow-ocp.git /tmp/repo
+              
+              echo "3. Running Configuration Playbook..."
+              cd /tmp/repo
+              ansible-playbook automation/aap-config/setup-aap.yml -v
+          env:
+            - name: CONTROLLER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aap-controller-secrets
+                  key: password
+            - name: SSH_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: ssh_private_key
+            - name: PROXMOX_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: proxmox_token_secret
+            - name: PROXMOX_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: proxmox_token_id
+            - name: PROXMOX_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: proxmox_user
+            - name: CLOUDFLARE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: cloudflare_token
