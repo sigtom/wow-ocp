@@ -5,7 +5,7 @@ USER root
 
 # 1. Install System Packages (RPMs)
 COPY bindep.txt /tmp/bindep.txt
-RUN dnf -y install git sshpass openssh-clients bind-utils iputils && dnf clean all
+RUN microdnf -y install git sshpass openssh-clients bind-utils iputils && microdnf clean all
 
 # 2. Install Python Packages
 COPY requirements.txt /tmp/requirements.txt
