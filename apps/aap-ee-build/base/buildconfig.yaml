@@ -1,0 +1,27 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: custom-homelab-ee-build
+  namespace: ansible-automation-platform
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: custom-homelab-ee:latest
+  source:
+    git:
+      uri: https://github.com/sigtom/wow-ocp.git
+      ref: main
+    contextDir: infrastructure/builds/aap-ee/context
+    type: Git
+  strategy:
+    type: Docker
+    dockerStrategy:
+      from:
+        kind: DockerImage
+        name: registry.redhat.io/ansible-automation-platform-24/ee-supported-rhel9:latest
+      # We need to expose credentials for Red Hat Registry if node doesn't have them
+      # But usually nodes have pull secrets. If build fails, we'll fix auth.
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange

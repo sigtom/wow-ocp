@@ -1,0 +1,7 @@
+collections:
+  - name: community.general
+  - name: community.docker
+  - name: kubernetes.core
+  - name: ansible.posix
+  - name: infra.controller_configuration
+  - name: containers.podman

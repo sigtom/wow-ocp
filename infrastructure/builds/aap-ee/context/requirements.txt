@@ -1,0 +1,8 @@
+proxmoxer
+requests
+docker
+kubernetes
+openshift
+passlib
+jmespath
+netaddr

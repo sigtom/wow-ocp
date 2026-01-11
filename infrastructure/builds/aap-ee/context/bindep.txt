@@ -1,0 +1,5 @@
+bind-utils
+git
+iputils
+openssh-clients
+sshpass

@@ -1,0 +1,32 @@
+version: 3
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-24/ee-supported-rhel9:latest
+
+dependencies:
+  galaxy:
+    collections:
+      - community.general
+      - community.docker
+      - kubernetes.core
+      - ansible.posix
+      - infra.controller_configuration
+      - containers.podman
+
+  python:
+    - proxmoxer
+    - requests
+    - docker
+    - kubernetes
+    - openshift
+    - passlib
+    - jmespath
+    - netaddr
+
+  system:
+    - git
+    - sshpass
+    - openssh-clients
+    - bind-utils
+    - iputils
