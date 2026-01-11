@@ -46,7 +46,7 @@
     # 1. Credential Types
     # -------------------------------------------------------
     - name: Create Proxmox Credential Type
-      infra.controller_configuration.credential_type:
+      ansible.controller.credential_type:
         name: "Proxmox VE"
         description: "Proxmox API Token authentication"
         kind: cloud
@@ -83,7 +83,7 @@
         validate_certs: no
 
     - name: Create Cloudflare Credential Type
-      infra.controller_configuration.credential_type:
+      ansible.controller.credential_type:
         name: "Cloudflare API"
         description: "Cloudflare DNS API Token"
         kind: cloud
@@ -108,7 +108,7 @@
     # 2. Execution Environments
     # -------------------------------------------------------
     - name: Create Custom HomeLab EE
-      infra.controller_configuration.execution_environment:
+      ansible.controller.execution_environment:
         name: "HomeLab EE"
         description: "Custom EE with Proxmox, Docker, and AAP Config collections"
         image: "{{ ee_image }}"
@@ -124,7 +124,7 @@
     # 3. Credentials
     # -------------------------------------------------------
     - name: Create Proxmox Credential
-      infra.controller_configuration.credential:
+      ansible.controller.credential:
         name: "Proxmox Production"
         organization: "{{ aap_organization }}"
         credential_type: "Proxmox VE"
@@ -140,7 +140,7 @@
         validate_certs: no
 
     - name: Create Cloudflare Credential
-      infra.controller_configuration.credential:
+      ansible.controller.credential:
         name: "Cloudflare DNS"
         organization: "{{ aap_organization }}"
         credential_type: "Cloudflare API"
@@ -153,7 +153,7 @@
         validate_certs: no
 
     - name: Create AAP SSH Key
-      infra.controller_configuration.credential:
+      ansible.controller.credential:
         name: "AAP Executor SSH"
         organization: "{{ aap_organization }}"
         credential_type: "Machine"
@@ -167,7 +167,7 @@
         validate_certs: no
 
     - name: Create Git Read-Only Credential
-      infra.controller_configuration.credential:
+      ansible.controller.credential:
         name: "Git Read-Only"
         organization: "{{ aap_organization }}"
         credential_type: "Source Control"
@@ -184,7 +184,7 @@
     # 4. Project
     # -------------------------------------------------------
     - name: Create HomeLab Project
-      infra.controller_configuration.project:
+      ansible.controller.project:
         name: "HomeLab Ops"
         organization: "{{ aap_organization }}"
         scm_type: git
