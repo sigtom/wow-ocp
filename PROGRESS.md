@@ -595,3 +595,51 @@
     - **Next Steps**:
         - Create `ExternalSecret` resources to consume actual secrets.
         - Deploy Ansible Automation Platform (AAP) leveraging these secrets.
+- [2026-01-11]: **ANSIBLE AUTOMATION PLATFORM (AAP) DEPLOYMENT - IN FLIGHT**
+    - **Infrastructure**: Deployed AAP Operator 2.6 via GitOps (infrastructure/operators/aap).
+    - **Application**: Deployed AutomationController instance via GitOps (apps/aap).
+    - **Secrets**: Integrated with Bitwarden via ESO. configured `ExternalSecret` to pull `admin_password` and `secret_key` from `aap-secrets` item.
+    - **Storage**: Configured `lvms-vg1` for Postgres (performance) and `truenas-nfs` for Projects (shared access).
+    - **Ingress**: Configured `aap.apps.ossus.sigtomtech.com` with wildcart cert pattern (bypassed Operator Route).
+    - **Status**: Operator installing, Controller waiting for secrets.
+- [2026-01-11]: **ANSIBLE AUTOMATION PLATFORM (AAP) DEPLOYMENT - SUCCESS**
+    - **Achievement**: Successfully deployed AAP 2.6 Automation Controller with full GitOps secrets integration.
+    - **Secrets Architecture**:
+        - Created `ClusterSecretStore/bitwarden-fields` to parse custom fields from Bitwarden JSON response.
+        - Implemented "Split & Merge" ExternalSecret pattern: `aap-controller-login` (password) + `aap-controller-fields` (secret_key) -> `aap-controller-secrets`.
+        - Verified secret synchronization from Bitwarden item `aap-secrets`.
+    - **Deployment**:
+        - Infrastructure: AAP Operator 2.6 (stable).
+        - Application: AutomationController with local postgres (`lvms-vg1`) and shared projects (`truenas-nfs`).
+        - Networking: Custom Ingress with wildcart cert (`aap.apps.ossus.sigtomtech.com`).
+    - **Status**: Database migration running, Web UI accessible.
+    - **Troubleshooting**: 
+        - Initial Controller reconciliation failed with "Could not find the tower pod's name".
+        - Cause: Race condition where Operator checked for pod name before Deployment status was updated.
+        - Fix: Force-restarted Operator pod to trigger fresh reconciliation loop.
+        - Result: Operator proceeding through database migration and web configuration.
+    - **Resolution**:
+        - Identified UI failure as potential "partial install" or missing static generation.
+        - Action: Deleted `AutomationController` CR and PVCs to force full clean redeployment.
+        - Config: Switched to `ingress_type: Route` to ensure Operator runs standard UI setup logic.
+        - Status: Migration running (v370/v400+). Waiting for completion to verify UI at `aap.apps.ossus.sigtomtech.com`.
+    - **Architecture Correction**: 
+        - Diagnosed `TemplateDoesNotExist` error as a result of deploying standalone `AutomationController` 2.6 without the required Platform Gateway.
+        - Deployed `AnsibleAutomationPlatform` CR to orchestrate the full stack (Gateway + Controller).
+        - Verified Platform dependencies (Redis, Postgres) spinning up.
+        - System is converging to the correct AAP 2.6 architecture.
+- [2026-01-11]: **AAP 2.6 CONFIGURATION AS CODE (CasC) - COMPLETE ✅**
+    - **Goal**: Configure AAP entirely via Code (GitOps) with zero manual steps.
+    - **Architecture**:
+        - **Build**: Custom Execution Environment (`HomeLab EE`) built on OpenShift (`apps/aap-ee-build`) with `proxmoxer`, `docker`, `kubernetes`.
+        - **Secrets**: `aap-infra-creds` synced from Bitwarden via ESO (Split stores: `login` vs `fields`).
+        - **Seeder**: Kubernetes Job (`aap-seeder`) runs Ansible playbook to configure Controller via API.
+    - **Challenges & Fixes**:
+        - **Bitwarden Corruption**: SSH Key was corrupted (single line) in Vault. Regenerated and pushed via `bw edit` + `jq`.
+        - **ESO Mapping**: Fixed ESO to use separate stores for standard Login fields vs Custom Fields.
+        - **Git SSH**: Fixed `git clone` in OpenShift random UID environment by patching `/etc/passwd` at runtime and forcing `HOME=/tmp`.
+        - **Ansible Modules**: Switched from `infra.controller_configuration` (Roles) to `ansible.controller` (Modules) for the seeder playbook.
+    - **Outcome**:
+        - AAP is fully configured: Credentials (Proxmox, Cloudflare, Git, SSH), Project (HomeLab Ops), and EE (HomeLab EE) are present.
+        - Seeder Job runs automatically on Git changes via ArgoCD Sync Hook.
+    - **Documentation**: Created `docs/AAP-WORKFLOW.md` detailing the entire architecture and how to add new secrets.
