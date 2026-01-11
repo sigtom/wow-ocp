@@ -6,6 +6,7 @@ resources:
   - certificate.yaml
   - sidekick.yaml
   - bitwarden-api-creds-sealed.yaml
+  - cluster-secret-store.yaml
 
 # Ensure everything is forced into our namespace
 namespace: external-secrets
