@@ -2,10 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - upstream/bundle.yaml
-  - upstream/provider-all.yaml
+  - operator.yaml
+  - certificate.yaml
+  - sidekick.yaml
   - bitwarden-api-creds-sealed.yaml
-  - cluster-secret-store.yaml
-
-# Ensure everything is forced into our namespace
-namespace: external-secrets
+# We'll add cluster-secret-store.yaml in the next step once the operator is up

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bitwarden-sdk-server
+  namespace: external-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bitwarden-sdk-server
+  template:
+    metadata:
+      labels:
+        app: bitwarden-sdk-server
+    spec:
+      containers:
+        - name: sdk-server
+          image: registry.redhat.io/external-secrets-operator/bitwarden-sdk-server-rhel9:latest
+          args:
+            - "--key-file=/certs/tls.key"
+            - "--cert-file=/certs/tls.crt"
+          ports:
+            - containerPort: 9998
+              name: https
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: bitwarden-sdk-server-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bitwarden-sdk-server
+  namespace: external-secrets
+spec:
+  ports:
+    - port: 9998
+      targetPort: 9998
+      name: https
+  selector:
+    app: bitwarden-sdk-server

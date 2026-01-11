@@ -1,7 +1,0 @@
-apiVersion: operator.external-secrets.io/v1alpha1
-kind: OperatorConfig
-metadata:
-  name: external-secrets
-  namespace: external-secrets
-spec:
-  install: true

@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bitwarden-sdk-server-tls
+  namespace: external-secrets
+spec:
+  secretName: bitwarden-sdk-server-tls
+  issuerRef:
+    name: cloudflare-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - bw-sdk.apps.ossus.sigtomtech.com
+    # We add the internal service name too so it's valid for cluster-internal calls
+    - bitwarden-sdk-server.external-secrets.svc.cluster.local
