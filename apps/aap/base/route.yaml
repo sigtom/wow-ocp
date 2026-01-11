@@ -1,0 +1,18 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: aap-controller
+  namespace: ansible-automation-platform
+  annotations:
+    haproxy.router.openshift.io/timeout: 2m
+spec:
+  host: aap.apps.ossus.sigtomtech.com
+  to:
+    kind: Service
+    name: aap-controller-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

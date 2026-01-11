@@ -4,3 +4,4 @@ resources:
   - secret.yaml
   - external-secret.yaml
   - automation-controller.yaml
+  - route.yaml
