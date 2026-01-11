@@ -26,6 +26,11 @@ spec:
             - name: certs
               mountPath: /certs
               readOnly: true
+          env:
+            - name: BITWARDEN_API_URL
+              value: "https://bitvault.sigtom.dev/api"
+            - name: BITWARDEN_IDENTITY_URL
+              value: "https://bitvault.sigtom.dev/identity"
       volumes:
         - name: certs
           secret:
@@ -43,3 +48,18 @@ spec:
       name: https
   selector:
     app: bitwarden-sdk-server
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: bitwarden-sdk-server
+  namespace: external-secrets
+spec:
+  host: bw-sdk.apps.ossus.sigtomtech.com
+  to:
+    kind: Service
+    name: bitwarden-sdk-server
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
