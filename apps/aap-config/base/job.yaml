@@ -48,6 +48,17 @@ spec:
               
               git clone git@github.com:sigtom/wow-ocp.git /tmp/repo
               
+              
+              echo "3. Debugging Ansible Environment..."
+              echo ">>> /usr/share/ansible/collections content:"
+              ls -R /usr/share/ansible/collections || echo "Directory not found"
+              
+              echo ">>> Ansible Configuration:"
+              ansible-config dump | grep COLLECTIONS
+              
+              echo ">>> Installed Collections:"
+              ansible-galaxy collection list
+              
               echo "3. Running Configuration Playbook..."
               cd /tmp/repo
               ansible-playbook automation/aap-config/setup-aap.yml -v
