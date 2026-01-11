@@ -10,9 +10,7 @@ kind: OperatorGroup
 metadata:
   name: external-secrets-operator-group
   namespace: external-secrets
-spec:
-  targetNamespaces:
-  - external-secrets
+spec: {} # Empty spec = AllNamespaces
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
