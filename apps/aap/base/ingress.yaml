@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aap-controller
+  namespace: ansible-automation-platform
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-prod
+    route.openshift.io/termination: edge
+    route.openshift.io/insecure-policy: Redirect
+spec:
+  tls:
+    - hosts:
+        - aap.apps.ossus.sigtomtech.com
+      secretName: aap-controller-tls
+  rules:
+    - host: aap.apps.ossus.sigtomtech.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aap-controller-service
+                port:
+                  number: 80

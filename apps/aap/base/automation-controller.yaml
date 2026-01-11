@@ -1,0 +1,23 @@
+apiVersion: automationcontroller.ansible.com/v1beta1
+kind: AutomationController
+metadata:
+  name: aap-controller
+  namespace: ansible-automation-platform
+spec:
+  replicas: 1
+  route_tls_termination_mechanism: Edge
+  ingress_type: none
+  loadbalancer_port: 80
+  admin_password_secret: aap-controller-secrets
+  secret_key_secret: aap-controller-secrets
+  
+  # Managed Postgres Storage (Operator will provision DB)
+  postgres_storage_class: lvms-vg1
+  postgres_storage_requirements:
+    requests:
+      storage: 10Gi
+      
+  # Projects Storage
+  projects_storage_class: truenas-nfs
+  projects_storage_size: 10Gi
+  projects_persistence: true
