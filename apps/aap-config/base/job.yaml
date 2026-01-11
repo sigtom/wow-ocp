@@ -39,7 +39,7 @@ spec:
               chmod 600 ~/.ssh/id_rsa
               ssh-keyscan github.com >> ~/.ssh/known_hosts
               
-              export GIT_SSH_COMMAND='ssh -v -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
+              export GIT_SSH_COMMAND='ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
               
               echo "2. Cloning Repository..."
               rm -rf /tmp/repo
@@ -47,17 +47,6 @@ spec:
               ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts -T git@github.com || true
               
               git clone git@github.com:sigtom/wow-ocp.git /tmp/repo
-              
-              
-              echo "3. Debugging Ansible Environment..."
-              echo ">>> /usr/share/ansible/collections content:"
-              ls -R /usr/share/ansible/collections || echo "Directory not found"
-              
-              echo ">>> Ansible Configuration:"
-              ansible-config dump | grep COLLECTIONS
-              
-              echo ">>> Installed Collections:"
-              ansible-galaxy collection list
               
               echo "3. Running Configuration Playbook..."
               cd /tmp/repo
