@@ -95,6 +95,8 @@ spec:
           image: "jessebot/bweso:1.5.0"
           imagePullPolicy: IfNotPresent
           env:
+            - name: HOME
+              value: /tmp
             - name: BW_HOST
               valueFrom:
                 secretKeyRef:
