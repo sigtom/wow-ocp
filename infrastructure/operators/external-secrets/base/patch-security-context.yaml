@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets
+  namespace: external-secrets
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: null
+        runAsNonRoot: null
+        fsGroup: null
+        seccompProfile: null
+      containers:
+        - name: external-secrets
+          securityContext:
+            runAsUser: null
+            runAsNonRoot: null
+            allowPrivilegeEscalation: null
+            capabilities: null
+            readOnlyRootFilesystem: null
+            seccompProfile: null
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets-cert-controller
+  namespace: external-secrets
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: null
+        runAsNonRoot: null
+        fsGroup: null
+        seccompProfile: null
+      containers:
+        - name: external-secrets-cert-controller
+          securityContext:
+            runAsUser: null
+            runAsNonRoot: null
+            allowPrivilegeEscalation: null
+            capabilities: null
+            readOnlyRootFilesystem: null
+            seccompProfile: null
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-secrets-webhook
+  namespace: external-secrets
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: null
+        runAsNonRoot: null
+        fsGroup: null
+        seccompProfile: null
+      containers:
+        - name: external-secrets-webhook
+          securityContext:
+            runAsUser: null
+            runAsNonRoot: null
+            allowPrivilegeEscalation: null
+            capabilities: null
+            readOnlyRootFilesystem: null
+            seccompProfile: null

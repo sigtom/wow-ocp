@@ -3,4 +3,6 @@ kind: Kustomization
 resources:
   - install.yaml
   - clustersecretstore.yaml
-  - scc-rbac.yaml
+
+patches:
+  - path: patch-security-context.yaml
