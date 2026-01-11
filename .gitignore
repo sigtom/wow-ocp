@@ -44,6 +44,11 @@ docs/PLAYBOOK-COMMANDS.md
 *.retry
 .ansible/
 facts.d/
+*.backup-*
+*-backup-*
+
+# One-off operational playbooks (contain incident response, not infrastructure-as-code)
+automation/playbooks/reconfigure-traefik.yaml
 
 # Python
 __pycache__/

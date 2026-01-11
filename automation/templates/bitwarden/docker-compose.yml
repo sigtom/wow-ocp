@@ -1,0 +1,28 @@
+---
+# Bitwarden Lite Docker Compose Stack
+# Official Bitwarden self-hosted deployment (lite variant for homelabs)
+# Documentation: https://bitwarden.com/help/install-and-deploy-lite/
+
+services:
+  bitwarden:
+    image: ghcr.io/bitwarden/lite
+    container_name: bitwarden
+    restart: unless-stopped
+    env_file: settings.env
+    ports:
+      - "8080:8080"     # HTTP only - SSL terminated by Traefik
+    volumes:
+      - ./data:/etc/bitwarden
+    environment:
+      # Services (enable all for full functionality)
+      - BW_ENABLE_ADMIN=true
+      - BW_ENABLE_API=true
+      - BW_ENABLE_IDENTITY=true
+      - BW_ENABLE_ICONS=true
+      - BW_ENABLE_NOTIFICATIONS=true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

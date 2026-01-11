@@ -117,15 +117,19 @@
     - not skip_existing_check
     - lxc_check.status == 200
 
+- name: Create SSH keys file locally
+  ansible.builtin.copy:
+    dest: "/tmp/lxc_keys_{{ vmid }}.pub"
+    content: "{{ global_ssh_keys | join('\n') }}\n"
+    mode: '0644'
+  delegate_to: localhost
+  when: lxc_check.status != 200
+
 - name: Upload SSH keys to Proxmox host
   ansible.builtin.shell: |
-    ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre root@{{ proxmox_api_host }} << 'REMOTE'
-    cat > /tmp/lxc_keys_{{ vmid }}.pub << 'EOF'
-{% for key in global_ssh_keys %}
-{{ key }}
-{% endfor %}
-    EOF
-    REMOTE
+    scp -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/id_pfsense_sre \
+      /tmp/lxc_keys_{{ vmid }}.pub \
+      root@{{ proxmox_api_host }}:/tmp/lxc_keys_{{ vmid }}.pub
   delegate_to: localhost
   when: lxc_check.status != 200
 

@@ -424,6 +424,39 @@
     - **User Workflow**: Clone → Copy .example files → Edit with environment → Deploy
     - **Result**: Professional, shareable repository ready for public GitHub with zero environment-specific data exposed
 
+- [2026-01-11]: **BITWARDEN LITE DEPLOYMENT - 60% COMPLETE (BLOCKED BY SSH BUG)**
+    - **Goal**: Replace Vaultwarden with official Bitwarden Lite for ESO integration with API keys
+    - **Research Complete**: 
+        - ✅ Confirmed Vaultwarden lacks API key support (Bitwarden Cloud feature only)
+        - ✅ Discovered Bitwarden Lite (homelab-optimized: 200MB RAM, SQLite, ARM support)
+        - ✅ Validated small-hack/bitwarden-eso-provider works with self-hosted Bitwarden
+        - ✅ User has Bitwarden Families license ($12.99/year) with API keys already
+    - **Infrastructure Created**:
+        - ✅ Inventory entry: `bitwarden-lite` (vmid 216, 172.16.100.106, 1C/1GB/10GB)
+        - ✅ Templates: docker-compose.yml, settings.env.j2, traefik-bitwarden.yml.j2
+        - ✅ Playbook: `automation/playbooks/deploy-bitwarden-lite.yaml` (modular, follows Nautobot pattern)
+        - ✅ DNS: bitvault.sigtom.dev → 172.16.100.10 (Traefik)
+    - **❌ BLOCKER: SSH Key Upload Bug (RECURRING)**:
+        - LXC 216 created successfully via playbook
+        - SSH keys uploaded but authorization fails (Permission denied)
+        - Root cause: Same bug as Traefik deployment - `join('\n')` creates literal `\n` strings
+        - Fix attempted but SSH auth still broken (keys look correct in authorized_keys)
+        - Possibly missing `keyctl=1` feature flag (Nautobot has it, Bitwarden doesn't)
+    - **Lessons Learned**:
+        - provision_lxc_generic role has syntax errors, never actually worked end-to-end
+        - Must test SSH immediately after LXC creation, not 100 lines later
+        - Inline working code instead of delegating to broken roles
+        - User correctly called out: "FIX THE FUCKING PLAYBOOK" - stop workarounds, fix root cause
+    - **Next Session Tasks**:
+        1. Debug why SSH keys work for Nautobot (215) but not Bitwarden (216)
+        2. Compare: features flags, SSH config, container OS differences
+        3. Fix playbook SSH key upload permanently (use copy module, not heredoc)
+        4. Test: Create LXC → Verify SSH → Install Docker → Deploy app (each phase validated)
+        5. Complete Bitwarden Lite deployment
+        6. Migrate data from Vaultwarden
+        7. Deploy ESO + bitwarden-eso-provider
+        8. Test secret sync from Bitwarden → K8s
+
 - [2026-01-10]: **NAUTOBOT IPAM/DCIM INTEGRATION PLANNING - 75% COMPLETE**
     - **Context**: Deployed Nautobot production instance, now planning automated network discovery and IPAM integration
     - **Physical Topology Documented**:
@@ -495,4 +528,60 @@
         4. Create network interface objects on all devices
         5. Document physical cable connections between devices
         6. Begin IP address import from IP-INVENTORY.md
+
+- [2026-01-11]: **AUTOMATION PATTERN STANDARDIZATION & BITWARDEN LITE DEPLOYMENT (90% COMPLETE - ON HOLD)**
+    - **Documentation Created**:
+        - `automation/DEPLOYMENT-PATTERN.md` - Comprehensive deployment standard documentation
+        - Mandatory two-play architecture (prevents Ansible fact caching bugs)
+        - Cattle infrastructure pattern enforcement
+        - Common mistakes and troubleshooting guide
+        - Reference: Traefik deployment as gold standard template
+    - **GitHub Issues Created**:
+        - Issue #15: Ansible deprecation warning (INJECT_FACTS_AS_VARS - need to migrate to ansible_facts dict)
+        - Issue #16: health_check role cloud-init check inappropriate for LXC containers
+    - **Bitwarden Lite Deployment Status**:
+        - **Infrastructure**: ✅ COMPLETE
+            - LXC 216 @ 172.16.100.16 (corrected from 172.16.100.106 which conflicted with OpenShift Apps VIP)
+            - SSH authentication working with id_pfsense_sre key
+            - Docker 29.1.4 + Docker Compose v2 installed
+        - **Application**: ✅ RUNNING
+            - Bitwarden Lite container deployed and healthy
+            - All services operational: Identity, API, Admin, Icons, Notifications, nginx
+            - SQLite database initialized at /etc/bitwarden/vault.db
+            - Health endpoint responding: http://172.16.100.16:8080/alive
+        - **Traefik Integration**: ✅ CONFIGURED (staging certs)
+            - Config deployed: /opt/traefik/config/bitwarden.yml
+            - Accessible at: https://bitvault.sigtom.dev
+            - Using Let's Encrypt STAGING certificates (intentional - Cloudflare token security)
+        - **Secrets Management**: ✅ WORKING
+            - Installation ID/Key from https://bitwarden.com/host/ injected via environment variables
+            - settings.env template working correctly with env_file in docker-compose
+    - **Critical Lessons Learned**:
+        - **IP Allocation**: MUST query Nautobot or IP inventory BEFORE provisioning (discovered 172.16.100.106 was OpenShift Apps VIP)
+        - **Docker Compose env_file**: Don't mix `env_file:` with `environment:` using `${VAR}` substitution - env_file passes vars directly to container
+        - **SSH Key Upload**: Fixed provision_lxc_generic role - replaced broken heredoc Jinja loop with ansible.builtin.copy + scp pattern
+        - **Traefik Wildcard Certs**: Use `tls: {}` in router config to leverage existing wildcard cert, not `certResolver:` which requests new cert
+    - **Bugs Fixed**:
+        - provision_lxc_generic role: SSH key upload Jinja syntax error in heredoc (replaced with copy + scp)
+        - snapshot_manager role: Recursive loop in pve_api_user variable lookup (disabled snapshots temporarily)
+        - Bitwarden docker-compose.yml: Removed duplicate env var declarations causing "variable not set" warnings
+        - Bitwarden image name: Corrected to `ghcr.io/bitwarden/lite` (no version tag per official docs)
+    - **Deployment Files Created**:
+        - `automation/playbooks/deploy-bitwarden-lite.yaml` - Full two-play deployment (follows Traefik pattern)
+        - `automation/templates/bitwarden/docker-compose.yml` - Bitwarden Lite stack
+        - `automation/templates/bitwarden/settings.env.j2` - Environment variables template
+        - `automation/templates/bitwarden/traefik-bitwarden.yml.j2` - Traefik integration config
+    - **Status**: ⏸️ ON HOLD - Paused at 90% completion
+        - **Reason**: Cloudflare API token security concern (previously exposed, rotating to Bitwarden-managed secrets)
+        - **Next Steps**: Pivot to ESO (External Secrets Operator) with Bitwarden Cloud integration first
+        - **Plan**:
+            1. Deploy ESO operator on OpenShift
+            2. Configure bitwarden-eso-provider pointing to vault.bitwarden.com (paid subscription)
+            3. Test with low-hanging fruit: migrate one sealed secret to ESO-managed secret
+            4. Deploy Ansible Automation Platform (AAP) on OpenShift
+            5. Integrate AAP with ESO for runtime secret injection into playbooks
+            6. Once AAP + ESO + Bitwarden Cloud proven: return to deploy self-hosted Bitwarden Lite
+            7. Switch ESO provider from vault.bitwarden.com to bitvault.sigtom.dev
+            8. Rotate all secrets to Bitwarden Lite instance
+            9. Switch Traefik from staging to production Let's Encrypt certs
 

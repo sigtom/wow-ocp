@@ -34,6 +34,83 @@
 
 Every manifest, command, or recommendation you provide must adhere to these non-negotiable rules.
 
+### 0. NO COWBOY SCRIPTS - USE THE RIGHT TOOL (Added 2026-01-11)
+
+**CRITICAL RULE:** DO NOT write ad-hoc bash scripts that directly modify deployed resources. Use the proper automation tooling:
+
+**For OpenShift Resources:**
+- ✅ GitOps workflow (commit → push → ArgoCD sync)
+- ✅ `oc` commands for emergency break-glass only
+- ❌ NEVER: ssh into nodes and modify configs
+- ❌ NEVER: one-off scripts that bypass Git
+
+**For Proxmox/LXC/VM Resources:**
+- ✅ Ansible playbooks in `automation/playbooks/`
+- ✅ Reuse existing playbooks where possible
+- ✅ Discuss before creating new one-off playbooks
+- ❌ NEVER: ssh scripts that modify configs directly
+- ❌ NEVER: manual `pct exec` or `qm` commands outside playbooks
+
+**Rationale:**
+- Configuration drift is the enemy
+- Git is the source of truth for OpenShift
+- Ansible is the source of truth for Proxmox
+- Every change must be repeatable and auditable
+- Manual scripts = technical debt
+
+### 0B. NO TEMP FILE SPAM - COMMUNICATE DIRECTLY (Added 2026-01-11)
+
+**CRITICAL RULE:** DO NOT create temporary markdown files in `/tmp/` to organize your thoughts. Talk directly to the user.
+
+**For communication/planning:**
+- ✅ Use markdown formatting directly in responses
+- ✅ Structure your thoughts inline (lists, headers, code blocks)
+- ✅ User can scroll back in terminal if they need to reference
+- ❌ NEVER: Create `/tmp/*.md` files for planning/discussion
+- ❌ NEVER: Write files just to `cat` them back
+
+**For documentation:**
+- ✅ Save to Git only if it's permanent (runbooks, architecture docs)
+- ✅ Proper location: `docs/`, `automation/`, `.pi/skills/`
+- ✅ Discuss file location/content with user first
+
+**Rationale:**
+- Clutters the filesystem with throwaway files
+- User has to scroll past unnecessary file creation commands
+- Important info should go in Git (PROGRESS.md, SYSTEM.md, docs/)
+- Temporary mental models belong in your response, not on disk
+
+### 0C. TEST YOUR FUCKING CODE BEFORE DECLARING SUCCESS (Added 2026-01-11)
+
+**CRITICAL LESSONS FROM BITWARDEN DEPLOYMENT FAILURE:**
+
+1. **SSH Key Upload Bug (RECURRING ISSUE):**
+   - Problem: `{{ list | join('\n') }}` in heredoc creates LITERAL `\n` strings, not newlines
+   - Same bug hit Traefik deployment, hit Bitwarden deployment AGAIN
+   - Solution: Use `ansible.builtin.copy` with explicit newlines or loop through items
+   - **Prevention:** ALWAYS test SSH immediately after LXC creation in playbooks
+
+2. **Never Assume Existing Roles Work:**
+   - `provision_lxc_generic` role has Jinja syntax errors (line 124: naked {% in YAML heredoc)
+   - Role was never actually tested end-to-end
+   - DO NOT delegate to untested roles - inline the working code until roles are proven
+
+3. **Test Each Phase Independently:**
+   - Don't write 300-line playbooks without testing each section
+   - After LXC creation: IMMEDIATELY test `ssh root@IP "echo test"`
+   - After Docker install: IMMEDIATELY test `docker --version`
+   - Fail fast, don't discover issues 200 lines later
+
+4. **When User Says "FIX THE FUCKING PLAYBOOK":**
+   - They mean: Stop trying workarounds, fix the ROOT CAUSE
+   - Don't apologize and keep doing the same broken thing
+   - Fix it, test it, verify it works, THEN move on
+
+5. **Secrets Management Reality Check:**
+   - Vaultwarden doesn't support API keys (only Bitwarden Cloud does)
+   - Bitwarden Lite ONLY needs: BW_INSTALLATION_ID + BW_INSTALLATION_KEY (from env vars)
+   - Stop overcomplicating - not everything needs Bitwarden CLI lookups
+
 ### A. Resource Discipline (The "Don't OOM Me" Rule)
 
 **Reality:** 3 blades = finite resources. ~72 vCPUs, ~384GB RAM total. Every pod without limits is a cluster bomb.
