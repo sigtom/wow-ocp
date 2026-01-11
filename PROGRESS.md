@@ -571,17 +571,27 @@
         - `automation/templates/bitwarden/docker-compose.yml` - Bitwarden Lite stack
         - `automation/templates/bitwarden/settings.env.j2` - Environment variables template
         - `automation/templates/bitwarden/traefik-bitwarden.yml.j2` - Traefik integration config
-    - **Status**: ⏸️ ON HOLD - Paused at 90% completion
-        - **Reason**: Cloudflare API token security concern (previously exposed, rotating to Bitwarden-managed secrets)
-        - **Next Steps**: Pivot to ESO (External Secrets Operator) with Bitwarden Cloud integration first
-        - **Plan**:
-            1. Deploy ESO operator on OpenShift
-            2. Configure bitwarden-eso-provider pointing to vault.bitwarden.com (paid subscription)
-            3. Test with low-hanging fruit: migrate one sealed secret to ESO-managed secret
-            4. Deploy Ansible Automation Platform (AAP) on OpenShift
-            5. Integrate AAP with ESO for runtime secret injection into playbooks
-            6. Once AAP + ESO + Bitwarden Cloud proven: return to deploy self-hosted Bitwarden Lite
-            7. Switch ESO provider from vault.bitwarden.com to bitvault.sigtom.dev
-            8. Rotate all secrets to Bitwarden Lite instance
-            9. Switch Traefik from staging to production Let's Encrypt certs
 
+- [2026-01-11]: **EXTERNAL SECRETS OPERATOR & BITWARDEN INTEGRATION (COMPLETE)**
+    - **Goal**: Enable GitOps-driven secrets management using External Secrets Operator (ESO) pulling from self-hosted Bitwarden Lite.
+    - **Challenge**: OLM installation of ESO failed due to version conflicts. Official Bitwarden provider requires paid "Secrets Manager" product.
+    - **The SRE Pivot**: 
+        - Bypassed OLM entirely.
+        - Deployed ESO `v1.2.1` (Upstream) via "Hydrated Helm" pattern (GitOps managed).
+        - Deployed `bitwarden-eso-provider` (Community Bridge) to interface with Bitwarden Vault API.
+    - **Architecture**: 
+        - **Engine**: ESO v1.2.1 running in `external-secrets` namespace.
+        - **Bridge**: `bitwarden-eso-provider` pod acting as a webhook provider.
+        - **Store**: `ClusterSecretStore/bitwarden-login` configured to talk to the Bridge.
+    - **Critical Technical Fixes**:
+        - **CRD Size Limit**: Enabled `ServerSideApply=true` in ArgoCD Application to handle 256KB+ CRDs (etcd limit).
+        - **OpenShift Security**: Removed hardcoded `runAsUser: 1000` from manifests (`securityContext: null`) to allow SCC defaults.
+        - **Container Permissions**: Injected `HOME=/tmp` into provider pod to fix `mkdir /.config` permission denied error (random UID support).
+        - **Configuration**: Added missing `BW_APPID` to SealedSecret to satisfy provider config requirement.
+    - **Outcome**: 
+        - ESO Operator: **Running**
+        - Bitwarden Provider: **Running**
+        - ClusterSecretStore: **Valid/Ready**
+    - **Next Steps**:
+        - Create `ExternalSecret` resources to consume actual secrets.
+        - Deploy Ansible Automation Platform (AAP) leveraging these secrets.

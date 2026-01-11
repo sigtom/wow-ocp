@@ -109,4 +109,4 @@ automation/.traefik-credentials
 bitwarden-placement-analysis.md
 external-secrets-bitwarden.md
 docs/*
-docs/
+docs/PROGRESS.archive.md
