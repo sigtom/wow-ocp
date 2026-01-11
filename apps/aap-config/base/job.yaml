@@ -24,13 +24,10 @@ spec:
               echo "----------------------------------------"
               
               echo "1. Configuring SSH..."
-              mkdir -p /tmp/.ssh
-              echo "$SSH_PRIVATE_KEY" > /tmp/.ssh/id_rsa
-              chmod 600 /tmp/.ssh/id_rsa
-              ssh-keyscan github.com >> /tmp/.ssh/known_hosts
-              
-              # Force Git to use this key
-              export GIT_SSH_COMMAND='ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
+              mkdir -p ~/.ssh
+              echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
+              ssh-keyscan github.com >> ~/.ssh/known_hosts
               
               echo "2. Cloning Repository..."
               rm -rf /tmp/repo
