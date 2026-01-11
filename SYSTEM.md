@@ -176,15 +176,19 @@ argocd-apps/              # Application CRDs for sync
 **NEVER suggest `oc apply -f <file>` unless:**
 - It's explicitly Day 0 bootstrap
 - It's a break-glass emergency with documented rollback plan
+- **EXCEPTION:** Huge CRDs (e.g. External Secrets) may require `oc apply -f <file> --server-side` if ArgoCD sync fails due to annotation size limits, though enabling `ServerSideApply=true` in ArgoCD is the preferred permanent fix.
 
 ### D. Secrets Management (The "Loose Lips Sink Ships" Rule)
 
-**Tool:** Bitnami Sealed Secrets (encrypted at rest in Git)
+**Tools:**
+1. **Bitnami Sealed Secrets:** For "bootstrap" secrets (e.g., cloud API keys, git credentials, Bitwarden access). Encrypted at rest in Git.
+2. **External Secrets Operator (ESO):** For application secrets (e.g., database passwords, app keys). Synced from Bitwarden Vault.
 
 **Absolute Rules:**
 - NEVER output a raw Kubernetes Secret manifest
 - NEVER commit unencrypted secrets to Git
-- ALWAYS use `kubeseal` before committing
+- ALWAYS use `kubeseal` for bootstrap secrets
+- PREFER `ExternalSecret` resource pointing to Bitwarden for app credentials
 
 **Workflow:**
 ```bash
@@ -336,9 +340,15 @@ oc set data secret/pull-secret -n openshift-config \
 
 **Never suggest:** Per-pod `imagePullSecrets` - this doesn't scale and breaks GitOps patterns
 
-### I. Ingress & Certificates (The "Green Lock" Rule)
+### I. Networking & Ingress (The "Green Lock" & "Traffic Cop" Rule)
 
-**CRITICAL PATTERN CHANGE (2025-12-23):**
+**Traffic Control (NetworkPolicies):**
+- **Intra-Namespace:** Use `podSelector` to allow traffic between specific pods (e.g. Operator -> Webhook).
+- **CRITICAL LESSON:** Do NOT use `namespaceSelector` to match the *current* namespace (it matches the Namespace object labels, not the Pods).
+- **Default:** `allow-same-namespace` is safe, but restrictive policies must use correct selectors.
+
+**Ingress Strategy:**
+- **CRITICAL PATTERN CHANGE (2025-12-23):**
 - Use **Kubernetes Ingress objects** in Git (not OpenShift Routes)
 - OpenShift IngressController auto-converts Ingress → Route with TLS secret sync
 - This allows Cert-Manager TLS secrets to propagate correctly to HAProxy
@@ -759,6 +769,30 @@ sudo systemctl enable --now qemu-guest-agent
 # Windows
 # Install from virtio-win ISO
 ```
+
+### Workflow: Deploy Complex Operator (Hydrated Helm Pattern)
+
+**Use Case:** When OLM is broken, rigid, or outdated.
+
+**Steps:**
+1.  **Add Helm Repo:** `helm repo add <name> <url>`
+2.  **Inspect Values:** `helm show values <repo>/<chart> > temp-values.yaml`
+3.  **Identify Overrides:**
+    *   OpenShift Security: `securityContext.runAsUser: null` (allow random UID)
+    *   Permissions: `extraEnv` for `HOME=/tmp` (if writing to filesystem)
+    *   Features: Enable/Disable sub-charts (e.g. webhooks)
+4.  **Hydrate Manifests:**
+    ```bash
+    helm template <release-name> <repo>/<chart> \
+      --namespace <ns> \
+      --version <version> \
+      --set <overrides> \
+      > infrastructure/operators/<name>/base/install.yaml
+    ```
+5.  **Create Kustomization:** Add `install.yaml` to `resources`.
+6.  **Configure ArgoCD:**
+    *   Enable `ServerSideApply=true` in `syncOptions` if CRDs are >256KB.
+7.  **Commit & Push.**
 
 ### Workflow: Troubleshoot PVC Stuck in Pending
 
@@ -2451,3 +2485,48 @@ bw lock
       no_log: true
 ```
 
+
+### Issue: ArgoCD Sync Failed on Huge CRDs (Annotation Too Long)
+
+**Last Seen:** 2026-01-11 (External Secrets Operator)
+**Affects:** Operators with massive CRDs (>256KB)
+
+**Symptoms:**
+- ArgoCD sync fails with `metadata.annotations: Too long: may not be more than 262144 bytes`
+- Dependent resources (like `ClusterSecretStore`) fail with "Resource not found" because CRD didn't apply
+
+**Root Cause:**
+- `kubectl apply` (client-side) stores the last applied configuration in an annotation.
+- Huge CRDs exceed the etcd value limit for this annotation.
+
+**Resolution:**
+1.  **Permanent:** Enable Server-Side Apply in ArgoCD Application:
+    ```yaml
+    spec:
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+    ```
+2.  **Emergency:** Manually apply via CLI: `oc apply -f crds.yaml --server-side`
+
+### Issue: Pod Permission Denied (mkdir /.config)
+
+**Last Seen:** 2026-01-11 (Bitwarden Provider)
+**Affects:** Container images built assuming root or specific UID
+
+**Symptoms:**
+- Pod in `CrashLoopBackOff`
+- Logs show: `mkdir: cannot create directory '//.config': Permission denied`
+
+**Root Cause:**
+- OpenShift runs containers as random UID.
+- Application tries to write to `HOME` (which might default to `/` or `/root` if user is unknown) and fails.
+
+**Resolution:**
+- **Fix 1:** Force `HOME` to a writable directory in Deployment env:
+    ```yaml
+    env:
+      - name: HOME
+        value: /tmp
+    ```
+- **Fix 2:** Disable hardcoded `runAsUser` in manifest to allow OpenShift SCC to assign UID.
