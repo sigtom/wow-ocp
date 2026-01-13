@@ -5,7 +5,7 @@
 snapshot_operation: create  # create, delete, list, cleanup
 
 # Snapshot naming
-snapshot_name: "{{ snapshot_type | default('manual') }}-{{ ansible_date_time.epoch }}"
+snapshot_name: "{{ snapshot_type | default('manual') }}-{{ ansible_facts['date_time']['epoch'] }}"
 snapshot_description: "Automated snapshot created by Ansible"
 
 # Snapshot type (used for naming and retention)
