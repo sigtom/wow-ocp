@@ -9,7 +9,6 @@ inventory/group_vars/*.yml
 !inventory/group_vars/.gitkeep
 
 # Playbooks (environment-specific deployments)
-playbooks/deploy-*.yaml
 playbooks/*-create-*.yaml
 !playbooks/*.example.yaml
 
