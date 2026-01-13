@@ -4,7 +4,7 @@
 
 - name: Get current timestamp
   ansible.builtin.set_fact:
-    current_epoch: "{{ ansible_date_time.epoch | int }}"
+    current_epoch: "{{ ansible_facts['date_time']['epoch'] | int }}"
 
 - name: Cleanup VM snapshots
   block:
