@@ -1,0 +1,109 @@
+---
+# ============================================================================
+# Bitwarden Lite Fully Automated Deployment (Cattle Pattern v4 - CLEAN)
+# ============================================================================
+- name: "PLAY 1: Provision Bitwarden Lite LXC Container"
+  hosts: bitwarden-lite
+  gather_facts: false
+  vars:
+    target_node: "{{ proxmox_node }}"
+    target_vmid: "{{ vmid }}"
+    target_ip: "{{ ansible_host }}"
+    target_hostname: "{{ bitwarden_domain }}"
+    resource_size: "{{ lxc_size }}"
+    os_template: "{{ lxc_template }}"
+    network: "{{ network_profile }}"
+    backup_policy: "{{ snapshot_policy | default('none') }}"
+    bitwarden_installation_id: "{{ lookup('env', 'BW_INSTALLATION_ID') }}"
+    bitwarden_installation_key: "{{ lookup('env', 'BW_INSTALLATION_KEY') }}"
+
+  tasks:
+    - name: "Gather facts from localhost"
+      ansible.builtin.setup:
+        gather_subset: ['date_time']
+      delegate_to: localhost
+      run_once: true
+
+    - name: "Provision LXC container"
+      ansible.builtin.include_role:
+        name: provision_lxc_generic
+      vars:
+        os_type: "{{ os_template }}"
+        tshirt_size: "{{ resource_size }}"
+        lxc_features: "nesting=1"
+        health_check_enabled: false
+        post_provisioning_enabled: false
+        skip_existing_check: true
+
+    - name: "Prepare SSH known_hosts"
+      ansible.builtin.shell: |
+        ssh-keygen -R {{ target_ip }} 2>/dev/null || true
+        ssh-keyscan -H {{ target_ip }} >> ~/.ssh/known_hosts 2>/dev/null
+      delegate_to: localhost
+
+- name: "PLAY 2: Configure Bitwarden Lite Services"
+  hosts: bitwarden-lite
+  gather_facts: true
+  vars:
+    bitwarden_base_dir: "/opt/bitwarden"
+    bitwarden_port: 8080
+    traefik_host: "172.16.100.10"
+    bitwarden_domain: "bitvault.sigtom.dev"
+    bitwarden_installation_id: "{{ lookup('env', 'BW_INSTALLATION_ID') }}"
+    bitwarden_installation_key: "{{ lookup('env', 'BW_INSTALLATION_KEY') }}"
+
+  tasks:
+    - name: "Phase 1: Install Docker"
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provision_profile: docker_host
+
+    - name: "Phase 2: Create base directory"
+      ansible.builtin.file:
+        path: "{{ bitwarden_base_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: "Phase 2: Copy Docker Compose"
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../templates/bitwarden/docker-compose.yml"
+        dest: "{{ bitwarden_base_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: "Phase 2: Create settings.env"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/bitwarden/settings.env.j2"
+        dest: "{{ bitwarden_base_dir }}/settings.env"
+        mode: '0600'
+
+    - name: "Phase 2: Install Docker Python library"
+      ansible.builtin.apt:
+        name: [python3-docker, python3-requests]
+        state: present
+
+    - name: "Phase 3: Start Bitwarden"
+      community.docker.docker_compose_v2:
+        project_src: "{{ bitwarden_base_dir }}"
+        state: present
+        recreate: always
+
+    - name: "Phase 3: Wait for Health"
+      ansible.builtin.uri:
+        url: "http://localhost:{{ bitwarden_port }}/alive"
+        status_code: 200
+      register: health_check
+      retries: 20
+      delay: 10
+      until: health_check.status == 200
+
+    - name: "Phase 4: Deploy Traefik config"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/bitwarden/traefik-bitwarden.yml.j2"
+        dest: "/tmp/bitwarden-traefik.yml"
+      delegate_to: localhost
+
+    - name: "Phase 4: Sync to Traefik"
+      ansible.builtin.shell: |
+        scp -i ~/.ssh/id_pfsense_sre -o StrictHostKeyChecking=no /tmp/bitwarden-traefik.yml root@{{ traefik_host }}:/opt/traefik/config/bitwarden.yml
+      delegate_to: localhost
