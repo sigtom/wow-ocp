@@ -1,0 +1,13 @@
+---
+- name: Test AAP Flow
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Debug Message
+      debug:
+        msg: "AAP GitOps Flow is working correctly!"
+
+    - name: Show Local Facts
+      debug:
+        var: ansible_facts
