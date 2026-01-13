@@ -17,7 +17,12 @@
     health_check_results: "{{ health_check_results + [ {'check': 'SSH Connectivity', 'status': 'FAIL', 'details': 'Host unreachable'} ] }}"
   when: ssh_check is failed
 
-- name: Check Cloud-Init Status
+- name: Record Cloud-Init Status (LXC)
+  ansible.builtin.set_fact:
+    health_check_results: "{{ health_check_results + [ {'check': 'Cloud-Init Status', 'status': 'SKIP', 'details': 'Skipped for LXC container'} ] }}"
+  when: is_lxc
+
+- name: Check Cloud-Init Status (VM/Host)
   block:
     - name: Check cloud-init status command
       ansible.builtin.command: cloud-init status
@@ -34,6 +39,7 @@
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Cloud-Init Status', 'status': 'WARN', 'details': 'Status: ' + cloud_init_status.stdout} ] }}"
       when: "'done' not in cloud_init_status.stdout"
+  when: not is_lxc
   rescue:
     - name: Record Cloud-Init check failure
       ansible.builtin.set_fact:
