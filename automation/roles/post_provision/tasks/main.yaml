@@ -16,7 +16,7 @@
       - "=========================================="
       - "Target: {{ inventory_hostname }}"
       - "Profile: {{ post_provisioning_profile }}"
-      - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
       - "=========================================="
   when: post_provision_verbose
 

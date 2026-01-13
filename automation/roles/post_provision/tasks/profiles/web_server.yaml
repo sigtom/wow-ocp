@@ -5,7 +5,7 @@
 
 - name: Gather facts if needed
   ansible.builtin.setup:
-  when: ansible_distribution is not defined
+  when: ansible_facts['distribution'] is not defined
 
 - name: Install nginx and certbot
   block:
@@ -18,7 +18,7 @@
         state: present
         update_cache: yes
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Install nginx and certbot (Fedora)
       ansible.builtin.dnf:
@@ -28,7 +28,7 @@
           - python3-certbot-nginx
         state: present
       become: yes
-      when: ansible_distribution == "Fedora"
+      when: ansible_facts['distribution'] == "Fedora"
     
     - name: Record nginx installation
       ansible.builtin.set_fact:
@@ -45,7 +45,7 @@
         name: ufw
         state: present
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Allow SSH
       community.general.ufw:

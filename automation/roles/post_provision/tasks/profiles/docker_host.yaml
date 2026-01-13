@@ -4,7 +4,7 @@
 
 - name: Gather facts if needed
   ansible.builtin.setup:
-  when: ansible_distribution is not defined
+  when: ansible_facts['distribution'] is not defined
 
 - name: Check if Docker is already installed
   ansible.builtin.command: docker --version
@@ -24,7 +24,7 @@
         state: present
         update_cache: yes
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Install Docker prerequisites (RedHat/Fedora)
       ansible.builtin.dnf:
@@ -32,7 +32,7 @@
           - dnf-plugins-core
         state: present
       become: yes
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts['os_family'] == "RedHat"
     
     - name: Create keyrings directory
       ansible.builtin.file:
@@ -40,24 +40,24 @@
         state: directory
         mode: '0755'
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Add Docker GPG key (Ubuntu/Debian)
       ansible.builtin.shell: |
-        curl -fsSL https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         chmod a+r /etc/apt/keyrings/docker.gpg
       args:
         creates: /etc/apt/keyrings/docker.gpg
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Add Docker repository (Ubuntu/Debian)
       ansible.builtin.apt_repository:
-        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        repo: "deb [arch={{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else ansible_facts['architecture'] }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }} {{ ansible_facts['distribution_release'] }} stable"
         state: present
         filename: docker
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Add Docker repository (Fedora)
       ansible.builtin.shell: |
@@ -65,7 +65,7 @@
       args:
         creates: /etc/yum.repos.d/docker-ce.repo
       become: yes
-      when: ansible_distribution == "Fedora"
+      when: ansible_facts['distribution'] == "Fedora"
     
     - name: Install Docker Engine (Debian/Ubuntu)
       ansible.builtin.apt:
@@ -78,7 +78,7 @@
         state: present
         update_cache: yes
       become: yes
-      when: ansible_os_family == "Debian"
+      when: ansible_facts['os_family'] == "Debian"
     
     - name: Install Docker Engine (Fedora)
       ansible.builtin.dnf:
@@ -90,7 +90,7 @@
           - docker-compose-plugin
         state: present
       become: yes
-      when: ansible_distribution == "Fedora"
+      when: ansible_facts['distribution'] == "Fedora"
     
     - name: Record Docker installation
       ansible.builtin.set_fact:
