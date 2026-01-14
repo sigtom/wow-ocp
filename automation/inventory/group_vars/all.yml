@@ -5,6 +5,7 @@ pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
 
 # Global SSH Keys to inject
 global_ssh_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfMMLr0UIUkpVUghSd4FkVUteUzFOCP1WknScNOrl8u sigtom@localhost.localdomain"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILPyc7oAxzmaymnrZWblYRbTH/hOd+OPaQStsMNi/3bU sigtom@localhost.localdomain"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
 
