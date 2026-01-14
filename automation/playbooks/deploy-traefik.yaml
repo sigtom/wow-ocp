@@ -58,9 +58,9 @@
     target_ip: "{{ ansible_host }}"
     target_hostname: "traefik.sigtom.dev"
     
-    resource_size: "{{ lxc_size }}"
-    os_template: "{{ lxc_template }}"
-    network: "{{ network_profile }}"
+    resource_size: "{{ lxc_size | default('small') }}"
+    os_template: "{{ lxc_template | default('ubuntu24') }}"
+    network: "{{ network_profile | default('apps') }}"
     backup_policy: "{{ snapshot_policy | default('default') }}"
     
     # Cloudflare token (from environment variable)
@@ -132,7 +132,7 @@
       ansible.builtin.include_role:
         name: provision_lxc_generic
       vars:
-        target_node: "{{ resolved_target_node }}"
+        proxmox_node: "{{ resolved_target_node }}"
         os_type: "{{ os_template }}"
         tshirt_size: "{{ resource_size }}"
         lxc_features: "nesting=1"
