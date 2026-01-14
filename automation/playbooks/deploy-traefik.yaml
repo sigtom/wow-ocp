@@ -50,7 +50,10 @@
   gather_facts: false
   
   vars:
-    target_node: "{{ proxmox_node | default('wow-prox1') }}"
+    # Resolve target node (default to wow-prox1 if not provided)
+    # Use intermediate variable to avoid recursion with role variables
+    resolved_target_node: "{{ proxmox_node | default('wow-prox1') }}"
+    
     target_vmid: "{{ vmid }}"
     target_ip: "{{ ansible_host }}"
     target_hostname: "traefik.sigtom.dev"
@@ -83,7 +86,7 @@
           - "=========================================="
           - "Traefik v3.6 Full Automated Deployment"
           - "=========================================="
-          - "Target Node: {{ target_node }}"
+          - "Target Node: {{ resolved_target_node }}"
           - "Container ID: {{ target_vmid }}"
           - "IP Address: {{ target_ip }}"
           - "Hostname: {{ target_hostname }}"
@@ -117,7 +120,7 @@
         snapshot_type: pre-provision
         resource_type: lxc
         vmid: "{{ target_vmid }}"
-        proxmox_node: "{{ target_node }}"
+        proxmox_node: "{{ resolved_target_node }}"
         pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
         pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
         pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
@@ -128,6 +131,7 @@
       ansible.builtin.include_role:
         name: provision_lxc_generic
       vars:
+        target_node: "{{ resolved_target_node }}"
         os_type: "{{ os_template }}"
         tshirt_size: "{{ resource_size }}"
         lxc_features: "nesting=1"
@@ -489,7 +493,7 @@
         snapshot_type: post-provision
         resource_type: lxc
         vmid: "{{ vmid }}"
-        proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
+        proxmox_node: "{{ resolved_target_node }}"
         pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
         pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
         pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
