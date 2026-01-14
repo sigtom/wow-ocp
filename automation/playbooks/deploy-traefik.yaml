@@ -45,11 +45,12 @@
 # ============================================================================
 
 - name: "PLAY 1: Provision Traefik LXC Container"
-  hosts: traefik
-  gather_facts: false  # Don't gather facts from non-existent container
+  hosts: localhost
+  connection: local
+  gather_facts: false
   
   vars:
-    target_node: "{{ proxmox_node }}"
+    target_node: "{{ proxmox_node | default('wow-prox1') }}"
     target_vmid: "{{ vmid }}"
     target_ip: "{{ ansible_host }}"
     target_hostname: "traefik.sigtom.dev"
@@ -168,6 +169,13 @@
           - ""
           - "Next: Play 2 will configure services..."
           - "=========================================="
+
+    - name: "Add new container to runtime inventory"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: traefik
+        ansible_user: root
+        # SSH connection details are handled by AAP credential injection (ssh-agent)
 
 
 # ============================================================================
