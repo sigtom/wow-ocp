@@ -190,7 +190,7 @@
         groups: traefik
         ansible_user: root
         vmid: "{{ target_vmid }}"
-        proxmox_node: "{{ target_node }}"
+        proxmox_node: "{{ resolved_target_node }}"
         # SSH connection details are handled by AAP credential injection (ssh-agent)
 
 
