@@ -274,9 +274,9 @@
               type: password
               variable: "CF_DNS_API_TOKEN"
         extra_vars:
-          vmid: "{{ target_vmid }}"
-          ansible_host: "{{ target_ip }}"
-          cloudflare_api_token: "{{ CF_DNS_API_TOKEN }}"
+          vmid: "{% raw %}{{ target_vmid }}{% endraw %}"
+          ansible_host: "{% raw %}{{ target_ip }}{% endraw %}"
+          cloudflare_api_token: "{% raw %}{{ CF_DNS_API_TOKEN }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
