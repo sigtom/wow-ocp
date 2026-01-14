@@ -140,6 +140,7 @@
       vars:
         proxmox_node: "{{ resolved_target_node }}"
         os_type: "{{ os_template }}"
+        ansible_host: "{{ target_ip }}"
         tshirt_size: "{{ resource_size }}"
         lxc_features: "nesting=1"
         health_check_enabled: false  # Will do full health check in Play 2
