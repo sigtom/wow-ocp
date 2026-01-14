@@ -1,0 +1,37 @@
+---
+- name: Test Proxmox API Connectivity
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    proxmox_node: "wow-prox1"
+    
+    # Credentials from Env (injected by AAP)
+    pve_api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+    pve_api_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"
+    pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+    # Extract host from URL (e.g., https://172.16.110.101:8006 -> 172.16.110.101)
+    proxmox_host: "{{ lookup('env', 'PROXMOX_URL') | regex_replace('https://', '') | regex_replace(':8006', '') }}"
+
+  tasks:
+    - name: Debug Credentials (Length Only)
+      debug:
+        msg:
+          - "User: {{ pve_api_user }}"
+          - "Token ID: {{ pve_api_token_id }}"
+          - "Secret Length: {{ pve_api_token_secret | length }}"
+          - "Host: {{ proxmox_host }}"
+
+    - name: List VMs via URI (Raw API Test)
+      uri:
+        url: "https://{{ proxmox_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+      register: vm_list
+
+    - name: Show VM List
+      debug:
+        msg: "{{ vm_list.json.data | map(attribute='vmid') | list }}"
