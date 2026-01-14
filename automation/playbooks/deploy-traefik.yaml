@@ -52,7 +52,7 @@
   vars:
     # Resolve target node (default to wow-prox1 if not provided)
     # Use intermediate variable to avoid recursion with role variables
-    resolved_target_node: "{{ proxmox_node | default('wow-prox1') }}"
+    resolved_target_node: "{{ target_node_input | default('wow-prox1') }}"
     
     target_vmid: "{{ vmid }}"
     target_ip: "{{ ansible_host }}"
