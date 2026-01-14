@@ -253,7 +253,7 @@
       ansible.builtin.include_role:
         name: post_provision
       vars:
-        post_provision_profile: docker_host
+        post_provisioning_profile: docker_host
 
     - name: "Phase 1: Docker health checks"
       ansible.builtin.include_role:
