@@ -243,6 +243,7 @@
         credentials:
           - "Proxmox Production"
           - "AAP Executor SSH"
+          - "Cloudflare DNS"
         survey_enabled: true
         survey_spec:
           name: ""
@@ -268,15 +269,9 @@
               type: text
               variable: "target_hostname"
               default: "traefik.sigtom.dev"
-            - question_name: "Cloudflare API Token"
-              question_description: ""
-              required: true
-              type: password
-              variable: "CF_DNS_API_TOKEN"
         extra_vars:
           vmid: "{% raw %}{{ target_vmid }}{% endraw %}"
           ansible_host: "{% raw %}{{ target_ip }}{% endraw %}"
-          cloudflare_api_token: "{% raw %}{{ CF_DNS_API_TOKEN }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
