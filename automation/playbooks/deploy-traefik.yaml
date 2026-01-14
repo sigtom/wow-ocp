@@ -112,20 +112,21 @@
       delegate_to: localhost
       run_once: true
     
-    - name: "Pre-provisioning snapshot"
-      ansible.builtin.include_role:
-        name: snapshot_manager
-      vars:
-        snapshot_operation: create
-        snapshot_type: pre-provision
-        resource_type: lxc
-        vmid: "{{ target_vmid }}"
-        proxmox_node: "{{ resolved_target_node }}"
-        pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
-        pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
-        pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
-        proxmox_api_defaults: "{{ lookup('vars', 'proxmox_api_defaults', default={}) }}"
-      when: backup_policy != 'none'
+    # Pre-provisioning snapshot removed: Cannot snapshot a container that doesn't exist yet (ID {{ target_vmid }})
+    # - name: "Pre-provisioning snapshot"
+    #   ansible.builtin.include_role:
+    #     name: snapshot_manager
+    #   vars:
+    #     snapshot_operation: create
+    #     snapshot_type: pre-provision
+    #     resource_type: lxc
+    #     vmid: "{{ target_vmid }}"
+    #     proxmox_node: "{{ resolved_target_node }}"
+    #     pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
+    #     pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
+    #     pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+    #     proxmox_api_defaults: "{{ lookup('vars', 'proxmox_api_defaults', default={}) }}"
+    #   when: backup_policy != 'none'
 
     - name: "Provision LXC container"
       ansible.builtin.include_role:
