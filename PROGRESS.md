@@ -643,3 +643,21 @@
         - AAP is fully configured: Credentials (Proxmox, Cloudflare, Git, SSH), Project (HomeLab Ops), and EE (HomeLab EE) are present.
         - Seeder Job runs automatically on Git changes via ArgoCD Sync Hook.
     - **Documentation**: Created `docs/AAP-WORKFLOW.md` detailing the entire architecture and how to add new secrets.
+- [2026-01-14]: **SUBAGENT & SKILLS INTEGRATION - Production Readiness**
+    - **Tooling**: Installed `subagent` extension with `gemini-3-flash` (Scout) and `gemini-3-pro-high` (Planner).
+    - **Global Skills**: Promoted project skills (`openshift-debug`, `vm-provisioning`, etc.) to global scope (`~/.pi/agent/skills/`).
+    - **Issue #15 Resolved**: Used Subagent Scout to identify Ansible deprecation warnings (bare facts). Planner designed fix using `ansible_facts[]`. Merged PR #17.
+    - **Issue #16 Resolved**: Used Subagent Planner to modify `health_check` role to skip Cloud-Init checks on LXC containers. Merged PR #18.
+
+- [2026-01-14]: **AAP GITOPS MIGRATION - "Cattle" Deployment Pipeline**
+    - **Goal**: Move local Ansible CLI workflows (`deploy-traefik.yaml`) to fully managed AAP Job Templates via GitOps.
+    - **Repo Alignment**: Imported untracked playbooks (`deploy-traefik.yaml`, `deploy-bitwarden-lite.yaml`) from remote dev box to Git.
+    - **Seeder Integration**: Updated `setup-aap.yml` (Configuration as Code) to automatically create Job Templates with Surveys.
+    - **Architecture Fixes**:
+        - **Provisioning Pattern**: Refactored playbooks to use `hosts: localhost` (create) -> `add_host` -> `hosts: target` (configure) pattern for dynamic inventory support in AAP.
+        - **Inventory Loading**: Symlinked `inventory/group_vars` to `playbooks/group_vars` so AAP runners can see global variables (T-shirt sizes, templates).
+        - **Credential Injection**: Fixed mapping of `PROXMOX_SRE_BOT_API_TOKEN` in AAP Credential injector.
+        - **SSH Auth**: Added AAP Executor Public Key to `group_vars/all.yml` (`global_ssh_keys`) so new containers authorize AAP immediately.
+        - **Recursion Bug**: Resolved variable recursion loop (`target_node` vs `proxmox_node`) in playbook variables.
+    - **Outcome**: Successfully deployed Staging Traefik (Job 55) via AAP with zero manual intervention.
+    - **Status**: Pipeline is 100% automated and repeatable.
