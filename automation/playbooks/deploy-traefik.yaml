@@ -67,7 +67,11 @@
     cloudflare_api_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
 
   pre_tasks:
-    - name: "Verify Cloudflare API token is set"
+    - name: "Debug Credential Injection"
+      ansible.builtin.debug:
+        msg: 
+          - "PROXMOX_SRE_BOT_API_TOKEN length: {{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') | length }}"
+          - "CF_DNS_API_TOKEN length: {{ lookup('env', 'CF_DNS_API_TOKEN') | length }}"
       ansible.builtin.fail:
         msg: |
           ❌ Cloudflare API token not found!
