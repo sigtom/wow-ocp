@@ -72,6 +72,8 @@
         msg: 
           - "PROXMOX_SRE_BOT_API_TOKEN length: {{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') | length }}"
           - "CF_DNS_API_TOKEN length: {{ lookup('env', 'CF_DNS_API_TOKEN') | length }}"
+
+    - name: "Verify Cloudflare API token is set"
       ansible.builtin.fail:
         msg: |
           ❌ Cloudflare API token not found!
