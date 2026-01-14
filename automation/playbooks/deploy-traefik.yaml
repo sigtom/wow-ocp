@@ -116,6 +116,8 @@
         snapshot_operation: create
         snapshot_type: pre-provision
         resource_type: lxc
+        vmid: "{{ target_vmid }}"
+        proxmox_node: "{{ target_node }}"
         pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
         pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
         pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
@@ -175,6 +177,8 @@
         name: "{{ target_ip }}"
         groups: traefik
         ansible_user: root
+        vmid: "{{ target_vmid }}"
+        proxmox_node: "{{ target_node }}"
         # SSH connection details are handled by AAP credential injection (ssh-agent)
 
 
@@ -484,6 +488,8 @@
         snapshot_operation: create
         snapshot_type: post-provision
         resource_type: lxc
+        vmid: "{{ vmid }}"
+        proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
         pve_api_user: "{{ lookup('vars', 'pve_api_user', default='sre-bot@pve') }}"
         pve_api_token_id: "{{ lookup('vars', 'pve_api_token_id', default='sre-token') }}"
         pve_api_token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
