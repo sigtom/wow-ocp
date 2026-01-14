@@ -75,7 +75,7 @@
             PROXMOX_URL: "{% raw %}{{ host }}{% endraw %}"
             PROXMOX_USER: "{% raw %}{{ username }}{% endraw %}"
             PROXMOX_TOKEN_ID: "{% raw %}{{ token_id }}{% endraw %}"
-            PROXMOX_TOKEN_SECRET: "{% raw %}{{ token_secret }}{% endraw %}"
+            PROXMOX_SRE_BOT_API_TOKEN: "{% raw %}{{ token_secret }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
