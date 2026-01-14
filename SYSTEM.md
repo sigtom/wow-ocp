@@ -2530,3 +2530,28 @@ bw lock
         value: /tmp
     ```
 - **Fix 2:** Disable hardcoded `runAsUser` in manifest to allow OpenShift SCC to assign UID.
+
+### J. AAP Automation Standards (The "Inception" Rule)
+
+**Architecture:**
+- **Seeder Job**: K8s Job (`aap-seeder`) runs `setup-aap.yml` to configure Controller (Projects, Templates, Credentials).
+- **Execution Environment**: `HomeLab EE` (contains `proxmoxer`, `docker`, collections).
+- **Inventory**: Dynamic "HomeLab Inventory" + `localhost` bridge.
+
+**Provisioning Pattern (Cattle):**
+Playbooks creating new infrastructure MUST use the **Two-Play Pattern**:
+1.  **Play 1 (The Creator)**:
+    -   Target: `hosts: localhost`
+    -   Action: Call Proxmox API to create resource.
+    -   Handoff: Use `add_host` to register new IP to a group (e.g. `traefik`).
+2.  **Play 2 (The Configurator)**:
+    -   Target: `hosts: <group_from_play_1>`
+    -   Action: SSH in and configure.
+
+**Variable Scope Rule:**
+- **Do NOT** use `ansible_host` in Job Template `extra_vars` (it overrides ALL hosts globally). Use `target_ip` instead.
+- **Symlink Required**: `automation/playbooks/group_vars` MUST symlink to `../inventory/group_vars` for AAP to see global vars.
+
+**Credential Injection:**
+- Secrets flow: Bitwarden -> ESO -> K8s Secret -> Seeder Env -> AAP Credential -> Job Env -> Playbook.
+- **Verification**: If 401 Unauthorized, check the Credential Type injector mapping in `setup-aap.yml`.
