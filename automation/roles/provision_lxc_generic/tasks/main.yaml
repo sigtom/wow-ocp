@@ -125,6 +125,11 @@
   delegate_to: localhost
   when: lxc_check.status != 200
 
+- name: Debug SSH Agent
+  command: ssh-add -l
+  changed_when: false
+  delegate_to: localhost
+
 - name: Upload SSH keys to Proxmox host
   ansible.builtin.shell: |
     scp -o BatchMode=yes -o StrictHostKeyChecking=no \
