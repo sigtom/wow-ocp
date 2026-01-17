@@ -1,0 +1,28 @@
+services:
+  dumb:
+    container_name: dumb
+    image: iampuid0/dumb:latest
+    restart: unless-stopped
+    stop_grace_period: 30s
+    shm_size: 128mb
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config:/config
+      - ./log:/log
+      - ./data:/data
+      - ./mnt/debrid:/mnt/debrid:shared
+    env_file:
+      - .env
+    ports:
+      - "3005:3005"   # DUMB Frontend
+      - "8080:8080"   # Riven Backend
+      - "3000:3000"   # Riven Frontend
+      - "8182:8182"   # Zilean
+      - "5050:5050"   # pgAdmin
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
