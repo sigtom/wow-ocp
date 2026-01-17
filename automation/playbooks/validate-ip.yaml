@@ -79,7 +79,7 @@
     - name: "Parse rDNS result"
       ansible.builtin.set_fact:
         has_ptr_record: "{{ 'pointer' in rdns_result.stdout }}"
-        ptr_hostname: "{{ rdns_result.stdout | regex_search('pointer (.+)', '\\1') | default(['']) | first }}"
+        ptr_hostname: "{{ rdns_result.stdout.split('pointer ')[-1] | trim if 'pointer' in rdns_result.stdout else '' }}"
 
     - name: "⚠️ WARNING - PTR record exists"
       ansible.builtin.debug:
