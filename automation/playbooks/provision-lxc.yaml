@@ -86,11 +86,11 @@
       vars:
         vmid: "{{ _target_vmid }}"
         ansible_host: "{{ _target_ip }}"
-        lxc_hostname: "{{ _target_hostname }}"
-        lxc_size: "{{ _tshirt_size }}"
-        lxc_template: "{{ _os_type }}"
+        inventory_hostname: "{{ _target_hostname }}"
+        tshirt_size: "{{ _tshirt_size }}"
+        os_type: "{{ _os_type }}"
         lxc_features: "nesting=1"
-        target_node: "{{ _proxmox_node }}"
+        proxmox_node: "{{ _proxmox_node }}"
         health_check_enabled: false
         post_provisioning_enabled: false
         skip_existing_check: false
