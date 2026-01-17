@@ -293,3 +293,174 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
+
+    # -------------------------------------------------------
+    # 7. Modular Job Templates for Workflow
+    # -------------------------------------------------------
+    
+    - name: Create Validate IP Job Template
+      ansible.controller.job_template:
+        name: "Validate IP"
+        description: "Check if IP is available (ping + rDNS)"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/validate-ip.yaml"
+        execution_environment: "HomeLab EE"
+        # No credentials needed - runs on localhost
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Provision LXC Job Template
+      ansible.controller.job_template:
+        name: "Provision LXC"
+        description: "Create LXC container on Proxmox"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/provision-lxc.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "Proxmox Production"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Install Docker Job Template
+      ansible.controller.job_template:
+        name: "Install Docker"
+        description: "Install Docker and Docker Compose on target host"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/install-docker.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "AAP Executor SSH"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    # -------------------------------------------------------
+    # 8. Workflow Template: Provision Docker LXC
+    # -------------------------------------------------------
+    
+    - name: Create Provision Docker LXC Workflow
+      ansible.controller.workflow_job_template:
+        name: "Provision Docker LXC"
+        description: "Complete workflow: Validate IP → Create LXC → Install Docker"
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        survey_enabled: true
+        survey_spec:
+          name: "Docker LXC Parameters"
+          description: "Configure the new Docker LXC container"
+          spec:
+            - question_name: "Container ID (VMID)"
+              question_description: "Unique container ID (check Proxmox for next available)"
+              required: true
+              type: integer
+              variable: "target_vmid"
+              min: 100
+              max: 9999
+              default: 220
+            - question_name: "IP Address"
+              question_description: "IP in Apps network (172.16.100.12-49 available)"
+              required: true
+              type: text
+              variable: "target_ip"
+              default: "172.16.100.20"
+            - question_name: "Hostname"
+              question_description: "Container hostname"
+              required: true
+              type: text
+              variable: "target_hostname"
+              default: "docker-lxc"
+            - question_name: "Size"
+              question_description: "Resource allocation (T-shirt size)"
+              required: true
+              type: multiplechoice
+              variable: "tshirt_size"
+              choices:
+                - "small"
+                - "medium"
+                - "large"
+                - "xlarge"
+              default: "medium"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Workflow Node 1 - Validate IP
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "Provision Docker LXC"
+        identifier: "validate_ip"
+        unified_job_template: "Validate IP"
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Workflow Node 2 - Provision LXC
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "Provision Docker LXC"
+        identifier: "provision_lxc"
+        unified_job_template: "Provision LXC"
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Workflow Node 3 - Install Docker
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "Provision Docker LXC"
+        identifier: "install_docker"
+        unified_job_template: "Install Docker"
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Link Node 1 → Node 2 (on success)
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "Provision Docker LXC"
+        identifier: "validate_ip"
+        success_nodes:
+          - "provision_lxc"
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Link Node 2 → Node 3 (on success)
+      ansible.controller.workflow_job_template_node:
+        workflow_job_template: "Provision Docker LXC"
+        identifier: "provision_lxc"
+        success_nodes:
+          - "install_docker"
+        organization: "{{ aap_organization }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
