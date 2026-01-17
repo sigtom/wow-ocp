@@ -26,19 +26,20 @@
   connection: local
   gather_facts: false
 
-  vars:
-    # Defaults for optional inputs
-    # Note: Don't use "var: {{ var | default() }}" pattern - causes recursion!
-    # Instead, define internal vars with different names
-    _target_vmid: "{{ target_vmid | default('') }}"
-    _target_ip: "{{ target_ip | default('') }}"
-    _target_hostname: "{{ target_hostname | default('docker-lxc') }}"
-    _tshirt_size: "{{ tshirt_size | default('medium') }}"
-    _os_type: "{{ os_type | default('ubuntu24') }}"
-    _proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
-    _network_profile: "{{ network_profile | default('apps') }}"
-
   pre_tasks:
+    # ========================================
+    # Resolve variables via set_fact to avoid recursion
+    # ========================================
+    - name: "Resolve input variables"
+      ansible.builtin.set_fact:
+        resolved_vmid: "{{ target_vmid | default('') }}"
+        resolved_ip: "{{ target_ip | default('') }}"
+        resolved_hostname: "{{ target_hostname | default('docker-lxc') }}"
+        resolved_size: "{{ tshirt_size | default('medium') }}"
+        resolved_os: "{{ os_type | default('ubuntu24') }}"
+        resolved_node: "{{ proxmox_node | default('wow-prox1') }}"
+        resolved_network: "{{ network_profile | default('apps') }}"
+
     - name: "Validate required inputs"
       ansible.builtin.fail:
         msg: |
@@ -49,7 +50,7 @@
             - target_ip: IP address (e.g., 172.16.100.20)
 
           These should come from the Workflow Survey.
-      when: _target_vmid == '' or _target_ip == ''
+      when: resolved_vmid == '' or resolved_ip == ''
 
     - name: "Validate Proxmox credentials"
       ansible.builtin.fail:
@@ -66,13 +67,13 @@
           - "==========================================="
           - "LXC Container Provisioning"
           - "==========================================="
-          - "Container ID: {{ _target_vmid }}"
-          - "IP Address: {{ _target_ip }}"
-          - "Hostname: {{ _target_hostname }}"
-          - "Size: {{ _tshirt_size }}"
-          - "OS: {{ _os_type }}"
-          - "Proxmox Node: {{ _proxmox_node }}"
-          - "Network: {{ _network_profile }}"
+          - "Container ID: {{ resolved_vmid }}"
+          - "IP Address: {{ resolved_ip }}"
+          - "Hostname: {{ resolved_hostname }}"
+          - "Size: {{ resolved_size }}"
+          - "OS: {{ resolved_os }}"
+          - "Proxmox Node: {{ resolved_node }}"
+          - "Network: {{ resolved_network }}"
           - "==========================================="
 
   tasks:
@@ -84,13 +85,13 @@
       ansible.builtin.include_role:
         name: provision_lxc_generic
       vars:
-        vmid: "{{ _target_vmid }}"
-        ansible_host: "{{ _target_ip }}"
-        inventory_hostname: "{{ _target_hostname }}"
-        tshirt_size: "{{ _tshirt_size }}"
-        os_type: "{{ _os_type }}"
+        vmid: "{{ resolved_vmid }}"
+        ansible_host: "{{ resolved_ip }}"
+        inventory_hostname: "{{ resolved_hostname }}"
+        tshirt_size: "{{ resolved_size }}"
+        os_type: "{{ resolved_os }}"
         lxc_features: "nesting=1"
-        proxmox_node: "{{ _proxmox_node }}"
+        proxmox_node: "{{ resolved_node }}"
         health_check_enabled: false
         post_provisioning_enabled: false
         skip_existing_check: false
@@ -101,18 +102,18 @@
 
     - name: "Wait for container SSH to be available"
       ansible.builtin.wait_for:
-        host: "{{ _target_ip }}"
+        host: "{{ resolved_ip }}"
         port: 22
         delay: 10
         timeout: 120
-        msg: "SSH not available on {{ _target_ip }} after 120 seconds"
+        msg: "SSH not available on {{ resolved_ip }} after 120 seconds"
 
     # Setup known_hosts for AAP runner (ephemeral container)
     - name: "Setup SSH known_hosts for target"
       ansible.builtin.shell: |
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
-        ssh-keyscan -H {{ _target_ip }} >> ~/.ssh/known_hosts 2>/dev/null
+        ssh-keyscan -H {{ resolved_ip }} >> ~/.ssh/known_hosts 2>/dev/null
       changed_when: false
       failed_when: false
 
@@ -122,9 +123,9 @@
           - "==========================================="
           - "✅ LXC Container Created Successfully"
           - "==========================================="
-          - "VMID: {{ _target_vmid }}"
-          - "IP: {{ _target_ip }}"
-          - "Hostname: {{ _target_hostname }}"
+          - "VMID: {{ resolved_vmid }}"
+          - "IP: {{ resolved_ip }}"
+          - "Hostname: {{ resolved_hostname }}"
           - "SSH Port: 22 (verified accessible)"
           - ""
           - "Next step: Install Docker"
@@ -138,6 +139,6 @@
     - name: "Set stats for workflow"
       ansible.builtin.set_stats:
         data:
-          target_ip: "{{ _target_ip }}"
-          target_vmid: "{{ _target_vmid }}"
-          target_hostname: "{{ _target_hostname }}"
+          target_ip: "{{ resolved_ip }}"
+          target_vmid: "{{ resolved_vmid }}"
+          target_hostname: "{{ resolved_hostname }}"
