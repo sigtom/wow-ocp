@@ -128,7 +128,14 @@
 - name: Debug SSH Agent
   command: ssh-add -l
   changed_when: false
+  failed_when: false
+  register: ssh_agent_debug
   delegate_to: localhost
+
+- name: Show SSH Agent status
+  ansible.builtin.debug:
+    msg: "SSH Agent: {{ ssh_agent_debug.stdout_lines | default(['No keys']) }}"
+  when: ssh_agent_debug.rc == 0
 
 - name: Upload SSH keys to Proxmox host
   ansible.builtin.shell: |
