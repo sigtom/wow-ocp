@@ -162,7 +162,7 @@
 
     - name: "Deploy .env from template"
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/../templates/dumb/.env.j2"
+        src: "{{ playbook_dir }}/../templates/dumb/dumb.env.j2"
         dest: "{{ dumb_install_dir }}/.env"
         mode: '0600'
 
