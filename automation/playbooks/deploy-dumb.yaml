@@ -1,0 +1,228 @@
+---
+# ============================================================================
+# Deploy DUMB (Debrid Unlimited Media Bridge)
+# ============================================================================
+# Description: Deploy DUMB AIO media stack to an existing Docker LXC
+#
+# Prerequisites:
+#   - LXC container with Docker installed (use "Provision Docker LXC" workflow)
+#   - Bitwarden CLI unlocked with BW_SESSION
+#   - FUSE support in LXC (requires privileged container or fuse feature)
+#
+# Bitwarden Items Required:
+#   - real-debrid-api-key: RealDebrid API key
+#   - torbox-api-key: TorBox API key
+#   - dumb-secrets (custom fields): dumb_postgres_password, dumb_pgadmin_password
+#
+# AAP Usage:
+#   - Job Template: "Deploy DUMB"
+#   - Credentials: "AAP Executor SSH", "Bitwarden"
+#   - Survey: target_ip, target_hostname
+#
+# Manual Usage:
+#   export BW_SESSION="..."
+#   ansible-playbook playbooks/deploy-dumb.yaml -e target_ip=172.16.100.20
+# ============================================================================
+
+- name: "Deploy DUMB Media Stack"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    target_ip: "{{ target_ip | default('172.16.100.20') }}"
+    target_hostname: "{{ target_hostname | default('dumb') }}"
+    dumb_install_dir: /opt/dumb
+
+  pre_tasks:
+    # ========================================
+    # Validate Prerequisites
+    # ========================================
+    - name: "Validate BW_SESSION is set"
+      ansible.builtin.fail:
+        msg: |
+          BW_SESSION environment variable not set!
+          
+          Unlock Bitwarden first:
+            export BW_SESSION=$(bw unlock --raw)
+      when: lookup('env', 'BW_SESSION') == ''
+
+    - name: "Fetch secrets from Bitwarden"
+      ansible.builtin.set_fact:
+        realdebrid_api_key: "{{ lookup('pipe', 'bw get item real-debrid-api-key 2>/dev/null | jq -r \".login.password // .notes // empty\"') }}"
+        torbox_api_key: "{{ lookup('pipe', 'bw get item torbox-api-key 2>/dev/null | jq -r \".login.password // .notes // empty\"') }}"
+      no_log: true
+
+    - name: "Generate passwords if not in Bitwarden"
+      ansible.builtin.set_fact:
+        dumb_postgres_password: "{{ lookup('password', '/dev/null length=24 chars=ascii_letters,digits') }}"
+        dumb_pgadmin_password: "{{ lookup('password', '/dev/null length=16 chars=ascii_letters,digits') }}"
+      no_log: true
+
+    - name: "Validate secrets retrieved"
+      ansible.builtin.fail:
+        msg: |
+          Failed to retrieve required secrets from Bitwarden!
+          
+          Required items:
+            - real-debrid-api-key
+            - torbox-api-key
+      when: realdebrid_api_key == '' or torbox_api_key == ''
+
+    - name: "Display deployment parameters"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "DUMB Deployment"
+          - "==========================================="
+          - "Target: {{ target_ip }}"
+          - "Hostname: {{ target_hostname }}"
+          - "Install Dir: {{ dumb_install_dir }}"
+          - "RealDebrid Key: {{ realdebrid_api_key[:10] }}..."
+          - "TorBox Key: {{ torbox_api_key[:10] }}..."
+          - "==========================================="
+
+    - name: "Setup SSH known_hosts"
+      ansible.builtin.shell: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan -H {{ target_ip }} >> ~/.ssh/known_hosts 2>/dev/null
+      changed_when: false
+      failed_when: false
+
+    - name: "Add target to runtime inventory"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: dumb_targets
+        ansible_user: root
+
+
+# ============================================================================
+# Play 2: Configure DUMB on Target
+# ============================================================================
+
+- name: "Configure DUMB"
+  hosts: dumb_targets
+  gather_facts: true
+
+  vars:
+    dumb_install_dir: /opt/dumb
+    # These are passed from Play 1
+    realdebrid_api_key: "{{ hostvars['localhost']['realdebrid_api_key'] }}"
+    torbox_api_key: "{{ hostvars['localhost']['torbox_api_key'] }}"
+    dumb_postgres_password: "{{ hostvars['localhost']['dumb_postgres_password'] }}"
+    dumb_pgadmin_password: "{{ hostvars['localhost']['dumb_pgadmin_password'] }}"
+    target_hostname: "{{ hostvars['localhost']['target_hostname'] }}"
+
+  tasks:
+    # ========================================
+    # Phase 1: Verify Docker & Enable FUSE
+    # ========================================
+    - name: "Verify Docker is running"
+      ansible.builtin.command: docker info
+      register: docker_info
+      changed_when: false
+      failed_when: docker_info.rc != 0
+
+    - name: "Check if /dev/fuse exists"
+      ansible.builtin.stat:
+        path: /dev/fuse
+      register: fuse_device
+
+    - name: "Create /dev/fuse if missing (requires privileged LXC)"
+      ansible.builtin.shell: |
+        mknod /dev/fuse c 10 229 2>/dev/null || true
+        chmod 666 /dev/fuse
+      when: not fuse_device.stat.exists
+      changed_when: true
+
+    # ========================================
+    # Phase 2: Create Directory Structure
+    # ========================================
+    - name: "Create DUMB directories"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ dumb_install_dir }}"
+        - "{{ dumb_install_dir }}/config"
+        - "{{ dumb_install_dir }}/log"
+        - "{{ dumb_install_dir }}/data"
+        - "{{ dumb_install_dir }}/mnt/debrid"
+
+    # ========================================
+    # Phase 3: Deploy Configuration Files
+    # ========================================
+    - name: "Deploy docker-compose.yml"
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../templates/dumb/docker-compose.yml"
+        dest: "{{ dumb_install_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: "Deploy .env from template"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/dumb/.env.j2"
+        dest: "{{ dumb_install_dir }}/.env"
+        mode: '0600'
+
+    # ========================================
+    # Phase 4: Pull and Start DUMB
+    # ========================================
+    - name: "Pull DUMB image"
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: "{{ dumb_install_dir }}"
+      register: pull_result
+      changed_when: "'Pulled' in pull_result.stderr or 'Downloaded' in pull_result.stderr"
+
+    - name: "Start DUMB container"
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ dumb_install_dir }}"
+      register: compose_up
+
+    - name: "Wait for DUMB to be healthy"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:3005"
+        method: GET
+        status_code: [200, 302]
+      register: health_check
+      until: health_check.status in [200, 302]
+      retries: 30
+      delay: 10
+      failed_when: false
+
+    # ========================================
+    # Phase 5: Verification
+    # ========================================
+    - name: "Get container status"
+      ansible.builtin.command: docker ps --filter name=dumb --format "{{ '{{' }}.Status{{ '}}' }}"
+      register: container_status
+      changed_when: false
+
+    - name: "✅ DUMB Deployment Complete"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "✅ DUMB Deployed Successfully"
+          - "==========================================="
+          - "Container: {{ container_status.stdout }}"
+          - ""
+          - "Access URLs:"
+          - "  DUMB Frontend: http://{{ ansible_host }}:3005"
+          - "  Riven Frontend: http://{{ ansible_host }}:3000"
+          - "  Riven Backend: http://{{ ansible_host }}:8080"
+          - "  Zilean: http://{{ ansible_host }}:8182"
+          - "  pgAdmin: http://{{ ansible_host }}:5050"
+          - ""
+          - "Credentials:"
+          - "  pgAdmin: admin@sigtom.dev / {{ dumb_pgadmin_password }}"
+          - "  Postgres: DUMB / {{ dumb_postgres_password }}"
+          - "==========================================="
+
+    - name: "Set stats for workflow"
+      ansible.builtin.set_stats:
+        data:
+          dumb_url: "http://{{ ansible_host }}:3005"
+          dumb_deployed: true
