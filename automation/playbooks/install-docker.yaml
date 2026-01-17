@@ -1,0 +1,153 @@
+---
+# ============================================================================
+# Install Docker on Target Host
+# ============================================================================
+# Description: Install Docker and Docker Compose on an LXC/VM
+#
+# This playbook connects to a target host and installs Docker.
+# Uses the post_provision role with docker_host profile.
+#
+# AAP Usage:
+#   - Job Template: "Install Docker"
+#   - Used as third node in "Provision Docker LXC" workflow
+#   - Credentials Required: "AAP Executor SSH"
+#   - Receives target_ip from previous workflow node (set_stats)
+#
+# Manual Usage:
+#   ansible-playbook playbooks/install-docker.yaml -e target_ip=172.16.100.20
+# ============================================================================
+
+- name: "Install Docker on Target Host"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    target_ip: "{{ target_ip | default('') }}"
+
+  tasks:
+    - name: "Validate target_ip is provided"
+      ansible.builtin.fail:
+        msg: |
+          target_ip is required!
+
+          This should be passed from the previous workflow node via set_stats,
+          or provided manually via -e target_ip=172.16.100.20
+      when: target_ip == ''
+
+    - name: "Display target"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "Installing Docker on: {{ target_ip }}"
+          - "==========================================="
+
+    # AAP injects SSH key via ssh-agent from "AAP Executor SSH" credential
+    # We need to handle known_hosts for ephemeral AAP runner containers
+
+    - name: "Setup SSH known_hosts for target"
+      ansible.builtin.shell: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan -H {{ target_ip }} >> ~/.ssh/known_hosts 2>/dev/null
+      changed_when: false
+      failed_when: false
+
+    - name: "Add target to runtime inventory"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: docker_targets
+        ansible_user: root
+        # SSH key is injected by AAP credential via ssh-agent
+
+
+# ============================================================================
+# Play 2: Configure Docker on Target
+# ============================================================================
+
+- name: "Configure Docker"
+  hosts: docker_targets
+  gather_facts: true
+
+  # AAP injects SSH credentials - no need to specify ansible_ssh_private_key_file
+  # Connection uses ssh-agent which AAP populates from "Machine" credential
+
+  tasks:
+    - name: "Display detected OS"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "Target Host Information"
+          - "==========================================="
+          - "IP: {{ ansible_host }}"
+          - "Distribution: {{ ansible_facts['distribution'] }}"
+          - "Version: {{ ansible_facts['distribution_version'] }}"
+          - "OS Family: {{ ansible_facts['os_family'] }}"
+          - "==========================================="
+
+    # ========================================
+    # Phase 1: Basic Health Check
+    # ========================================
+
+    - name: "Run basic health checks"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: basic
+
+    # ========================================
+    # Phase 2: Install Docker
+    # ========================================
+
+    - name: "Install Docker via post_provision role"
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provisioning_profile: docker_host
+
+    # ========================================
+    # Phase 3: Docker Health Check
+    # ========================================
+
+    - name: "Run Docker health checks"
+      ansible.builtin.include_role:
+        name: health_check
+      vars:
+        health_check_profile: docker
+
+    # ========================================
+    # Final Verification
+    # ========================================
+
+    - name: "Get Docker version"
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: "Get Docker Compose version"
+      ansible.builtin.command: docker compose version
+      register: compose_version
+      changed_when: false
+
+    - name: "✅ Docker Installation Complete"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "✅ Docker Installation Complete"
+          - "==========================================="
+          - "Host: {{ ansible_host }}"
+          - "Docker: {{ docker_version.stdout }}"
+          - "Compose: {{ compose_version.stdout }}"
+          - ""
+          - "Container is ready for application deployment!"
+          - ""
+          - "SSH Access: ssh root@{{ ansible_host }}"
+          - "Test Docker: ssh root@{{ ansible_host }} 'docker run hello-world'"
+          - "==========================================="
+
+    - name: "Set stats for workflow"
+      ansible.builtin.set_stats:
+        data:
+          docker_installed: true
+          docker_version: "{{ docker_version.stdout }}"
+          compose_version: "{{ compose_version.stdout }}"
