@@ -465,3 +465,54 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
+
+    # -------------------------------------------------------
+    # 9. Application Deployment Job Templates
+    # -------------------------------------------------------
+
+    - name: Create Deploy DUMB Job Template
+      ansible.controller.job_template:
+        name: "Deploy DUMB"
+        description: "Deploy DUMB (Debrid Unlimited Media Bridge) to Docker LXC"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/deploy-dumb.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "AAP Executor SSH"
+        survey_enabled: true
+        survey_spec:
+          name: "DUMB Deployment Parameters"
+          description: "Configure DUMB deployment target and secrets"
+          spec:
+            - question_name: "Target IP"
+              question_description: "IP of Docker LXC container"
+              required: true
+              type: text
+              variable: "target_ip"
+              default: "172.16.100.20"
+            - question_name: "Hostname"
+              question_description: "Container hostname"
+              required: true
+              type: text
+              variable: "target_hostname"
+              default: "dumb"
+            - question_name: "RealDebrid API Key"
+              question_description: "API key from real-debrid.com"
+              required: true
+              type: password
+              variable: "realdebrid_api_key"
+              default: ""
+            - question_name: "TorBox API Key"
+              question_description: "API key from torbox.app"
+              required: true
+              type: password
+              variable: "torbox_api_key"
+              default: ""
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
