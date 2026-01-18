@@ -40,7 +40,7 @@
     # ========================================
     - name: "Check if secrets provided directly"
       ansible.builtin.set_fact:
-        secrets_provided: "{{ (realdebrid_api_key is defined and realdebrid_api_key != '') and (torbox_api_key is defined and torbox_api_key != '') }}"
+        secrets_provided: "{{ torbox_api_key is defined and torbox_api_key != '' }}"
 
     - name: "Fetch secrets from Bitwarden (if not provided directly)"
       when: not secrets_provided
@@ -57,7 +57,6 @@
 
         - name: "Fetch secrets from Bitwarden"
           ansible.builtin.set_fact:
-            realdebrid_api_key: "{{ lookup('pipe', 'bw get item real-debrid-api-key 2>/dev/null | jq -r \".login.password // .notes // empty\"') }}"
             torbox_api_key: "{{ lookup('pipe', 'bw get item torbox-api-key 2>/dev/null | jq -r \".login.password // .notes // empty\"') }}"
           no_log: true
 
@@ -73,11 +72,10 @@
           Missing required secrets!
           
           Required:
-            - realdebrid_api_key
             - torbox_api_key
           
-          Provide via Survey or Bitwarden.
-      when: realdebrid_api_key is not defined or realdebrid_api_key == '' or torbox_api_key is not defined or torbox_api_key == ''
+          Provide via Survey, Credential, or Bitwarden.
+      when: torbox_api_key is not defined or torbox_api_key == ''
 
     - name: "Display deployment parameters"
       ansible.builtin.debug:
