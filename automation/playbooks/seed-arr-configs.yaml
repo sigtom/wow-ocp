@@ -46,7 +46,7 @@
     # ========================================
     # Phase 1: Configure Radarr
     # ========================================
-    - name: "Radarr: Sync Custom Formats"
+    - name: "Radarr: Sync Configuration"
       block:
         - name: "Radarr: Get existing Custom Formats"
           ansible.builtin.uri:
@@ -55,7 +55,7 @@
             headers: { "X-Api-Key": "{{ radarr_api_key }}" }
           register: radarr_cf_existing
 
-        - name: "Radarr: Sync Custom Formats"
+        - name: "Radarr: Create missing Custom Formats"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:7878/api/v3/customformat"
             method: POST
@@ -66,10 +66,56 @@
           loop: "{{ custom_formats }}"
           when: item.name not in (radarr_cf_existing.json | map(attribute='name') | list)
 
+        - name: "Radarr: Get final Custom Formats for IDs"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/customformat"
+            method: GET
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+          register: radarr_cf_final
+
+        - name: "Radarr: Get existing Quality Profiles"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile"
+            method: GET
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+          register: radarr_qp_existing
+
+        - name: "Radarr: Update Cloud-Unlimited Profile Scores"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
+            method: PUT
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+            body_format: json
+            body: "{{ profile | combine({'formatItems': [
+                {'format': remux_id, 'name': 'Remux', 'score': 1000},
+                {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
+              ]}) }}"
+          vars:
+            profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+            remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+            x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          when: "'Cloud-Unlimited' in (radarr_qp_existing.json | map(attribute='name') | list)"
+
+        - name: "Radarr: Update NAS-Archive Profile Scores"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
+            method: PUT
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+            body_format: json
+            body: "{{ profile | combine({'formatItems': [
+                {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
+                {'format': remux_id, 'name': 'Remux', 'score': 0}
+              ]}) }}"
+          vars:
+            profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
+            remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+            x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          when: "'NAS-Archive' in (radarr_qp_existing.json | map(attribute='name') | list)"
+
     # ========================================
     # Phase 2: Configure Sonarr
     # ========================================
-    - name: "Sonarr: Sync Custom Formats"
+    - name: "Sonarr: Sync Configuration"
       block:
         - name: "Sonarr: Get existing Custom Formats"
           ansible.builtin.uri:
@@ -78,7 +124,7 @@
             headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
           register: sonarr_cf_existing
 
-        - name: "Sonarr: Sync Custom Formats"
+        - name: "Sonarr: Create missing Custom Formats"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:8989/api/v3/customformat"
             method: POST
@@ -88,3 +134,49 @@
             status_code: [201, 202]
           loop: "{{ custom_formats }}"
           when: item.name not in (sonarr_cf_existing.json | map(attribute='name') | list)
+
+        - name: "Sonarr: Get final Custom Formats for IDs"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/customformat"
+            method: GET
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+          register: sonarr_cf_final
+
+        - name: "Sonarr: Get existing Quality Profiles"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile"
+            method: GET
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+          register: sonarr_qp_existing
+
+        - name: "Sonarr: Update Cloud-Unlimited Profile Scores"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
+            method: PUT
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+            body_format: json
+            body: "{{ profile | combine({'formatItems': [
+                {'format': remux_id, 'name': 'Remux', 'score': 1000},
+                {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
+              ]}) }}"
+          vars:
+            profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+            remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+            x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          when: "'Cloud-Unlimited' in (sonarr_qp_existing.json | map(attribute='name') | list)"
+
+        - name: "Sonarr: Update NAS-Archive Profile Scores"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
+            method: PUT
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+            body_format: json
+            body: "{{ profile | combine({'formatItems': [
+                {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
+                {'format': remux_id, 'name': 'Remux', 'score': 0}
+              ]}) }}"
+          vars:
+            profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
+            remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+            x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          when: "'NAS-Archive' in (sonarr_qp_existing.json | map(attribute='name') | list)"
