@@ -82,3 +82,15 @@ spec:
                 secretKeyRef:
                   name: aap-infra-creds-secret
                   key: cloudflare_token
+            - name: REALDEBRID_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: realdebrid_api_key
+                  optional: true
+            - name: TORBOX_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: torbox_api_key
+                  optional: true

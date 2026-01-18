@@ -25,6 +25,10 @@
     
     ssh_private_key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
     
+    # DUMB Debrid secrets (injected from dumb-secrets K8s Secret)
+    realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
+    torbox_api_key: "{{ lookup('env', 'TORBOX_API_KEY') }}"
+    
     # Image we just built
     ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
 
@@ -98,6 +102,34 @@
         injectors:
           env:
             CF_DNS_API_TOKEN: "{% raw %}{{ api_token }}{% endraw %}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create DUMB Secrets Credential Type
+      ansible.controller.credential_type:
+        name: "DUMB Debrid Secrets"
+        description: "RealDebrid and TorBox API keys for DUMB media stack"
+        kind: cloud
+        inputs:
+          fields:
+            - id: realdebrid_api_key
+              label: RealDebrid API Key
+              type: string
+              secret: true
+            - id: torbox_api_key
+              label: TorBox API Key
+              type: string
+              secret: true
+          required:
+            - realdebrid_api_key
+            - torbox_api_key
+        injectors:
+          extra_vars:
+            realdebrid_api_key: "{% raw %}{{ realdebrid_api_key }}{% endraw %}"
+            torbox_api_key: "{% raw %}{{ torbox_api_key }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -179,6 +211,21 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
+
+    - name: Create DUMB Secrets Credential
+      ansible.controller.credential:
+        name: "DUMB Debrid Secrets"
+        organization: "{{ aap_organization }}"
+        credential_type: "DUMB Debrid Secrets"
+        inputs:
+          realdebrid_api_key: "{{ realdebrid_api_key }}"
+          torbox_api_key: "{{ torbox_api_key }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+      when: realdebrid_api_key != '' and torbox_api_key != ''
 
     # -------------------------------------------------------
     # 4. Project
@@ -482,10 +529,11 @@
         execution_environment: "HomeLab EE"
         credentials:
           - "AAP Executor SSH"
+          - "DUMB Debrid Secrets"
         survey_enabled: true
         survey_spec:
           name: "DUMB Deployment Parameters"
-          description: "Configure DUMB deployment target and secrets"
+          description: "Configure DUMB deployment target"
           spec:
             - question_name: "Target IP"
               question_description: "IP of Docker LXC container"
@@ -499,18 +547,6 @@
               type: text
               variable: "target_hostname"
               default: "dumb"
-            - question_name: "RealDebrid API Key"
-              question_description: "API key from real-debrid.com"
-              required: true
-              type: password
-              variable: "realdebrid_api_key"
-              default: ""
-            - question_name: "TorBox API Key"
-              question_description: "API key from torbox.app"
-              required: true
-              type: password
-              variable: "torbox_api_key"
-              default: ""
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
