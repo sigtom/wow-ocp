@@ -9,7 +9,6 @@ services:
     volumes:
       - ./config/sabnzbd:/config
       - /mnt/nas/downloads:/downloads
-      - /mnt/nas/downloads/incomplete:/incomplete-downloads
     ports:
       - "8080:8080"
     restart: unless-stopped
