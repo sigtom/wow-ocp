@@ -94,3 +94,21 @@ spec:
                   name: dumb-secrets
                   key: torbox_api_key
                   optional: true
+            - name: SONARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-arr-secrets
+                  key: sonarr_api_key
+                  optional: true
+            - name: RADARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-arr-secrets
+                  key: radarr_api_key
+                  optional: true
+            - name: PROWLARR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-arr-secrets
+                  key: prowlarr_api_key
+                  optional: true

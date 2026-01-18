@@ -1,0 +1,123 @@
+---
+# ============================================================================
+# Seed Arr Configurations
+# ============================================================================
+# Description: Configure Quality Profiles and Custom Formats in Sonarr/Radarr
+#
+# AAP Usage:
+#   - Job Template: "Seed Arr Configs"
+#   - Credentials: "Media Arr API Keys"
+#   - Survey: lxc_ip
+# ============================================================================
+
+- name: "Configure Arr Media Brains"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    target_ip: "{{ lxc_ip | default('172.16.100.20') }}"
+    
+    # -------------------------------------------------------
+    # Custom Format Definitions (Trash Guides Logic)
+    # -------------------------------------------------------
+    custom_formats:
+      - name: "x265/HEVC"
+        includeCustomFormatWhenRenaming: true
+        specifications:
+          - name: "x265"
+            implementation: "ReleaseTitleSpecification"
+            negate: false
+            required: false
+            fields: { "value": "\\b(x265|hevc)\\b" }
+      
+      - name: "Remux"
+        includeCustomFormatWhenRenaming: true
+        specifications:
+          - name: "Remux"
+            implementation: "ReleaseTitleSpecification"
+            negate: false
+            required: false
+            fields: { "value": "\\b(remux)\\b" }
+
+  tasks:
+    # ========================================
+    # Phase 1: Configure Radarr
+    # ========================================
+    - name: "Radarr Configuration Block"
+      block:
+        - name: "Radarr: Get existing Custom Formats"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/customformat"
+            method: GET
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+          register: radarr_cf_existing
+
+        - name: "Radarr: Sync Custom Formats"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/customformat"
+            method: POST
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+            body_format: json
+            body: "{{ item }}"
+            status_code: [201, 202]
+          loop: "{{ custom_formats }}"
+          when: item.name not in (radarr_cf_existing.json | map(attribute='name') | list)
+
+        - name: "Radarr: Create Cloud-Unlimited Profile"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile"
+            method: POST
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+            body_format: json
+            body:
+              name: "Cloud-Unlimited"
+              upgradeAllowed: true
+              cutoff: 100 # Remux-2160p
+              items:
+                - quality: { id: 22, name: "Remux-2160p" }
+                  allowed: true
+                - quality: { id: 18, name: "Bluray-2160p" }
+                  allowed: true
+          register: radarr_cloud_profile
+          failed_when: false # Might already exist
+
+    # ========================================
+    # Phase 2: Configure Sonarr
+    # ========================================
+    - name: "Sonarr Configuration Block"
+      block:
+        - name: "Sonarr: Get existing Custom Formats"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/customformat"
+            method: GET
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+          register: sonarr_cf_existing
+
+        - name: "Sonarr: Sync Custom Formats"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/customformat"
+            method: POST
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+            body_format: json
+            body: "{{ item }}"
+            status_code: [201, 202]
+          loop: "{{ custom_formats }}"
+          when: item.name not in (sonarr_cf_existing.json | map(attribute='name') | list)
+
+        - name: "Sonarr: Create NAS-Archive Profile"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile"
+            method: POST
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+            body_format: json
+            body:
+              name: "NAS-Archive"
+              upgradeAllowed: true
+              cutoff: 7 # WEBDL-1080p
+              items:
+                - quality: { id: 7, name: "WEBDL-1080p" }
+                  allowed: true
+                - quality: { id: 1, name: "SDTV" }
+                  allowed: false
+          failed_when: false

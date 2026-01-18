@@ -29,6 +29,11 @@
     realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
     torbox_api_key: "{{ lookup('env', 'TORBOX_API_KEY') }}"
     
+    # Arr API keys (injected from media-arr-secrets K8s Secret)
+    sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
+    radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
+    prowlarr_api_key: "{{ lookup('env', 'PROWLARR_API_KEY') }}"
+    
     # Image we just built
     ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
 
@@ -136,6 +141,40 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
 
+    - name: Create Media Arr Secrets Credential Type
+      ansible.controller.credential_type:
+        name: "Media Arr API Keys"
+        description: "API keys for Sonarr, Radarr, and Prowlarr"
+        kind: cloud
+        inputs:
+          fields:
+            - id: sonarr_api_key
+              label: Sonarr API Key
+              type: string
+              secret: true
+            - id: radarr_api_key
+              label: Radarr API Key
+              type: string
+              secret: true
+            - id: prowlarr_api_key
+              label: Prowlarr API Key
+              type: string
+              secret: true
+          required:
+            - sonarr_api_key
+            - radarr_api_key
+            - prowlarr_api_key
+        injectors:
+          extra_vars:
+            sonarr_api_key: "{% raw %}{{ sonarr_api_key }}{% endraw %}"
+            radarr_api_key: "{% raw %}{{ radarr_api_key }}{% endraw %}"
+            prowlarr_api_key: "{% raw %}{{ prowlarr_api_key }}{% endraw %}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
     # -------------------------------------------------------
     # 2. Execution Environments
     # -------------------------------------------------------
@@ -226,6 +265,22 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
       when: realdebrid_api_key != '' and torbox_api_key != ''
+
+    - name: Create Media Arr Secrets Credential
+      ansible.controller.credential:
+        name: "Media Arr API Keys"
+        organization: "{{ aap_organization }}"
+        credential_type: "Media Arr API Keys"
+        inputs:
+          sonarr_api_key: "{{ sonarr_api_key }}"
+          radarr_api_key: "{{ radarr_api_key }}"
+          prowlarr_api_key: "{{ prowlarr_api_key }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+      when: sonarr_api_key != '' and radarr_api_key != '' and prowlarr_api_key != ''
 
     # -------------------------------------------------------
     # 4. Project
@@ -603,6 +658,34 @@
               type: text
               variable: "target_hostname"
               default: "downloaders"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Seed Arr Configs Job Template
+      ansible.controller.job_template:
+        name: "Seed Arr Configs"
+        description: "Configure Quality Profiles and Custom Formats in Sonarr and Radarr"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/seed-arr-configs.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "Media Arr API Keys"
+        survey_enabled: true
+        survey_spec:
+          name: "Arr Seeder Parameters"
+          description: "Configure Arr seeder target"
+          spec:
+            - question_name: "LXC IP"
+              required: true
+              type: text
+              variable: "lxc_ip"
+              default: "172.16.100.20"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
