@@ -46,7 +46,7 @@
     # ========================================
     # Phase 1: Configure Radarr
     # ========================================
-    - name: "Radarr: Sync Configuration"
+    - name: "Radarr: Sync Custom Formats"
       block:
         - name: "Radarr: Get existing Custom Formats"
           ansible.builtin.uri:
@@ -66,13 +66,6 @@
           loop: "{{ custom_formats }}"
           when: item.name not in (radarr_cf_existing.json | map(attribute='name') | list)
 
-        - name: "Radarr: Get final Custom Formats for IDs"
-          ansible.builtin.uri:
-            url: "http://{{ target_ip }}:7878/api/v3/customformat"
-            method: GET
-            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
-          register: radarr_cf_final
-
         - name: "Radarr: Get existing Quality Profiles"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:7878/api/v3/qualityprofile"
@@ -80,70 +73,77 @@
             headers: { "X-Api-Key": "{{ radarr_api_key }}" }
           register: radarr_qp_existing
 
-        - name: "Radarr: Update Cloud-Unlimited Profile"
+        - name: "Radarr: Get final Custom Formats for IDs"
           ansible.builtin.uri:
-            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
-            method: PUT
+            url: "http://{{ target_ip }}:7878/api/v3/customformat"
+            method: GET
             headers: { "X-Api-Key": "{{ radarr_api_key }}" }
-            body_format: json
-            body: >-
-              {% set new_items = [] %}
-              {% for item in profile.items %}
-                {% set is_allowed = false %}
-                {% if item.quality is defined and item.quality.id in [31, 19, 18, 17] %}
-                  {% set is_allowed = true %}
-                {% elif item.id is defined and item.id == 1003 %}
-                  {% set is_allowed = true %}
-                {% endif %}
-                {% set _ = new_items.append(item | combine({'allowed': is_allowed})) %}
-              {% endfor %}
-              {{ profile | combine({
-                'formatItems': [
-                  {'format': remux_id, 'name': 'Remux', 'score': 1000},
-                  {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-                ], 
-                'minUpgradeFormatScore': 1,
-                'upgradeAllowed': true,
-                'cutoff': 31,
-                'items': new_items
-              }) }}
-          vars:
-            profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
-            remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
-            x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          register: radarr_cf_final
+
+        # -- Cloud-Unlimited --
+        - name: "Radarr: Transform Cloud-Unlimited"
+          block:
+            - name: "Radarr: Build Cloud-Unlimited Items"
+              ansible.builtin.set_fact:
+                radarr_cloud_items: "{{ radarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
+              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first).items }}"
+              vars:
+                allowed: "{{ (item.quality is defined and item.quality.id in [31, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
+
+            - name: "Radarr: PUT Cloud-Unlimited"
+              ansible.builtin.uri:
+                url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
+                method: PUT
+                headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+                body_format: json
+                body: "{{ profile | combine({
+                    'formatItems': [
+                      {'format': remux_id, 'name': 'Remux', 'score': 1000},
+                      {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
+                    ], 
+                    'minUpgradeFormatScore': 1,
+                    'upgradeAllowed': true,
+                    'cutoff': 31,
+                    'items': radarr_cloud_items
+                  }) }}"
+                status_code: [200, 202]
+              vars:
+                profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+                remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+                x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'Cloud-Unlimited' in (radarr_qp_existing.json | map(attribute='name') | list)"
 
-        - name: "Radarr: Update NAS-Archive Profile"
-          ansible.builtin.uri:
-            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
-            method: PUT
-            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
-            body_format: json
-            body: >-
-              {% set new_items = [] %}
-              {% for item in profile.items %}
-                {% set is_allowed = false %}
-                {% if item.quality is defined and item.quality.id in [7, 3, 9, 15] %}
-                  {% set is_allowed = true %}
-                {% elif item.id is defined and item.id == 1002 %}
-                  {% set is_allowed = true %}
-                {% endif %}
-                {% set _ = new_items.append(item | combine({'allowed': is_allowed})) %}
-              {% endfor %}
-              {{ profile | combine({
-                'formatItems': [
-                  {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
-                  {'format': remux_id, 'name': 'Remux', 'score': 0}
-                ], 
-                'minUpgradeFormatScore': 1,
-                'upgradeAllowed': true,
-                'cutoff': 7,
-                'items': new_items
-              }) }}
-          vars:
-            profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
-            remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
-            x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+        # -- NAS-Archive --
+        - name: "Radarr: Transform NAS-Archive"
+          block:
+            - name: "Radarr: Build NAS-Archive Items"
+              ansible.builtin.set_fact:
+                radarr_nas_items: "{{ radarr_nas_items | default([]) + [item | combine({'allowed': allowed})] }}"
+              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first).items }}"
+              vars:
+                allowed: "{{ (item.quality is defined and item.quality.id in [7, 3, 9, 15]) or (item.id is defined and item.id == 1002) }}"
+
+            - name: "Radarr: PUT NAS-Archive"
+              ansible.builtin.uri:
+                url: "http://{{ target_ip }}:7878/api/v3/qualityprofile/{{ profile.id }}"
+                method: PUT
+                headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+                body_format: json
+                body: "{{ profile | combine({
+                    'formatItems': [
+                      {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
+                      {'format': remux_id, 'name': 'Remux', 'score': 0}
+                    ], 
+                    'minUpgradeFormatScore': 1,
+                    'upgradeAllowed': true,
+                    'cutoff': 7,
+                    'items': radarr_nas_items
+                  }) }}"
+                status_code: [200, 202]
+              vars:
+                profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
+                remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+                x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'NAS-Archive' in (radarr_qp_existing.json | map(attribute='name') | list)"
 
     # ========================================
@@ -169,13 +169,6 @@
           loop: "{{ custom_formats }}"
           when: item.name not in (sonarr_cf_existing.json | map(attribute='name') | list)
 
-        - name: "Sonarr: Get final Custom Formats for IDs"
-          ansible.builtin.uri:
-            url: "http://{{ target_ip }}:8989/api/v3/customformat"
-            method: GET
-            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
-          register: sonarr_cf_final
-
         - name: "Sonarr: Get existing Quality Profiles"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:8989/api/v3/qualityprofile"
@@ -183,68 +176,75 @@
             headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
           register: sonarr_qp_existing
 
-        - name: "Sonarr: Update Cloud-Unlimited Profile"
+        - name: "Sonarr: Get final Custom Formats for IDs"
           ansible.builtin.uri:
-            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
-            method: PUT
+            url: "http://{{ target_ip }}:8989/api/v3/customformat"
+            method: GET
             headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
-            body_format: json
-            body: >-
-              {% set new_items = [] %}
-              {% for item in profile.items %}
-                {% set is_allowed = false %}
-                {% if item.quality is defined and item.quality.id in [21, 19, 18, 17] %}
-                  {% set is_allowed = true %}
-                {% elif item.id is defined and item.id == 1003 %}
-                  {% set is_allowed = true %}
-                {% endif %}
-                {% set _ = new_items.append(item | combine({'allowed': is_allowed})) %}
-              {% endfor %}
-              {{ profile | combine({
-                'formatItems': [
-                  {'format': remux_id, 'name': 'Remux', 'score': 1000},
-                  {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-                ], 
-                'minUpgradeFormatScore': 1,
-                'upgradeAllowed': true,
-                'cutoff': 21,
-                'items': new_items
-              }) }}
-          vars:
-            profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
-            remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
-            x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+          register: sonarr_cf_final
+
+        # -- Cloud-Unlimited --
+        - name: "Sonarr: Transform Cloud-Unlimited"
+          block:
+            - name: "Sonarr: Build Cloud-Unlimited Items"
+              ansible.builtin.set_fact:
+                sonarr_cloud_items: "{{ sonarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
+              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first).items }}"
+              vars:
+                allowed: "{{ (item.quality is defined and item.quality.id in [21, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
+
+            - name: "Sonarr: PUT Cloud-Unlimited"
+              ansible.builtin.uri:
+                url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
+                method: PUT
+                headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+                body_format: json
+                body: "{{ profile | combine({
+                    'formatItems': [
+                      {'format': remux_id, 'name': 'Remux', 'score': 1000},
+                      {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
+                    ], 
+                    'minUpgradeFormatScore': 1,
+                    'upgradeAllowed': true,
+                    'cutoff': 21,
+                    'items': sonarr_cloud_items
+                  }) }}"
+                status_code: [200, 202]
+              vars:
+                profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+                remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+                x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'Cloud-Unlimited' in (sonarr_qp_existing.json | map(attribute='name') | list)"
 
-        - name: "Sonarr: Update NAS-Archive Profile"
-          ansible.builtin.uri:
-            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
-            method: PUT
-            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
-            body_format: json
-            body: >-
-              {% set new_items = [] %}
-              {% for item in profile.items %}
-                {% set is_allowed = false %}
-                {% if item.quality is defined and item.quality.id in [7, 3, 9, 15, 6] %}
-                  {% set is_allowed = true %}
-                {% elif item.id is defined and item.id == 1002 %}
-                  {% set is_allowed = true %}
-                {% endif %}
-                {% set _ = new_items.append(item | combine({'allowed': is_allowed})) %}
-              {% endfor %}
-              {{ profile | combine({
-                'formatItems': [
-                  {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
-                  {'format': remux_id, 'name': 'Remux', 'score': 0}
-                ], 
-                'minUpgradeFormatScore': 1,
-                'upgradeAllowed': true,
-                'cutoff': 7,
-                'items': new_items
-              }) }}
-          vars:
-            profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
-            remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
-            x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
+        # -- NAS-Archive --
+        - name: "Sonarr: Transform NAS-Archive"
+          block:
+            - name: "Sonarr: Build NAS-Archive Items"
+              ansible.builtin.set_fact:
+                sonarr_nas_items: "{{ sonarr_nas_items | default([]) + [item | combine({'allowed': allowed})] }}"
+              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first).items }}"
+              vars:
+                allowed: "{{ (item.quality is defined and item.quality.id in [7, 3, 9, 15, 6]) or (item.id is defined and item.id == 1002) }}"
+
+            - name: "Sonarr: PUT NAS-Archive"
+              ansible.builtin.uri:
+                url: "http://{{ target_ip }}:8989/api/v3/qualityprofile/{{ profile.id }}"
+                method: PUT
+                headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+                body_format: json
+                body: "{{ profile | combine({
+                    'formatItems': [
+                      {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
+                      {'format': remux_id, 'name': 'Remux', 'score': 0}
+                    ], 
+                    'minUpgradeFormatScore': 1,
+                    'upgradeAllowed': true,
+                    'cutoff': 7,
+                    'items': sonarr_nas_items
+                  }) }}"
+                status_code: [200, 202]
+              vars:
+                profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
+                remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
+                x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'NAS-Archive' in (sonarr_qp_existing.json | map(attribute='name') | list)"
