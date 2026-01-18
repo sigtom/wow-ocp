@@ -86,7 +86,7 @@
             - name: "Radarr: Build Cloud-Unlimited Items"
               ansible.builtin.set_fact:
                 radarr_cloud_items: "{{ radarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
-              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first).items }}"
+              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first)['items'] }}"
               vars:
                 allowed: "{{ (item.quality is defined and item.quality.id in [31, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
 
@@ -119,7 +119,7 @@
             - name: "Radarr: Build NAS-Archive Items"
               ansible.builtin.set_fact:
                 radarr_nas_items: "{{ radarr_nas_items | default([]) + [item | combine({'allowed': allowed})] }}"
-              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first).items }}"
+              loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first)['items'] }}"
               vars:
                 allowed: "{{ (item.quality is defined and item.quality.id in [7, 3, 9, 15]) or (item.id is defined and item.id == 1002) }}"
 
@@ -189,7 +189,7 @@
             - name: "Sonarr: Build Cloud-Unlimited Items"
               ansible.builtin.set_fact:
                 sonarr_cloud_items: "{{ sonarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
-              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first).items }}"
+              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first)['items'] }}"
               vars:
                 allowed: "{{ (item.quality is defined and item.quality.id in [21, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
 
@@ -222,7 +222,7 @@
             - name: "Sonarr: Build NAS-Archive Items"
               ansible.builtin.set_fact:
                 sonarr_nas_items: "{{ sonarr_nas_items | default([]) + [item | combine({'allowed': allowed})] }}"
-              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first).items }}"
+              loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first)['items'] }}"
               vars:
                 allowed: "{{ (item.quality is defined and item.quality.id in [7, 3, 9, 15, 6]) or (item.id is defined and item.id == 1002) }}"
 
