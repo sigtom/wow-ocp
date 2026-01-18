@@ -788,3 +788,7 @@
     - If Zurg fails: Verify TorBox API key is valid
     - If mounts fail: Ensure `fuse=1` feature on LXC
     - Logs location inside container: `/opt/dumb/log/`
+- [2026-01-18]: **OVERSEERR DEPLOYED TO DOWNLOADERS LXC (221) ✅**
+    - Added Overseerr as a sidecar container to the Downloaders stack.
+    - Configured for port 5055.
+    - Maintained isolation of DUMB stack by keeping external apps on dedicated storage LXC.
