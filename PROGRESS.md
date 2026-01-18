@@ -661,3 +661,55 @@
         - **Recursion Bug**: Resolved variable recursion loop (`target_node` vs `proxmox_node`) in playbook variables.
     - **Outcome**: Successfully deployed Staging Traefik (Job 55) via AAP with zero manual intervention.
     - **Status**: Pipeline is 100% automated and repeatable.
+
+- [2026-01-17]: **AAP WORKFLOW: PROVISION DOCKER LXC - COMPLETE ✅**
+    - **Goal**: Create modular AAP workflow for zero-touch Docker LXC provisioning
+    - **Workflow Chain**: `Validate IP → Provision LXC → Install Docker`
+    - **Components Created**:
+        - `validate-ip.yaml`: Ping + rDNS check to ensure IP is available
+        - `provision-lxc.yaml`: Create LXC container via Proxmox API
+        - `install-docker.yaml`: Install Docker + Compose on target
+    - **AAP Integration**:
+        - 3 Job Templates with proper credential assignments
+        - 1 Workflow Template with Survey (vmid, ip, hostname, tshirt_size)
+        - `set_stats` passes variables between workflow nodes
+    - **Bugs Fixed**:
+        - Variable recursion: Use `set_fact` to resolve vars before role invocation
+        - SSH agent debug: Made non-fatal with `failed_when: false`
+        - SSH credential: Added "AAP Executor SSH" to Provision LXC job template
+        - Role variable mapping: Corrected playbook vars to role expected vars
+    - **Test Deployment**: LXC 220 "docker-lxc" @ 172.16.100.20 - Ubuntu 24.04, Docker 29.1.5
+    - **Deployment Time**: ~4 minutes (Validate 5s → Provision 45s → Docker 3m)
+
+- [2026-01-17]: **DUMB (DEBRID UNLIMITED MEDIA BRIDGE) DEPLOYMENT - 90% COMPLETE**
+    - **Goal**: Deploy DUMB AIO media stack to LXC via GitOps/Ansible
+    - **LXC Prepared**:
+        - Renamed LXC 220 from "docker-lxc" to "dumb"
+        - Added FUSE feature: `pct set 220 --features nesting=1,fuse=1`
+        - `/dev/fuse` now available for rclone mounts
+    - **Automation Created**:
+        - `automation/playbooks/deploy-dumb.yaml`: Two-play deployment playbook
+        - `automation/templates/dumb/docker-compose.yml`: DUMB container config
+        - `automation/templates/dumb/dumb.env.j2`: Environment template (TorBox only, RealDebrid disabled)
+    - **ESO Integration**:
+        - Added debrid keys to bitvault.sigtom.dev (ESO provider vault)
+        - Created ExternalSecret `dumb-secrets` → syncs TorBox API key
+        - Secret synced successfully: `SecretSynced: True`
+    - **AAP Integration**:
+        - Created "DUMB Debrid Secrets" credential type (extra_vars injection)
+        - Job Template "Deploy DUMB" (ID: 16) with Survey for target IP/hostname
+        - Seeder job injects secrets from `dumb-secrets` K8s secret
+    - **Configuration**: TorBox ONLY (RealDebrid disabled per user preference)
+    - **Status**: Ready to launch - project synced, credentials configured
+    - **Next Step**: Launch "Deploy DUMB" job via AAP
+
+- [2026-01-17]: **INFRASTRUCTURE NOTES**
+    - **Bitwarden Vaults**:
+        - `vault.sigtom.dev`: Primary vault (user's main Bitwarden)
+        - `bitvault.sigtom.dev`: Self-hosted Bitwarden Lite (ESO provider target)
+        - ESO provider configured for bitvault.sigtom.dev
+    - **LXC 220 (dumb)**:
+        - IP: 172.16.100.20
+        - Features: nesting=1,fuse=1
+        - Docker 29.1.5 + Compose v5.0.1
+        - Ready for DUMB deployment
