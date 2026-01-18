@@ -34,16 +34,3 @@ services:
       - SYS_ADMIN
     security_opt:
       - apparmor:unconfined
-
-  overseerr:
-    image: sctx/overseerr:latest
-    container_name: overseerr
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
-    volumes:
-      - ./config/overseerr:/app/config
-    ports:
-      - "5055:5055"
