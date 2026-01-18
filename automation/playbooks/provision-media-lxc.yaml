@@ -1,0 +1,60 @@
+---
+# ============================================================================
+# Provision Media LXC Container (with NAS Mount)
+# ============================================================================
+# Description: Create an LXC container on Proxmox with NAS bind mount
+#
+# AAP Usage:
+#   - Job Template: "Provision Media LXC"
+#   - Survey provides: target_vmid, target_ip, target_hostname, tshirt_size
+# ============================================================================
+
+- name: "Provision Media LXC Container"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  pre_tasks:
+    - name: "Resolve input variables"
+      ansible.builtin.set_fact:
+        resolved_vmid: "{{ target_vmid | default('') }}"
+        resolved_ip: "{{ target_ip | default('') }}"
+        resolved_hostname: "{{ target_hostname | default('media-lxc') }}"
+        resolved_size: "{{ tshirt_size | default('medium') }}"
+        resolved_os: "{{ os_type | default('ubuntu24') }}"
+        resolved_node: "{{ proxmox_node | default('wow-prox1') }}"
+
+    - name: "Validate required inputs"
+      ansible.builtin.fail:
+        msg: "Missing target_vmid or target_ip!"
+      when: resolved_vmid == '' or resolved_ip == ''
+
+  tasks:
+    - name: "Provision LXC container with NAS mount"
+      ansible.builtin.include_role:
+        name: provision_lxc_generic
+      vars:
+        vmid: "{{ resolved_vmid }}"
+        ansible_host: "{{ resolved_ip }}"
+        inventory_hostname: "{{ resolved_hostname }}"
+        tshirt_size: "{{ resolved_size }}"
+        os_type: "{{ resolved_os }}"
+        lxc_features: "nesting=1,fuse=1"
+        proxmox_node: "{{ resolved_node }}"
+        lxc_mount_points:
+          - "/mnt/pve/nas_media,mp=/mnt/nas"
+        health_check_enabled: false
+        post_provisioning_enabled: false
+
+    - name: "Wait for container SSH"
+      ansible.builtin.wait_for:
+        host: "{{ resolved_ip }}"
+        port: 22
+        timeout: 120
+
+    - name: "Set stats for workflow"
+      ansible.builtin.set_stats:
+        data:
+          target_ip: "{{ resolved_ip }}"
+          target_vmid: "{{ resolved_vmid }}"
+          target_hostname: "{{ resolved_hostname }}"

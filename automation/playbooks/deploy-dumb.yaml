@@ -33,6 +33,7 @@
     target_ip: "{{ target_ip | default('172.16.100.20') }}"
     target_hostname: "{{ target_hostname | default('dumb') }}"
     dumb_install_dir: /opt/dumb
+    plex_claim_token: "{{ plex_claim_token | default('') }}"
 
   pre_tasks:
     # ========================================

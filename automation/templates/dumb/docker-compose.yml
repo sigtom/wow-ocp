@@ -12,6 +12,7 @@ services:
       - ./log:/log
       - ./data:/data
       - ./mnt/debrid:/mnt/debrid:shared
+      - /mnt/nas:/mnt/nas
     env_file:
       - .env
     ports:
@@ -21,7 +22,7 @@ services:
       - "8182:8182"   # Zilean
       - "5050:5050"   # pgAdmin
       - "8282:8282"   # Decypharr
-      - "8096:8096"   # Jellyfin
+      - "32400:32400" # Plex Media Server
       - "8989:8989"   # Sonarr
       - "7878:7878"   # Radarr
       - "8686:8686"   # Lidarr

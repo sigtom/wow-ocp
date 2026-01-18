@@ -1,0 +1,32 @@
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./config/sabnzbd:/config
+      - /mnt/nas/downloads:/downloads
+      - /mnt/nas/downloads/incomplete:/incomplete-downloads
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - WEBUI_PORT=8081
+    volumes:
+      - ./config/qbittorrent:/config
+      - /mnt/nas/downloads:/downloads
+    ports:
+      - "8081:8081"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped

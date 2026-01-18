@@ -1,0 +1,47 @@
+---
+# ============================================================================
+# Setup NFS Mount on Proxmox Host
+# ============================================================================
+# Description: Mounts the TrueNAS NFS share on the Proxmox host for LXC pass-through
+#
+# This must be run on the Proxmox host itself (wow-prox1).
+# ============================================================================
+
+- name: "Setup Proxmox NFS Storage"
+  hosts: "{{ target_node | default('wow-prox1') }}"
+  gather_facts: true
+  vars:
+    nfs_server: "172.16.160.100"
+    nfs_path: "/mnt/Media/docker-media"
+    host_mount_path: "/mnt/pve/nas_media"
+
+  tasks:
+    - name: "Ensure NFS tools are installed"
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present
+        update_cache: yes
+
+    - name: "Create mount point directory"
+      ansible.builtin.file:
+        path: "{{ host_mount_path }}"
+        state: directory
+        mode: '0755'
+
+    - name: "Mount TrueNAS NFS share"
+      ansible.builtin.mount:
+        path: "{{ host_mount_path }}"
+        src: "{{ nfs_server }}:{{ nfs_path }}"
+        fstype: nfs
+        opts: "defaults,soft,intr,tcp,timeo=14,retrans=2"
+        state: mounted
+
+    - name: "Verify mount accessibility"
+      ansible.builtin.command: "ls -la {{ host_mount_path }}"
+      register: mount_check
+      changed_when: false
+
+    - name: "Display mount status"
+      ansible.builtin.debug:
+        msg: "NFS successfully mounted on {{ inventory_hostname }} at {{ host_mount_path }}"
+      when: mount_check.rc == 0

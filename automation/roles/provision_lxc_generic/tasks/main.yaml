@@ -166,7 +166,10 @@
       --features {{ lxc_features }} \
       --unprivileged {{ 1 if lxc_unprivileged else 0 }} \
       --ssh-public-keys /tmp/lxc_keys_{{ vmid }}.pub \
-      {% if start_lxc %}--start 1{% endif %}
+      {% if start_lxc %}--start 1{% endif %} \
+      {% for mp in lxc_mount_points | default([]) %}
+      --mp{{ loop.index0 }} {{ mp }} \
+      {% endfor %}
     
     rm /tmp/lxc_keys_{{ vmid }}.pub
     REMOTE

@@ -1,0 +1,76 @@
+---
+# ============================================================================
+# Deploy Downloaders Media Stack (LXC 221)
+# ============================================================================
+# Description: Deploy qBittorrent and SABnzbd to a dedicated LXC
+#
+# Prerequisites:
+#   - LXC 221 provisioned with Docker
+#   - NFS share mounted on host at /mnt/pve/nas_media
+# ============================================================================
+
+- name: "Deploy Downloaders Stack"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    target_ip: "{{ target_ip | default('172.16.100.21') }}"
+    target_hostname: "{{ target_hostname | default('downloaders') }}"
+    install_dir: /opt/downloaders
+
+  tasks:
+    - name: "Setup SSH known_hosts"
+      ansible.builtin.shell: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H {{ target_ip }} >> ~/.ssh/known_hosts 2>/dev/null
+      changed_when: false
+      failed_when: false
+
+    - name: "Add target to runtime inventory"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: downloader_targets
+        ansible_user: root
+
+- name: "Configure Downloaders"
+  hosts: downloader_targets
+  gather_facts: true
+
+  vars:
+    install_dir: /opt/downloaders
+
+  tasks:
+    - name: "Create application directories"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ install_dir }}"
+        - "{{ install_dir }}/config"
+        - "{{ install_dir }}/config/qbittorrent"
+        - "{{ install_dir }}/config/sabnzbd"
+
+    - name: "Deploy docker-compose.yml"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/downloaders/docker-compose.yml.j2"
+        dest: "{{ install_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: "Start Downloader containers"
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ install_dir }}"
+      register: compose_up
+
+    - name: "✅ Downloaders Deployment Complete"
+      ansible.builtin.debug:
+        msg:
+          - "==========================================="
+          - "✅ Downloaders Deployed Successfully"
+          - "==========================================="
+          - "IP: {{ ansible_host }}"
+          - "Sabnzbd: http://{{ ansible_host }}:8080"
+          - "qBittorrent: http://{{ ansible_host }}:8081"
+          - "==========================================="

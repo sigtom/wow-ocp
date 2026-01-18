@@ -324,17 +324,18 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
 
-    - name: Create Test Proxmox API Job Template
+    - name: Create Setup Proxmox NFS Job Template
       ansible.controller.job_template:
-        name: "Test Proxmox API"
+        name: "Setup Proxmox NFS"
+        description: "Mount TrueNAS NFS share on Proxmox host"
         job_type: run
         organization: "{{ aap_organization }}"
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
-        playbook: "automation/playbooks/test-proxmox-api.yaml"
+        playbook: "automation/playbooks/setup-proxmox-nfs.yaml"
         execution_environment: "HomeLab EE"
         credentials:
-          - "Proxmox Production"
+          - "AAP Executor SSH"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -355,7 +356,6 @@
         project: "HomeLab Ops"
         playbook: "automation/playbooks/validate-ip.yaml"
         execution_environment: "HomeLab EE"
-        # No credentials needed - runs on localhost
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -371,6 +371,25 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/provision-lxc.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "Proxmox Production"
+          - "AAP Executor SSH"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Provision Media LXC Job Template
+      ansible.controller.job_template:
+        name: "Provision Media LXC"
+        description: "Create LXC container on Proxmox with NAS mount"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/provision-media-lxc.yaml"
         execution_environment: "HomeLab EE"
         credentials:
           - "Proxmox Production"
@@ -400,50 +419,40 @@
         validate_certs: no
 
     # -------------------------------------------------------
-    # 8. Workflow Template: Provision Docker LXC
+    # 8. Workflow Templates
     # -------------------------------------------------------
     
-    - name: Create Provision Docker LXC Workflow
+    - name: Create Provision Media Docker LXC Workflow
       ansible.controller.workflow_job_template:
-        name: "Provision Docker LXC"
-        description: "Complete workflow: Validate IP → Create LXC → Install Docker"
+        name: "Provision Media Docker LXC"
+        description: "Complete workflow: Validate IP → Create Media LXC → Install Docker"
         organization: "{{ aap_organization }}"
         inventory: "HomeLab Inventory"
         survey_enabled: true
         survey_spec:
-          name: "Docker LXC Parameters"
-          description: "Configure the new Docker LXC container"
+          name: "Media LXC Parameters"
+          description: "Configure the new Media Docker LXC container"
           spec:
             - question_name: "Container ID (VMID)"
-              question_description: "Unique container ID (check Proxmox for next available)"
               required: true
               type: integer
               variable: "target_vmid"
-              min: 100
-              max: 9999
-              default: 220
+              default: 221
             - question_name: "IP Address"
-              question_description: "IP in Apps network (172.16.100.12-49 available)"
               required: true
               type: text
               variable: "target_ip"
-              default: "172.16.100.20"
+              default: "172.16.100.21"
             - question_name: "Hostname"
-              question_description: "Container hostname"
               required: true
               type: text
               variable: "target_hostname"
-              default: "docker-lxc"
+              default: "downloaders"
             - question_name: "Size"
-              question_description: "Resource allocation (T-shirt size)"
               required: true
               type: multiplechoice
               variable: "tshirt_size"
-              choices:
-                - "small"
-                - "medium"
-                - "large"
-                - "xlarge"
+              choices: ["small", "medium", "large", "xlarge"]
               default: "medium"
         state: present
         controller_host: "{{ controller_host }}"
@@ -451,67 +460,67 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
 
-    - name: Create Workflow Node 1 - Validate IP
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "Provision Docker LXC"
-        identifier: "validate_ip"
-        unified_job_template: "Validate IP"
-        organization: "{{ aap_organization }}"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: no
+    - name: Setup Workflow Nodes for Media LXC
+      block:
+        - name: Create Node - Validate IP
+          ansible.controller.workflow_job_template_node:
+            workflow_job_template: "Provision Media Docker LXC"
+            identifier: "validate_ip"
+            unified_job_template: "Validate IP"
+            organization: "{{ aap_organization }}"
+            state: present
+            controller_host: "{{ controller_host }}"
+            controller_username: "{{ controller_username }}"
+            controller_password: "{{ controller_password }}"
+            validate_certs: no
 
-    - name: Create Workflow Node 2 - Provision LXC
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "Provision Docker LXC"
-        identifier: "provision_lxc"
-        unified_job_template: "Provision LXC"
-        organization: "{{ aap_organization }}"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: no
+        - name: Create Node - Provision Media LXC
+          ansible.controller.workflow_job_template_node:
+            workflow_job_template: "Provision Media Docker LXC"
+            identifier: "provision_media_lxc"
+            unified_job_template: "Provision Media LXC"
+            organization: "{{ aap_organization }}"
+            state: present
+            controller_host: "{{ controller_host }}"
+            controller_username: "{{ controller_username }}"
+            controller_password: "{{ controller_password }}"
+            validate_certs: no
 
-    - name: Create Workflow Node 3 - Install Docker
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "Provision Docker LXC"
-        identifier: "install_docker"
-        unified_job_template: "Install Docker"
-        organization: "{{ aap_organization }}"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: no
+        - name: Create Node - Install Docker
+          ansible.controller.workflow_job_template_node:
+            workflow_job_template: "Provision Media Docker LXC"
+            identifier: "install_docker"
+            unified_job_template: "Install Docker"
+            organization: "{{ aap_organization }}"
+            state: present
+            controller_host: "{{ controller_host }}"
+            controller_username: "{{ controller_username }}"
+            controller_password: "{{ controller_password }}"
+            validate_certs: no
 
-    - name: Link Node 1 → Node 2 (on success)
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "Provision Docker LXC"
-        identifier: "validate_ip"
-        success_nodes:
-          - "provision_lxc"
-        organization: "{{ aap_organization }}"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: no
+        - name: Link Node 1 → Node 2
+          ansible.controller.workflow_job_template_node:
+            workflow_job_template: "Provision Media Docker LXC"
+            identifier: "validate_ip"
+            success_nodes: ["provision_media_lxc"]
+            organization: "{{ aap_organization }}"
+            state: present
+            controller_host: "{{ controller_host }}"
+            controller_username: "{{ controller_username }}"
+            controller_password: "{{ controller_password }}"
+            validate_certs: no
 
-    - name: Link Node 2 → Node 3 (on success)
-      ansible.controller.workflow_job_template_node:
-        workflow_job_template: "Provision Docker LXC"
-        identifier: "provision_lxc"
-        success_nodes:
-          - "install_docker"
-        organization: "{{ aap_organization }}"
-        state: present
-        controller_host: "{{ controller_host }}"
-        controller_username: "{{ controller_username }}"
-        controller_password: "{{ controller_password }}"
-        validate_certs: no
+        - name: Link Node 2 → Node 3
+          ansible.controller.workflow_job_template_node:
+            workflow_job_template: "Provision Media Docker LXC"
+            identifier: "provision_media_lxc"
+            success_nodes: ["install_docker"]
+            organization: "{{ aap_organization }}"
+            state: present
+            controller_host: "{{ controller_host }}"
+            controller_username: "{{ controller_username }}"
+            controller_password: "{{ controller_password }}"
+            validate_certs: no
 
     # -------------------------------------------------------
     # 9. Application Deployment Job Templates
@@ -536,17 +545,54 @@
           description: "Configure DUMB deployment target"
           spec:
             - question_name: "Target IP"
-              question_description: "IP of Docker LXC container"
               required: true
               type: text
               variable: "target_ip"
               default: "172.16.100.20"
             - question_name: "Hostname"
-              question_description: "Container hostname"
               required: true
               type: text
               variable: "target_hostname"
               default: "dumb"
+            - question_name: "Plex Claim Token"
+              question_description: "Get from https://www.plex.tv/claim/"
+              required: false
+              type: text
+              variable: "plex_claim_token"
+              default: ""
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Create Deploy Downloaders Job Template
+      ansible.controller.job_template:
+        name: "Deploy Downloaders"
+        description: "Deploy qBittorrent and Sabnzbd to Docker LXC"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/deploy-downloaders.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "AAP Executor SSH"
+        survey_enabled: true
+        survey_spec:
+          name: "Downloaders Deployment Parameters"
+          description: "Configure Downloaders deployment target"
+          spec:
+            - question_name: "Target IP"
+              required: true
+              type: text
+              variable: "target_ip"
+              default: "172.16.100.21"
+            - question_name: "Hostname"
+              required: true
+              type: text
+              variable: "target_hostname"
+              default: "downloaders"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
