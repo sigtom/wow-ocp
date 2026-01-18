@@ -241,7 +241,17 @@
         scm_delete_on_update: true
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
+        wait: yes # Wait for sync to complete
         state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
+    - name: Force Project Sync to discover new playbooks
+      ansible.controller.project_update:
+        project: "HomeLab Ops"
+        wait: yes
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
