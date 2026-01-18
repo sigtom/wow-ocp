@@ -713,3 +713,78 @@
         - Features: nesting=1,fuse=1
         - Docker 29.1.5 + Compose v5.0.1
         - Ready for DUMB deployment
+
+- [2026-01-17]: **DUMB DEPLOYMENT - NEXT SESSION CHECKLIST**
+    - **Status**: 90% complete - all automation ready, just needs launch
+    - **Prerequisites Verified**:
+        - ✅ LXC 220 "dumb" @ 172.16.100.20 running with Docker + FUSE
+        - ✅ ESO ExternalSecret `dumb-secrets` synced (TorBox API key)
+        - ✅ AAP Job Template "Deploy DUMB" (ID: 16) configured
+        - ✅ AAP Project synced with latest playbooks
+    
+    **STEPS TO COMPLETE DUMB DEPLOYMENT:**
+    
+    1. **Launch Deploy DUMB Job via AAP**:
+       ```bash
+       AAP_PASS=$(oc get secret -n ansible-automation-platform aap-controller-secrets -o jsonpath='{.data.password}' | base64 -d)
+       
+       curl -sk -u "admin:$AAP_PASS" -X POST \
+         -H "Content-Type: application/json" \
+         -d '{"extra_vars": {"target_ip": "172.16.100.20", "target_hostname": "dumb"}}' \
+         "https://aap.apps.ossus.sigtomtech.com/api/controller/v2/job_templates/16/launch/"
+       ```
+       OR: AAP UI → Templates → Deploy DUMB → Launch
+    
+    2. **Monitor Job Progress**:
+       ```bash
+       # Get job ID from launch response, then:
+       curl -sk -u "admin:$AAP_PASS" "https://aap.apps.ossus.sigtomtech.com/api/controller/v2/jobs/<JOB_ID>/stdout/?format=txt"
+       ```
+    
+    3. **Verify DUMB is Running**:
+       ```bash
+       ssh root@172.16.110.101 "pct exec 220 -- docker ps"
+       # Should show: dumb container running
+       
+       # Check DUMB logs
+       ssh root@172.16.110.101 "pct exec 220 -- docker logs dumb --tail=50"
+       ```
+    
+    4. **Access DUMB Services**:
+       - DUMB Frontend: http://172.16.100.20:3005
+       - Riven Frontend: http://172.16.100.20:3000
+       - Riven Backend: http://172.16.100.20:8080
+       - Zilean: http://172.16.100.20:8182
+       - pgAdmin: http://172.16.100.20:5050
+    
+    5. **Optional: Add Traefik Route for HTTPS**:
+       ```bash
+       # Create Traefik file provider config on LXC 210
+       ssh root@172.16.110.101 "pct exec 210 -- bash -c 'cat > /opt/traefik/config/dumb.yml << EOF
+       http:
+         routers:
+           dumb:
+             rule: \"Host(\\\`dumb.sigtom.dev\\\`)\"
+             service: dumb
+             tls: {}
+         services:
+           dumb:
+             loadBalancer:
+               servers:
+                 - url: \"http://172.16.100.20:3005\"
+       EOF'"
+       
+       # Add DNS: dumb.sigtom.dev → 172.16.100.10 (Traefik IP)
+       ```
+    
+    6. **Configure Riven** (First-time setup):
+       - Open http://172.16.100.20:3000
+       - Connect to TorBox (key already injected)
+       - Configure Plex/media library paths
+       - Add content sources (Overseerr, Trakt, etc.)
+    
+    **TROUBLESHOOTING:**
+    - If DUMB fails to start: Check `/dev/fuse` exists in container
+    - If Zurg fails: Verify TorBox API key is valid
+    - If mounts fail: Ensure `fuse=1` feature on LXC
+    - Logs location inside container: `/opt/dumb/log/`
