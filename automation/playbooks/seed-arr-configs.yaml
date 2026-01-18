@@ -29,7 +29,8 @@
             implementation: "ReleaseTitleSpecification"
             negate: false
             required: false
-            fields: { "value": "\\b(x265|hevc)\\b" }
+            fields: 
+              - { "name": "value", "value": "\\b(x265|hevc)\\b" }
       
       - name: "Remux"
         includeCustomFormatWhenRenaming: true
@@ -38,7 +39,8 @@
             implementation: "ReleaseTitleSpecification"
             negate: false
             required: false
-            fields: { "value": "\\b(remux)\\b" }
+            fields: 
+              - { "name": "value", "value": "\\b(remux)\\b" }
 
   tasks:
     # ========================================
@@ -64,6 +66,13 @@
           loop: "{{ custom_formats }}"
           when: item.name not in (radarr_cf_existing.json | map(attribute='name') | list)
 
+        - name: "Radarr: Get existing Quality Profiles"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:7878/api/v3/qualityprofile"
+            method: GET
+            headers: { "X-Api-Key": "{{ radarr_api_key }}" }
+          register: radarr_qp_existing
+
         - name: "Radarr: Create Cloud-Unlimited Profile"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:7878/api/v3/qualityprofile"
@@ -73,14 +82,13 @@
             body:
               name: "Cloud-Unlimited"
               upgradeAllowed: true
-              cutoff: 100 # Remux-2160p
+              cutoff: 22 # Remux-2160p
               items:
                 - quality: { id: 22, name: "Remux-2160p" }
                   allowed: true
                 - quality: { id: 18, name: "Bluray-2160p" }
                   allowed: true
-          register: radarr_cloud_profile
-          failed_when: false # Might already exist
+          when: "'Cloud-Unlimited' not in (radarr_qp_existing.json | map(attribute='name') | list)"
 
     # ========================================
     # Phase 2: Configure Sonarr
@@ -105,6 +113,13 @@
           loop: "{{ custom_formats }}"
           when: item.name not in (sonarr_cf_existing.json | map(attribute='name') | list)
 
+        - name: "Sonarr: Get existing Quality Profiles"
+          ansible.builtin.uri:
+            url: "http://{{ target_ip }}:8989/api/v3/qualityprofile"
+            method: GET
+            headers: { "X-Api-Key": "{{ sonarr_api_key }}" }
+          register: sonarr_qp_existing
+
         - name: "Sonarr: Create NAS-Archive Profile"
           ansible.builtin.uri:
             url: "http://{{ target_ip }}:8989/api/v3/qualityprofile"
@@ -118,6 +133,6 @@
               items:
                 - quality: { id: 7, name: "WEBDL-1080p" }
                   allowed: true
-                - quality: { id: 1, name: "SDTV" }
-                  allowed: false
-          failed_when: false
+                - quality: { id: 6, name: "HDTV-1080p" }
+                  allowed: true
+          when: "'NAS-Archive' not in (sonarr_qp_existing.json | map(attribute='name') | list)"
