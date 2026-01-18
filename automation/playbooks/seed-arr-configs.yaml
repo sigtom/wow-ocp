@@ -89,7 +89,8 @@
             body: "{{ profile | combine({'formatItems': [
                 {'format': remux_id, 'name': 'Remux', 'score': 1000},
                 {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-              ]}) }}"
+              ], 'minUpgradeFormatScore': 1}) }}"
+            status_code: [200, 202]
           vars:
             profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
             remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
@@ -105,7 +106,8 @@
             body: "{{ profile | combine({'formatItems': [
                 {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
                 {'format': remux_id, 'name': 'Remux', 'score': 0}
-              ]}) }}"
+              ], 'minUpgradeFormatScore': 1}) }}"
+            status_code: [200, 202]
           vars:
             profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
             remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
@@ -158,7 +160,8 @@
             body: "{{ profile | combine({'formatItems': [
                 {'format': remux_id, 'name': 'Remux', 'score': 1000},
                 {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-              ]}) }}"
+              ], 'minUpgradeFormatScore': 1}) }}"
+            status_code: [200, 202]
           vars:
             profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
             remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
@@ -174,7 +177,8 @@
             body: "{{ profile | combine({'formatItems': [
                 {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
                 {'format': remux_id, 'name': 'Remux', 'score': 0}
-              ]}) }}"
+              ], 'minUpgradeFormatScore': 1}) }}"
+            status_code: [200, 202]
           vars:
             profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'NAS-Archive') | first }}"
             remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
