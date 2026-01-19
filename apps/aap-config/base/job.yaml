@@ -112,3 +112,21 @@ spec:
                   name: media-arr-secrets
                   key: prowlarr_api_key
                   optional: true
+            - name: PIHOLE_KEY_116
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secrets
+                  key: PIHOLE_KEY_116
+                  optional: true
+            - name: PIHOLE_KEY_100_2
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secrets
+                  key: PIHOLE_KEY_100_2
+                  optional: true
+            - name: PIHOLE_KEY_110_100
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-secrets
+                  key: PIHOLE_KEY_110_100
+                  optional: true
