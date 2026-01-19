@@ -1,7 +1,5 @@
 # ============================================================================
-# Traefik v3.6 Static Configuration (TOML)
-# ============================================================================
-# Using TOML to support multiple Docker providers (not possible in YAML)
+# Traefik v3.6 Static Configuration (TOML) - RESTORED
 # ============================================================================
 
 [global]
@@ -55,20 +53,11 @@
     directory = "/config"
     watch = true
 
-# Local Docker provider
-[[providers.docker]]
-  endpoint = "unix:///var/run/docker.sock"
-  exposedByDefault = false
-  network = "traefik-proxy"
-  watch = true
-
-# Remote Docker providers
-{% for host in remote_docker_hosts | default([]) %}
-[[providers.docker]]
-  endpoint = "tcp://{{ host.ip }}:2375"
-  exposedByDefault = false
-  watch = true
-{% endfor %}
+  [providers.docker]
+    endpoint = "unix:///var/run/docker.sock"
+    exposedByDefault = false
+    network = "traefik-proxy"
+    watch = true
 
 [log]
   level = "INFO"
