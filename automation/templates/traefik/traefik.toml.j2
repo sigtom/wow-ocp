@@ -1,0 +1,81 @@
+# ============================================================================
+# Traefik v3.6 Static Configuration (TOML)
+# ============================================================================
+# Using TOML to support multiple Docker providers (not possible in YAML)
+# ============================================================================
+
+[global]
+  checkNewVersion = true
+  sendAnonymousUsage = false
+
+[api]
+  dashboard = true
+  insecure = false
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+  
+  [entryPoints.websecure]
+    address = ":443"
+    [entryPoints.websecure.http.tls]
+      certResolver = "cloudflare"
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "nixsysadmin.io"
+        sans = ["*.nixsysadmin.io"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "sigtom.com"
+        sans = ["*.sigtom.com"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "sigtom.dev"
+        sans = ["*.sigtom.dev"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "sigtom.info"
+        sans = ["*.sigtom.info"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "sigtom.io"
+        sans = ["*.sigtom.io"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "sigtomtech.com"
+        sans = ["*.sigtomtech.com"]
+      [[entryPoints.websecure.http.tls.domains]]
+        main = "tecnixsystems.com"
+        sans = ["*.tecnixsystems.com"]
+
+[certificatesResolvers.cloudflare.acme]
+  email = "tec.thor@gmail.com"
+  storage = "/letsencrypt/acme.json"
+  [certificatesResolvers.cloudflare.acme.dnsChallenge]
+    provider = "cloudflare"
+    delayBeforeCheck = 30
+    resolvers = ["1.1.1.1:53", "8.8.8.8:53"]
+
+[providers]
+  [providers.file]
+    directory = "/config"
+    watch = true
+
+# Local Docker provider
+[[providers.docker]]
+  endpoint = "unix:///var/run/docker.sock"
+  exposedByDefault = false
+  network = "traefik-proxy"
+  watch = true
+
+# Remote Docker providers
+{% for host in remote_docker_hosts | default([]) %}
+[[providers.docker]]
+  endpoint = "tcp://{{ host.ip }}:2375"
+  exposedByDefault = false
+  watch = true
+{% endfor %}
+
+[log]
+  level = "INFO"
+  filePath = "/logs/traefik.log"
+  format = "json"
+
+[accessLog]
+  filePath = "/logs/access.log"
+  format = "json"
+  bufferingSize = 100

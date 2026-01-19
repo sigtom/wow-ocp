@@ -28,6 +28,38 @@ services:
       - "8686:8686"   # Lidarr
       - "9696:9696"   # Prowlarr
       - "6969:6969"   # Whisparr
+    labels:
+      - "traefik.enable=true"
+      # DUMB Frontend
+      - "traefik.http.routers.dumb.rule=Host(`dumb.sigtom.dev`)"
+      - "traefik.http.routers.dumb.entrypoints=websecure"
+      - "traefik.http.routers.dumb.tls.certresolver=cloudflare"
+      - "traefik.http.routers.dumb.service=dumb-svc"
+      - "traefik.http.services.dumb-svc.loadbalancer.server.port=3005"
+      # Riven
+      - "traefik.http.routers.riven.rule=Host(`riven.sigtom.dev`)"
+      - "traefik.http.routers.riven.entrypoints=websecure"
+      - "traefik.http.routers.riven.tls.certresolver=cloudflare"
+      - "traefik.http.routers.riven.service=riven-svc"
+      - "traefik.http.services.riven-svc.loadbalancer.server.port=3000"
+      # Sonarr
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.sigtom.dev`)"
+      - "traefik.http.routers.sonarr.entrypoints=websecure"
+      - "traefik.http.routers.sonarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.sonarr.service=sonarr-svc"
+      - "traefik.http.services.sonarr-svc.loadbalancer.server.port=8989"
+      # Radarr
+      - "traefik.http.routers.radarr.rule=Host(`radarr.sigtom.dev`)"
+      - "traefik.http.routers.radarr.entrypoints=websecure"
+      - "traefik.http.routers.radarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.radarr.service=radarr-svc"
+      - "traefik.http.services.radarr-svc.loadbalancer.server.port=7878"
+      # Prowlarr
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.sigtom.dev`)"
+      - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      - "traefik.http.routers.prowlarr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.prowlarr.service=prowlarr-svc"
+      - "traefik.http.services.prowlarr-svc.loadbalancer.server.port=9696"
     devices:
       - /dev/fuse:/dev/fuse:rwm
     cap_add:

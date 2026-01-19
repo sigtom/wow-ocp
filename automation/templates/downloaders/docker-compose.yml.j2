@@ -12,6 +12,12 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.sigtom.dev`)"
+      - "traefik.http.routers.sabnzbd.entrypoints=websecure"
+      - "traefik.http.routers.sabnzbd.tls.certresolver=cloudflare"
+      - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -29,6 +35,12 @@ services:
       - "6881:6881"
       - "6881:6881/udp"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qb.sigtom.dev`)"
+      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      - "traefik.http.routers.qbittorrent.tls.certresolver=cloudflare"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8081"
 
   overseerr:
     image: sctx/overseerr:latest
@@ -42,3 +54,9 @@ services:
       - ./config/overseerr:/app/config
     ports:
       - "5055:5055"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.overseerr.rule=Host(`requests.sigtom.dev`)"
+      - "traefik.http.routers.overseerr.entrypoints=websecure"
+      - "traefik.http.routers.overseerr.tls.certresolver=cloudflare"
+      - "traefik.http.services.overseerr.loadbalancer.server.port=5055"
