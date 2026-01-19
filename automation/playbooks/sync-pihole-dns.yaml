@@ -26,7 +26,7 @@
 
     # Pi-hole Instances
     piholes:
-      - { name: "Pihole-116", url: "https://10.0.0.116/api", token: "{{ key_116 }}" }
+      # - { name: "Pihole-116", url: "https://10.0.0.116/api", token: "{{ key_116 }}" } # Pending network upgrade
       - { name: "Pihole-100-2", url: "https://172.16.100.2/api", token: "{{ key_100_2 }}" }
       - { name: "Pihole-110-100", url: "http://172.16.110.100:20720/api", token: "{{ key_110_100 }}" }
 
