@@ -1,15 +1,16 @@
 ---
 # ============================================================================
-# Sync DNS to Pi-holes
+# Sync DNS to Pi-hole v6
 # ============================================================================
-# Description: Sync local DNS records to multiple Pi-hole instances via API.
+# Description: Sync local DNS records to multiple Pi-hole v6 instances via 
+#              the new REST API using Session ID (SID) authentication.
 #
 # AAP Usage:
 #   - Job Template: "Sync DNS to Pi-holes"
 #   - Credentials: "Pi-hole API Keys"
 # ============================================================================
 
-- name: "Sync Records to Pi-holes"
+- name: "Sync Records to Pi-hole v6"
   hosts: localhost
   connection: local
   gather_facts: false
@@ -25,50 +26,27 @@
 
     # Pi-hole Instances
     piholes:
-      - { name: "Pihole-116", url: "https://10.0.0.116/admin/api.php", token: "{{ key_116 }}", validate_certs: false }
-      - { name: "Pihole-100-2", url: "https://172.16.100.2/admin/api.php", token: "{{ key_100_2 }}", validate_certs: false }
-      - { name: "Pihole-110-100", url: "http://172.16.110.100:20720/admin/api.php", token: "{{ key_110_100 }}", validate_certs: false }
+      - { name: "Pihole-116", url: "https://10.0.0.116/api", token: "{{ key_116 }}" }
+      - { name: "Pihole-100-2", url: "https://172.16.100.2/api", token: "{{ key_100_2 }}" }
+      - { name: "Pihole-110-100", url: "http://172.16.110.100:20720/api", token: "{{ key_110_100 }}" }
 
     # Records to sync
     dns_records:
-      - { name: "sabnzbd.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "qb.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "overseerr.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "dumb.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "riven.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "sonarr.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "radarr.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "prowlarr.sigtom.io", ip: "{{ traefik_ip }}" }
-      - { name: "traefik.sigtom.io", ip: "{{ traefik_ip }}" }
+      - "sabnzbd.sigtom.io"
+      - "qb.sigtom.io"
+      - "overseerr.sigtom.io"
+      - "dumb.sigtom.io"
+      - "riven.sigtom.io"
+      - "sonarr.sigtom.io"
+      - "radarr.sigtom.io"
+      - "prowlarr.sigtom.io"
+      - "traefik.sigtom.io"
 
   tasks:
-    - name: "Validate Credentials Presence"
-      ansible.builtin.fail:
-        msg: "Missing Pi-hole API keys! Ensure 'Pi-hole API Keys' credential is attached to the Job Template."
-      when: key_116 == "" or key_100_2 == "" or key_110_100 == ""
-
-    - name: "Update Pi-hole Records"
-      ansible.builtin.uri:
-        url: "{{ item.0.url }}?customdns&auth={{ item.0.token }}&add&domain={{ item.1.name }}&ip={{ item.1.ip }}"
-        method: GET
-        validate_certs: "{{ item.0.validate_certs }}"
-        status_code: [200]
-        return_content: true
-      loop: "{{ piholes | product(dns_records) | list }}"
-      register: api_result
-      # Use the 'api_result' directly for each iteration's check
-      changed_when: 
-        - api_result.json is defined
-        - api_result.json.success | default(false)
-        - "'added' in (api_result.json.msg | default(''))"
-      # Mask the token in logs while allowing other parts to be seen
-      no_log: true 
-
-    - name: "Report Sync Status"
-      ansible.builtin.debug:
-        msg: "Successfully processed {{ dns_records | length }} records on {{ item.name }}"
+    - name: "Process each Pi-hole instance"
+      ansible.builtin.include_tasks:
+        file: "{{ playbook_dir }}/sync-single-pihole.yml"
       loop: "{{ piholes }}"
-
-    - name: "✅ Sync Complete"
-      ansible.builtin.debug:
-        msg: "All records processed across all Pi-hole instances."
+      loop_control:
+        loop_var: pihole
+      no_log: true
