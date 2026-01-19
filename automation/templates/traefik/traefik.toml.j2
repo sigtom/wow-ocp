@@ -1,5 +1,5 @@
 # ============================================================================
-# Traefik v3.6 Static Configuration (TOML) - SWARM MODE
+# Traefik v3.6 Static Configuration (TOML)
 # ============================================================================
 
 [global]
@@ -52,11 +52,23 @@
   directory = "/config"
   watch = true
 
-[providers.docker]
+# Local Docker provider
+[[providers.docker]]
   endpoint = "unix:///var/run/docker.sock"
-  swarmMode = true
   exposedByDefault = false
   network = "traefik-proxy"
+  watch = true
+
+# Remote Docker provider: DUMB
+[[providers.docker]]
+  endpoint = "tcp://172.16.100.20:2375"
+  exposedByDefault = false
+  watch = true
+
+# Remote Docker provider: Downloaders
+[[providers.docker]]
+  endpoint = "tcp://172.16.100.21:2375"
+  exposedByDefault = false
   watch = true
 
 [log]
