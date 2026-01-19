@@ -1,0 +1,63 @@
+---
+# ============================================================================
+# Setup Docker Swarm Cluster
+# ============================================================================
+# Description: Initialize a Docker Swarm cluster across LXCs.
+#              This enables Traefik auto-discovery via the Swarm API.
+#
+# Nodes:
+#   - Manager: 172.16.100.10 (Traefik)
+#   - Workers: 172.16.100.20 (DUMB), 172.16.100.21 (Downloaders)
+# ============================================================================
+
+- name: "Initialize Swarm Manager"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    manager_ip: "172.16.100.10"
+    worker_ips:
+      - "172.16.100.20"
+      - "172.16.100.21"
+
+  tasks:
+    - name: "Check if Swarm is already initialized on Manager"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ manager_ip }} "docker info --format '{{ '{{' }}.Swarm.LocalNodeState{{ '}}' }}'"
+      register: swarm_status
+      changed_when: false
+
+    - name: "Initialize Swarm"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ manager_ip }} "docker swarm init --advertise-addr {{ manager_ip }}"
+      when: swarm_status.stdout != 'active'
+
+    - name: "Capture Worker Join Token"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ manager_ip }} "docker swarm join-token worker -q"
+      register: worker_token
+      changed_when: false
+
+    - name: "Join Workers to Swarm"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ item }} "docker info --format '{{ '{{' }}.Swarm.LocalNodeState{{ '}}' }}'"
+      register: worker_status
+      loop: "{{ worker_ips }}"
+      changed_when: false
+
+    - name: "Execute Join on Workers"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ item.item }} "docker swarm join --token {{ worker_token.stdout }} {{ manager_ip }}:2377"
+      loop: "{{ worker_status.results }}"
+      when: item.stdout != 'active'
+
+    - name: "Verify Cluster State"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ manager_ip }} "docker node ls"
+      register: cluster_nodes
+      changed_when: false
+
+    - name: "✅ Swarm Status"
+      ansible.builtin.debug:
+        msg: "{{ cluster_nodes.stdout_lines }}"
