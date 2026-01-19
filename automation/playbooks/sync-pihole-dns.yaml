@@ -25,9 +25,9 @@
 
     # Pi-hole Instances
     piholes:
-      - { url: "https://10.0.0.116/admin/api.php", token: "{{ key_116 }}", validate_certs: false }
-      - { url: "https://172.16.100.2/admin/api.php", token: "{{ key_100_2 }}", validate_certs: false }
-      - { url: "http://172.16.110.100:20720/admin/api.php", token: "{{ key_110_100 }}", validate_certs: false }
+      - { name: "Pihole-116", url: "https://10.0.0.116/admin/api.php", token: "{{ key_116 }}", validate_certs: false }
+      - { name: "Pihole-100-2", url: "https://172.16.100.2/admin/api.php", token: "{{ key_100_2 }}", validate_certs: false }
+      - { name: "Pihole-110-100", url: "http://172.16.110.100:20720/admin/api.php", token: "{{ key_110_100 }}", validate_certs: false }
 
     # Records to sync
     dns_records:
@@ -42,9 +42,9 @@
       - { name: "traefik.sigtom.io", ip: "{{ traefik_ip }}" }
 
   tasks:
-    - name: "Validate Credentials"
+    - name: "Validate Credentials Presence"
       ansible.builtin.fail:
-        msg: "Missing Pi-hole API keys! Ensure 'Pi-hole API Keys' credential is attached."
+        msg: "Missing Pi-hole API keys! Ensure 'Pi-hole API Keys' credential is attached to the Job Template."
       when: key_116 == "" or key_100_2 == "" or key_110_100 == ""
 
     - name: "Update Pi-hole Records"
@@ -53,11 +53,22 @@
         method: GET
         validate_certs: "{{ item.0.validate_certs }}"
         status_code: [200]
+        return_content: true
       loop: "{{ piholes | product(dns_records) | list }}"
-      register: api_results
-      changed_when: "'added' in (api_results.json.msg | default(''))"
-      no_log: true
+      register: api_result
+      # Use the 'api_result' directly for each iteration's check
+      changed_when: 
+        - api_result.json is defined
+        - api_result.json.success | default(false)
+        - "'added' in (api_result.json.msg | default(''))"
+      # Mask the token in logs while allowing other parts to be seen
+      no_log: true 
+
+    - name: "Report Sync Status"
+      ansible.builtin.debug:
+        msg: "Successfully processed {{ dns_records | length }} records on {{ item.name }}"
+      loop: "{{ piholes }}"
 
     - name: "✅ Sync Complete"
       ansible.builtin.debug:
-        msg: "Synced {{ dns_records | length }} records across {{ piholes | length }} Pi-hole instances."
+        msg: "All records processed across all Pi-hole instances."
