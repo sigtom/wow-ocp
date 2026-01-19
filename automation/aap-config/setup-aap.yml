@@ -175,22 +175,34 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
 
-    - name: Create Bitwarden Credential Type
+    - name: Create Pi-hole API Keys Credential Type
       ansible.controller.credential_type:
-        name: "Bitwarden Session"
-        description: "Bitwarden CLI Session Token"
+        name: "Pi-hole API Keys"
+        description: "API tokens for all three Pi-hole instances"
         kind: cloud
         inputs:
           fields:
-            - id: session_token
-              label: BW_SESSION Token
+            - id: key_116
+              label: API Key (10.0.0.116)
+              type: string
+              secret: true
+            - id: key_100_2
+              label: API Key (172.16.100.2)
+              type: string
+              secret: true
+            - id: key_110_100
+              label: API Key (172.16.110.100:20720)
               type: string
               secret: true
           required:
-            - session_token
+            - key_116
+            - key_100_2
+            - key_110_100
         injectors:
           env:
-            BW_SESSION: "{% raw %}{{ session_token }}{% endraw %}"
+            PIHOLE_KEY_116: "{% raw %}{{ key_116 }}{% endraw %}"
+            PIHOLE_KEY_100_2: "{% raw %}{{ key_100_2 }}{% endraw %}"
+            PIHOLE_KEY_110_100: "{% raw %}{{ key_110_100 }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -304,19 +316,21 @@
         validate_certs: no
       when: sonarr_api_key != '' and radarr_api_key != '' and prowlarr_api_key != ''
 
-    - name: Create Bitwarden Session Credential
+    - name: Create Pi-hole API Keys Credential
       ansible.controller.credential:
-        name: "Bitwarden Session"
+        name: "Pi-hole API Keys"
         organization: "{{ aap_organization }}"
-        credential_type: "Bitwarden Session"
+        credential_type: "Pi-hole API Keys"
         inputs:
-          session_token: "{{ lookup('env', 'BW_SESSION') }}"
+          key_116: "{{ lookup('env', 'PIHOLE_KEY_116') }}"
+          key_100_2: "{{ lookup('env', 'PIHOLE_KEY_100_2') }}"
+          key_110_100: "{{ lookup('env', 'PIHOLE_KEY_110_100') }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
-      when: lookup('env', 'BW_SESSION') != ''
+      when: lookup('env', 'PIHOLE_KEY_116') != ''
 
     # -------------------------------------------------------
     # 4. Project
@@ -770,7 +784,7 @@
         playbook: "automation/playbooks/sync-pihole-dns.yaml"
         execution_environment: "HomeLab EE"
         credentials:
-          - "Bitwarden Session"
+          - "Pi-hole API Keys"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"

@@ -6,45 +6,8 @@
 #
 # AAP Usage:
 #   - Job Template: "Sync DNS to Pi-holes"
-#   - Credentials: "Bitwarden Session"
+#   - Credentials: "Pi-hole API Keys"
 # ============================================================================
-
-- name: "Fetch Pi-hole API Keys"
-  hosts: localhost
-  connection: local
-  gather_facts: false
-
-  tasks:
-    - name: "Fetch API keys from Bitwarden"
-      block:
-        - name: "Check if BW_SESSION is available"
-          ansible.builtin.fail:
-            msg: "BW_SESSION is not set! Please attach the 'Bitwarden Session' credential to this job."
-          when: lookup('env', 'BW_SESSION') == ""
-
-        - name: "Get item from Bitwarden"
-          ansible.builtin.shell: "bw get item pihole-api-keys 2>/dev/null"
-          register: bw_output
-          no_log: true
-
-        - name: "Parse keys into inventory facts"
-          ansible.builtin.set_fact:
-            pihole_keys: "{{ bw_output.stdout | from_json }}"
-          no_log: true
-
-        - name: "Extract Field Values"
-          ansible.builtin.set_fact:
-            key_116: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_10.0.0.116') | first).value }}"
-            key_100_2: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.100.2') | first).value }}"
-            key_110_100: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.110.100') | first).value }}"
-          no_log: true
-      rescue:
-        - name: "Fallback to environment variables"
-          ansible.builtin.set_fact:
-            key_116: "{{ lookup('env', 'PIHOLE_KEY_116') }}"
-            key_100_2: "{{ lookup('env', 'PIHOLE_KEY_100_2') }}"
-            key_110_100: "{{ lookup('env', 'PIHOLE_KEY_110_100') }}"
-          when: lookup('env', 'PIHOLE_KEY_116') != ""
 
 - name: "Sync Records to Pi-holes"
   hosts: localhost
@@ -55,11 +18,16 @@
     # Target Traefik IP for all app aliases
     traefik_ip: "172.16.100.10"
     
+    # Credentials injected via AAP Environment Variables
+    key_116: "{{ lookup('env', 'PIHOLE_KEY_116') }}"
+    key_100_2: "{{ lookup('env', 'PIHOLE_KEY_100_2') }}"
+    key_110_100: "{{ lookup('env', 'PIHOLE_KEY_110_100') }}"
+
     # Pi-hole Instances
     piholes:
-      - { url: "https://10.0.0.116/admin/api.php", token: "{{ hostvars['localhost']['key_116'] }}", validate_certs: false }
-      - { url: "https://172.16.100.2/admin/api.php", token: "{{ hostvars['localhost']['key_100_2'] }}", validate_certs: false }
-      - { url: "http://172.16.110.100:20720/admin/api.php", token: "{{ hostvars['localhost']['key_110_100'] }}", validate_certs: false }
+      - { url: "https://10.0.0.116/admin/api.php", token: "{{ key_116 }}", validate_certs: false }
+      - { url: "https://172.16.100.2/admin/api.php", token: "{{ key_100_2 }}", validate_certs: false }
+      - { url: "http://172.16.110.100:20720/admin/api.php", token: "{{ key_110_100 }}", validate_certs: false }
 
     # Records to sync
     dns_records:
@@ -74,6 +42,11 @@
       - { name: "traefik.sigtom.io", ip: "{{ traefik_ip }}" }
 
   tasks:
+    - name: "Validate Credentials"
+      ansible.builtin.fail:
+        msg: "Missing Pi-hole API keys! Ensure 'Pi-hole API Keys' credential is attached."
+      when: key_116 == "" or key_100_2 == "" or key_110_100 == ""
+
     - name: "Update Pi-hole Records"
       ansible.builtin.uri:
         url: "{{ item.0.url }}?customdns&auth={{ item.0.token }}&add&domain={{ item.1.name }}&ip={{ item.1.ip }}"
