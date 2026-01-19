@@ -1,5 +1,8 @@
 # ============================================================================
-# Traefik v3.6 Static Configuration (TOML) - MULTI-NODE
+# Traefik v3.6 Static Configuration (TOML) - CLEAN
+# ============================================================================
+# Docker providers are handled via CLI flags in docker-compose.yml
+# to support multiple endpoints in Traefik v3.
 # ============================================================================
 
 [global]
@@ -50,25 +53,6 @@
 
 [providers.file]
   directory = "/config"
-  watch = true
-
-# Local Docker provider
-[providers.docker.local]
-  endpoint = "unix:///var/run/docker.sock"
-  exposedByDefault = false
-  network = "traefik-proxy"
-  watch = true
-
-# Remote Docker provider: DUMB
-[providers.docker.dumb]
-  endpoint = "tcp://172.16.100.20:2375"
-  exposedByDefault = false
-  watch = true
-
-# Remote Docker provider: Downloaders
-[providers.docker.downloaders]
-  endpoint = "tcp://172.16.100.21:2375"
-  exposedByDefault = false
   watch = true
 
 [log]
