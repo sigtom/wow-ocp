@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - secret.yaml
   - external-secret.yaml
+  - pihole-secrets.yaml
   - job.yaml
