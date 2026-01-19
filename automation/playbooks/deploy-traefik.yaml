@@ -301,6 +301,12 @@
         dest: "{{ traefik_base_dir }}/traefik.toml"
         mode: '0644'
 
+    - name: "Phase 2: Deploy Remote Apps configuration"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/traefik/config/remote-apps.yml.j2"
+        dest: "{{ traefik_config_dir }}/remote-apps.yml"
+        mode: '0644'
+
     - name: "Phase 2: Install htpasswd on container for auth generation"
       ansible.builtin.apt:
         name: apache2-utils

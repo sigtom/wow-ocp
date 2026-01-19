@@ -1,0 +1,85 @@
+http:
+  routers:
+    overseerr:
+      rule: "Host(`overseerr.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: overseerr-svc
+      tls: {}
+    sabnzbd:
+      rule: "Host(`sabnzbd.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: sabnzbd-svc
+      tls: {}
+    qbittorrent:
+      rule: "Host(`qb.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: qbittorrent-svc
+      tls: {}
+    dumb:
+      rule: "Host(`dumb.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: dumb-svc
+      tls: {}
+    sonarr:
+      rule: "Host(`sonarr.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: sonarr-svc
+      tls: {}
+    radarr:
+      rule: "Host(`radarr.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: radarr-svc
+      tls: {}
+    prowlarr:
+      rule: "Host(`prowlarr.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: prowlarr-svc
+      tls: {}
+    riven:
+      rule: "Host(`riven.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: riven-svc
+      tls: {}
+    plex:
+      rule: "Host(`plex.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: plex-svc
+      tls: {}
+
+  services:
+    overseerr-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.21:5055"
+    sabnzbd-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.21:8080"
+    qbittorrent-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.21:8081"
+    dumb-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:3005"
+    sonarr-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:8989"
+    radarr-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:7878"
+    prowlarr-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:9696"
+    riven-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:3000"
+    plex-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:32400"
