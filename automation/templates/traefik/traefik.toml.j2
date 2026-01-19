@@ -15,26 +15,26 @@
     [entryPoints.websecure.http.tls]
       certResolver = "cloudflare"
       [[entryPoints.websecure.http.tls.domains]]
-        main = "nixsysadmin.io"
-        sans = ["*.nixsysadmin.io"]
+        main = "*.nixsysadmin.io"
+        sans = ["nixsysadmin.io"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "sigtom.com"
-        sans = ["*.sigtom.com"]
+        main = "*.sigtom.com"
+        sans = ["sigtom.com"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "sigtom.dev"
-        sans = ["*.sigtom.dev"]
+        main = "*.sigtom.dev"
+        sans = ["sigtom.dev"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "sigtom.info"
-        sans = ["*.sigtom.info"]
+        main = "*.sigtom.info"
+        sans = ["sigtom.info"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "sigtom.io"
-        sans = ["*.sigtom.io"]
+        main = "*.sigtom.io"
+        sans = ["sigtom.io"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "sigtomtech.com"
-        sans = ["*.sigtomtech.com"]
+        main = "*.sigtomtech.com"
+        sans = ["sigtomtech.com"]
       [[entryPoints.websecure.http.tls.domains]]
-        main = "tecnixsystems.com"
-        sans = ["*.tecnixsystems.com"]
+        main = "*.tecnixsystems.com"
+        sans = ["tecnixsystems.com"]
 
 [certificatesResolvers.cloudflare.acme]
   email = "tec.thor@gmail.com"

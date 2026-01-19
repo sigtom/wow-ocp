@@ -372,7 +372,14 @@
       ansible.builtin.shell: docker network rm traefik-proxy 2>/dev/null || true
       changed_when: false
 
-    - name: "Phase 2: Clear acme.json for clean wildcard start"
+    - name: "Phase 2: Stop and Prune everything (Deep Clean)"
+      ansible.builtin.shell: |
+        cd {{ traefik_base_dir }}
+        docker compose -f whoami-compose.yml down --remove-orphans 2>/dev/null || true
+        docker compose down --remove-orphans 2>/dev/null || true
+      changed_when: true
+
+    - name: "Phase 2: Wipe acme.json for clean wildcard start"
       ansible.builtin.file:
         path: "{{ traefik_certs_dir }}/acme.json"
         state: absent
