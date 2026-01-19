@@ -1,5 +1,5 @@
 # ============================================================================
-# Traefik v3.6 Static Configuration (TOML)
+# Traefik v3.6 Static Configuration (TOML) - MULTI-NODE
 # ============================================================================
 
 [global]
@@ -53,20 +53,20 @@
   watch = true
 
 # Local Docker provider
-[[providers.docker]]
+[providers.docker.local]
   endpoint = "unix:///var/run/docker.sock"
   exposedByDefault = false
   network = "traefik-proxy"
   watch = true
 
 # Remote Docker provider: DUMB
-[[providers.docker]]
+[providers.docker.dumb]
   endpoint = "tcp://172.16.100.20:2375"
   exposedByDefault = false
   watch = true
 
 # Remote Docker provider: Downloaders
-[[providers.docker]]
+[providers.docker.downloaders]
   endpoint = "tcp://172.16.100.21:2375"
   exposedByDefault = false
   watch = true
