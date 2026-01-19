@@ -48,17 +48,16 @@
     delayBeforeCheck = 30
     resolvers = ["1.1.1.1:53", "8.8.8.8:53"]
 
-[providers]
-  [providers.file]
-    directory = "/config"
-    watch = true
+[providers.file]
+  directory = "/config"
+  watch = true
 
-  [providers.docker]
-    endpoint = "unix:///var/run/docker.sock"
-    swarmMode = true  # Enables cross-node label discovery
-    exposedByDefault = false
-    network = "traefik-proxy"
-    watch = true
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  swarmMode = true
+  exposedByDefault = false
+  network = "traefik-proxy"
+  watch = true
 
 [log]
   level = "INFO"

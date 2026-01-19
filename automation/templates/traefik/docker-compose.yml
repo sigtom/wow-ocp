@@ -50,7 +50,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       
       # Traefik static configuration
-      - ./traefik.toml:/traefik.toml:ro
+      - ./traefik.toml:/etc/traefik/traefik.toml:ro
       
       # Dynamic configuration files
       - ./config:/config:ro
