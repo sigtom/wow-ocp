@@ -40,7 +40,6 @@
       - "sonarr.sigtom.io"
       - "radarr.sigtom.io"
       - "prowlarr.sigtom.io"
-      - "traefik.sigtom.io"
 
   tasks:
     - name: "Process each Pi-hole instance"
