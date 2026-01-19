@@ -21,10 +21,10 @@
     headers:
       sid: "{{ pihole_sid }}"
     validate_certs: false
-    status_code: [200]
+    status_code: [200, 201]
   loop: "{{ dns_records }}"
   register: update_result
-  changed_when: "update_result.status == 200"
+  changed_when: "update_result.status == 201"
 
 - name: "Logout from {{ pihole.name }}"
   ansible.builtin.uri:
