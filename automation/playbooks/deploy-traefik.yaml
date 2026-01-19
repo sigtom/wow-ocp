@@ -139,13 +139,21 @@
         name: provision_lxc_generic
       vars:
         proxmox_node: "{{ resolved_target_node }}"
-        os_type: "{{ os_template }}"
+        os_type: "{{ os_type }}"
         ansible_host: "{{ target_ip }}"
         tshirt_size: "{{ resource_size }}"
         lxc_features: "nesting=1"
         health_check_enabled: false  # Will do full health check in Play 2
         post_provisioning_enabled: false  # Will do Docker install in Play 2
         skip_existing_check: true  # Allow running on existing container for this deployment
+
+    - name: "Surgical SSH Key Injection (Force AAP Access)"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ hostvars[resolved_target_node].ansible_host }} \
+        "pct exec {{ target_vmid }} -- bash -c 'mkdir -p /root/.ssh && chmod 700 /root/.ssh && echo \"{{ item }}\" >> /root/.ssh/authorized_keys && sort -u /root/.ssh/authorized_keys -o /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys'"
+      loop: "{{ global_ssh_keys }}"
+      delegate_to: localhost
+      changed_when: true
 
     - name: "Wait for container to be fully booted"
       ansible.builtin.wait_for:
