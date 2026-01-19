@@ -372,6 +372,18 @@
       ansible.builtin.shell: docker network rm traefik-proxy 2>/dev/null || true
       changed_when: false
 
+    - name: "Phase 2: Clear acme.json for clean wildcard start"
+      ansible.builtin.file:
+        path: "{{ traefik_certs_dir }}/acme.json"
+        state: absent
+      changed_when: true
+
+    - name: "Phase 2: Re-create acme.json with correct permissions"
+      ansible.builtin.file:
+        path: "{{ traefik_certs_dir }}/acme.json"
+        state: touch
+        mode: '0600'
+
     # ========================================
     # Phase 3: Start Traefik and Verify
     # ========================================
@@ -467,7 +479,7 @@
                 - "traefik.enable=true"
                 - "traefik.http.routers.whoami-{{ loop.index }}.rule=Host(`{{ domain }}`)"
                 - "traefik.http.routers.whoami-{{ loop.index }}.entrypoints=websecure"
-                - "traefik.http.routers.whoami-{{ loop.index }}.tls.certresolver=cloudflare"
+                - "traefik.http.routers.whoami-{{ loop.index }}.tls={}"
                 - "traefik.http.services.whoami-{{ loop.index }}.loadbalancer.server.port=80"
           {% endfor %}
           
