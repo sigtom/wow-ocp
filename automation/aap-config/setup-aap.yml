@@ -175,6 +175,28 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
 
+    - name: Create Bitwarden Credential Type
+      ansible.controller.credential_type:
+        name: "Bitwarden Session"
+        description: "Bitwarden CLI Session Token"
+        kind: cloud
+        inputs:
+          fields:
+            - id: session_token
+              label: BW_SESSION Token
+              type: string
+              secret: true
+          required:
+            - session_token
+        injectors:
+          env:
+            BW_SESSION: "{% raw %}{{ session_token }}{% endraw %}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+
     # -------------------------------------------------------
     # 2. Execution Environments
     # -------------------------------------------------------
@@ -281,6 +303,20 @@
         controller_password: "{{ controller_password }}"
         validate_certs: no
       when: sonarr_api_key != '' and radarr_api_key != '' and prowlarr_api_key != ''
+
+    - name: Create Bitwarden Session Credential
+      ansible.controller.credential:
+        name: "Bitwarden Session"
+        organization: "{{ aap_organization }}"
+        credential_type: "Bitwarden Session"
+        inputs:
+          session_token: "{{ lookup('env', 'BW_SESSION') }}"
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
+      when: lookup('env', 'BW_SESSION') != ''
 
     # -------------------------------------------------------
     # 4. Project
@@ -733,7 +769,8 @@
         project: "HomeLab Ops"
         playbook: "automation/playbooks/sync-pihole-dns.yaml"
         execution_environment: "HomeLab EE"
-        # No extra credentials needed as it pulls from Bitwarden via lookup
+        credentials:
+          - "Bitwarden Session"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"

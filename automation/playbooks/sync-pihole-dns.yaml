@@ -6,7 +6,7 @@
 #
 # AAP Usage:
 #   - Job Template: "Sync DNS to Pi-holes"
-#   - Credentials: "Bitwarden"
+#   - Credentials: "Bitwarden Session"
 # ============================================================================
 
 - name: "Fetch Pi-hole API Keys"
@@ -16,16 +16,35 @@
 
   tasks:
     - name: "Fetch API keys from Bitwarden"
-      ansible.builtin.set_fact:
-        pihole_keys: "{{ lookup('pipe', 'bw get item pihole-api-keys 2>/dev/null') | from_json }}"
-      no_log: true
+      block:
+        - name: "Check if BW_SESSION is available"
+          ansible.builtin.fail:
+            msg: "BW_SESSION is not set! Please attach the 'Bitwarden Session' credential to this job."
+          when: lookup('env', 'BW_SESSION') == ""
 
-    - name: "Parse keys into inventory facts"
-      ansible.builtin.set_fact:
-        key_116: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_10.0.0.116') | first).value }}"
-        key_100_2: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.100.2') | first).value }}"
-        key_110_100: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.110.100') | first).value }}"
-      no_log: true
+        - name: "Get item from Bitwarden"
+          ansible.builtin.shell: "bw get item pihole-api-keys 2>/dev/null"
+          register: bw_output
+          no_log: true
+
+        - name: "Parse keys into inventory facts"
+          ansible.builtin.set_fact:
+            pihole_keys: "{{ bw_output.stdout | from_json }}"
+          no_log: true
+
+        - name: "Extract Field Values"
+          ansible.builtin.set_fact:
+            key_116: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_10.0.0.116') | first).value }}"
+            key_100_2: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.100.2') | first).value }}"
+            key_110_100: "{{ (pihole_keys.fields | selectattr('name', 'equalto', 'pihole_172.16.110.100') | first).value }}"
+          no_log: true
+      rescue:
+        - name: "Fallback to environment variables"
+          ansible.builtin.set_fact:
+            key_116: "{{ lookup('env', 'PIHOLE_KEY_116') }}"
+            key_100_2: "{{ lookup('env', 'PIHOLE_KEY_100_2') }}"
+            key_110_100: "{{ lookup('env', 'PIHOLE_KEY_110_100') }}"
+          when: lookup('env', 'PIHOLE_KEY_116') != ""
 
 - name: "Sync Records to Pi-holes"
   hosts: localhost
@@ -63,8 +82,8 @@
         status_code: [200]
       loop: "{{ piholes | product(dns_records) | list }}"
       register: api_results
-      changed_when: "'added' in api_results.json.msg | default('')"
-      no_log: true # Prevent API tokens from leaking in logs
+      changed_when: "'added' in (api_results.json.msg | default(''))"
+      no_log: true
 
     - name: "✅ Sync Complete"
       ansible.builtin.debug:
