@@ -213,6 +213,11 @@
     traefik_certs_dir: "{{ traefik_base_dir }}/letsencrypt"
     traefik_logs_dir: "{{ traefik_base_dir }}/logs"
     
+    # Remote Docker Hosts for auto-discovery
+    remote_docker_hosts:
+      - { name: "dumb", ip: "172.16.100.20" }
+      - { name: "downloaders", ip: "172.16.100.21" }
+    
     # Cloudflare token (from environment variable)
     cloudflare_api_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
     
@@ -283,9 +288,9 @@
         mode: '0644'
 
     - name: "Phase 2: Copy Traefik static configuration"
-      ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../templates/traefik/traefik.yml"
-        dest: "{{ traefik_base_dir }}/traefik.yml"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/traefik/traefik.toml.j2"
+        dest: "{{ traefik_base_dir }}/traefik.toml"
         mode: '0644'
 
     - name: "Phase 2: Install htpasswd on container for auth generation"
