@@ -1,8 +1,3 @@
----
-# ============================================================================
-# Traefik v3.6 Docker Compose Stack
-# ============================================================================
-
 services:
   traefik:
     image: traefik:v3.6
@@ -10,42 +5,29 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    
-    # Use CLI arguments to support multiple Docker providers in Traefik v3
     command:
       - "--configFile=/etc/traefik/traefik.toml"
-      - "--providers.docker.local.endpoint=unix:///var/run/docker.sock"
-      - "--providers.docker.local.exposedByDefault=false"
-      - "--providers.docker.local.network=traefik-proxy"
-      - "--providers.docker.dumb.endpoint=tcp://172.16.100.20:2375"
-      - "--providers.docker.dumb.exposedByDefault=false"
-      - "--providers.docker.downloaders.endpoint=tcp://172.16.100.21:2375"
-      - "--providers.docker.downloaders.exposedByDefault=false"
-    
     networks:
       - traefik-proxy
-    
     ports:
       - "80:80"
       - "443:443"
       - "8080:8080"
-    
     environment:
       - TZ=America/New_York
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
-    
+      - TRAEFIK_DASHBOARD_AUTH=${TRAEFIK_DASHBOARD_AUTH}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.toml:/etc/traefik/traefik.toml:ro
       - ./config:/config:ro
       - ./letsencrypt:/letsencrypt
       - ./logs:/logs
-    
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.sigtom.dev`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-dashboard.tls={}"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth"
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH}"
