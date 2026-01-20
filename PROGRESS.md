@@ -819,3 +819,9 @@
     - **Fix**: Shortened `download_links_refresh_interval` to 15 minutes and `auto_expire_links_after` to 24 hours in Decypharr config.
     - **Automation**: Templatized Decypharr `config.json` via Ansible and updated AAP Seeder to map necessary media API credentials.
     - **Outcome**: Verified tokens are proactively rotated before expiration, resolving streaming errors.
+
+- [2026-01-20]: **EXPANDED MEDIA AUTOMATION STACK**
+    - **Bazarr**: Added Bazarr to DUMB LXC (.20) as an isolated service for subtitle management.
+    - **FlareSolverr**: Added FlareSolverr to Downloader LXC (.21) to solve Cloudflare challenges for indexers.
+    - **Tautulli**: Added Tautulli to Downloader LXC (.21) for Plex monitoring and history.
+    - **Traefik/DNS**: Automated DNS records and Traefik routing for new services via AAP pipeline.

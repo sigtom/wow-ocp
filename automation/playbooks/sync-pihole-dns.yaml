@@ -41,6 +41,8 @@
       - "radarr.sigtom.io"
       - "prowlarr.sigtom.io"
       - "plex.sigtom.io"
+      - "bazarr.sigtom.io"
+      - "tautulli.sigtom.io"
 
   tasks:
     - name: "Process each Pi-hole instance"

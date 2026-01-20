@@ -45,6 +45,16 @@ http:
       entryPoints: ["websecure"]
       service: plex-svc
       tls: {}
+    bazarr:
+      rule: "Host(`bazarr.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: bazarr-svc
+      tls: {}
+    tautulli:
+      rule: "Host(`tautulli.sigtom.io`)"
+      entryPoints: ["websecure"]
+      service: tautulli-svc
+      tls: {}
 
   services:
     overseerr-svc:
@@ -59,6 +69,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://172.16.100.21:8081"
+    tautulli-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.21:8181"
     dumb-svc:
       loadBalancer:
         servers:
@@ -83,3 +97,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://172.16.100.20:32400"
+    bazarr-svc:
+      loadBalancer:
+        servers:
+          - url: "http://172.16.100.20:6767"
