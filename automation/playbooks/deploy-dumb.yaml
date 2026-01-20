@@ -70,6 +70,15 @@
         mode: '0644'
       notify: "Restart DUMB"
 
+    - name: "Deploy Riven settings.json"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/dumb/riven_settings.json.j2"
+        dest: "{{ dumb_install_dir }}/data/riven/settings.json"
+        owner: "1000"
+        group: "1000"
+        mode: '0644'
+      notify: "Restart DUMB"
+
     - name: "Deploy docker-compose.yml"
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../templates/dumb/docker-compose.yml"
