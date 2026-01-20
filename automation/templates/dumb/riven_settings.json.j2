@@ -1,6 +1,6 @@
 {
     "version": "0.23.6",
-    "api_key": "{{ riven_api_key | default('REDACTED_RIVEN_API_KEY') }}",
+    "api_key": "{{ riven_api_key }}",
     "debug": false,
     "debug_database": false,
     "log": true,
@@ -18,7 +18,7 @@
         "updater_interval": 120,
         "plex": {
             "enabled": true,
-            "token": "{{ plex_token | default('REDACTED_PLEX_TOKEN') }}",
+            "token": "{{ plex_token }}",
             "url": "http://localhost:32400"
         },
         "jellyfin": {
@@ -61,7 +61,7 @@
             "update_interval": 30,
             "enabled": true,
             "url": "https://overseerr.sigtom.io/",
-            "api_key": "REDACTED_OVERSEERR_API_KEY==",
+            "api_key": "{{ overseerr_api_key }}",
             "use_webhook": false
         },
         "plex_watchlist": {
@@ -286,7 +286,7 @@
         "update_interval": 3600
     },
     "database": {
-        "host": "postgresql+psycopg2://DUMB:{{ dumb_postgres_password | default('wvmz4Vi75kuvG80AFVpGGGnk') }}@127.0.0.1/riven"
+        "host": "postgresql+psycopg2://DUMB:{{ dumb_postgres_password }}@127.0.0.1/riven"
     },
     "notifications": {
         "enabled": false,

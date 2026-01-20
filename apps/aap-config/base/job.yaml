@@ -92,6 +92,24 @@ spec:
                   name: dumb-secrets
                   key: torbox_api_key
                   optional: true
+            - name: RIVEN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: riven_api_key
+                  optional: true
+            - name: PLEX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: plex_token
+                  optional: true
+            - name: OVERSEERR_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: overseerr_api_key
+                  optional: true
             - name: SONARR_API_KEY
               valueFrom:
                 secretKeyRef:

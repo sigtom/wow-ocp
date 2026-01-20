@@ -28,6 +28,9 @@
     # DUMB Debrid secrets (injected from dumb-secrets K8s Secret)
     realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
     torbox_api_key: "{{ lookup('env', 'TORBOX_API_KEY') }}"
+    riven_api_key: "{{ lookup('env', 'RIVEN_API_KEY') }}"
+    plex_token: "{{ lookup('env', 'PLEX_TOKEN') }}"
+    overseerr_api_key: "{{ lookup('env', 'OVERSEERR_API_KEY') }}"
     
     # Arr API keys (injected from media-arr-secrets K8s Secret)
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
@@ -128,6 +131,18 @@
               label: TorBox API Key
               type: string
               secret: true
+            - id: riven_api_key
+              label: Riven API Key
+              type: string
+              secret: true
+            - id: plex_token
+              label: Plex API Token
+              type: string
+              secret: true
+            - id: overseerr_api_key
+              label: Overseerr API Key
+              type: string
+              secret: true
           required:
             - realdebrid_api_key
             - torbox_api_key
@@ -135,6 +150,9 @@
           extra_vars:
             realdebrid_api_key: "{% raw %}{{ realdebrid_api_key }}{% endraw %}"
             torbox_api_key: "{% raw %}{{ torbox_api_key }}{% endraw %}"
+            riven_api_key: "{% raw %}{{ riven_api_key }}{% endraw %}"
+            plex_token: "{% raw %}{{ plex_token }}{% endraw %}"
+            overseerr_api_key: "{% raw %}{{ overseerr_api_key }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -293,6 +311,9 @@
         inputs:
           realdebrid_api_key: "{{ realdebrid_api_key }}"
           torbox_api_key: "{{ torbox_api_key }}"
+          riven_api_key: "{{ riven_api_key }}"
+          plex_token: "{{ plex_token }}"
+          overseerr_api_key: "{{ overseerr_api_key }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"

@@ -32,12 +32,6 @@
   vars:
     dumb_install_dir: /opt/dumb
   tasks:
-    - name: "Ensure database passwords are defined"
-      ansible.builtin.set_fact:
-        dumb_postgres_password: "{{ dumb_postgres_password | default('wvmz4Vi75kuvG80AFVpGGGnk') }}"
-        dumb_pgadmin_password: "{{ dumb_pgadmin_password | default('95PHH6GZru5jPqR7') }}"
-      no_log: true
-
     # ========================================
     # Phase 1: Directory Structure
     # ========================================
