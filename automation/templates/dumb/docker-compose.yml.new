@@ -1,0 +1,68 @@
+services:
+  dumb:
+    container_name: dumb
+    image: iampuid0/dumb:latest
+    restart: unless-stopped
+    stop_grace_period: 30s
+    shm_size: 128mb
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./config:/config
+      - ./log:/log
+      - ./data:/data
+      - ./mnt/debrid:/mnt/debrid:shared
+      - /mnt/nas:/mnt/nas
+    env_file:
+      - .env
+    ports:
+      - "3005:3005"   # DUMB Frontend
+      - "8080:8080"   # Riven Backend
+      - "3000:3000"   # Riven Frontend
+      - "8182:8182"   # Zilean
+      - "5050:5050"   # pgAdmin
+      - "8282:8282"   # Decypharr
+      - "32400:32400" # Plex Media Server
+      - "8989:8989"   # Sonarr
+      - "7878:7878"   # Radarr
+      - "8686:8686"   # Lidarr
+      - "9696:9696"   # Prowlarr
+      - "6969:6969"   # Whisparr
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+    volumes:
+      - ./config/sabnzbd:/config
+      - /mnt/nas/downloads:/downloads
+      - /mnt/nas/downloads/incomplete:/incomplete-downloads
+    ports:
+      - "8085:8080"
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
+      - WEBUI_PORT=8081
+    volumes:
+      - ./config/qbittorrent:/config
+      - /mnt/nas/downloads:/downloads
+    ports:
+      - "8081:8081"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped

@@ -1,6 +1,0 @@
-node_modules
-*.log
-.env
-raw-secret*.yaml
-secret*.yaml
-!sealed-secret*.yaml
