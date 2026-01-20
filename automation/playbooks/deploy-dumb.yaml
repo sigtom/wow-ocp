@@ -54,6 +54,8 @@
         - "{{ dumb_install_dir }}/log"
         - "{{ dumb_install_dir }}/data"
         - "{{ dumb_install_dir }}/data/decypharr"
+        - "{{ dumb_install_dir }}/cache"
+        - "{{ dumb_install_dir }}/cache/decypharr"
         - "{{ dumb_install_dir }}/mnt/debrid"
 
     # ========================================
