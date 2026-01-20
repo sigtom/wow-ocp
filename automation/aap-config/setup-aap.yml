@@ -923,6 +923,7 @@
         credential: "Git Read-Only"
         overwrite: true
         update_on_launch: true
+        execution_environment: "HomeLab EE"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
