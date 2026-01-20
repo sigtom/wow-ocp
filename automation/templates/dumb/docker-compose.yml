@@ -11,6 +11,7 @@ services:
       - ./config:/config
       - ./log:/log
       - ./data:/data
+      - ./cache:/cache
       - ./mnt/debrid:/mnt/debrid:shared
       - /mnt/nas:/mnt/nas
     env_file:
