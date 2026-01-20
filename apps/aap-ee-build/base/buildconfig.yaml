@@ -19,7 +19,7 @@ spec:
     dockerStrategy:
       from:
         kind: DockerImage
-        name: registry.redhat.io/ansible-automation-platform-24/ee-supported-rhel9:latest
+        name: registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest
       # We need to expose credentials for Red Hat Registry if node doesn't have them
       # But usually nodes have pull secrets. If build fails, we'll fix auth.
   triggers:

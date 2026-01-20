@@ -1,5 +1,5 @@
 # Simple robust EE build for OpenShift
-FROM registry.redhat.io/ansible-automation-platform-24/ee-supported-rhel9:latest
+FROM registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest
 
 USER root
 
