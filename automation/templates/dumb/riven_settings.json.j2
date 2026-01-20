@@ -44,7 +44,7 @@
         "episode_filesize_mb_max": -1,
         "proxy_url": "",
         "real_debrid": {
-            "enabled": true,
+            "enabled": false,
             "api_key": "{{ realdebrid_api_key }}"
         },
         "all_debrid": {
@@ -59,9 +59,9 @@
     "content": {
         "overseerr": {
             "update_interval": 30,
-            "enabled": false,
-            "url": "",
-            "api_key": "",
+            "enabled": true,
+            "url": "https://overseerr.sigtom.io/",
+            "api_key": "REDACTED_OVERSEERR_API_KEY==",
             "use_webhook": false
         },
         "plex_watchlist": {
@@ -84,22 +84,22 @@
         },
         "trakt": {
             "update_interval": 300,
-            "enabled": true,
+            "enabled": false,
             "api_key": "",
             "watchlist": [],
             "user_lists": [],
             "collection": [],
-            "fetch_trending": true,
+            "fetch_trending": false,
             "trending_count": 10,
-            "fetch_popular": true,
+            "fetch_popular": false,
             "popular_count": 10,
-            "fetch_most_watched": true,
+            "fetch_most_watched": false,
             "most_watched_period": "weekly",
             "most_watched_count": 10,
             "oauth": {
-                "oauth_client_id": "REDACTED_TRAKT_ID",
-                "oauth_client_secret": "REDACTED_TRAKT_SECRET",
-                "oauth_redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                "oauth_client_id": "",
+                "oauth_client_secret": "",
+                "oauth_redirect_uri": "",
                 "access_token": "",
                 "refresh_token": ""
             },
@@ -182,7 +182,7 @@
         "exclude": [],
         "preferred": [],
         "resolutions": {
-            "r2160p": false,
+            "r2160p": true,
             "r1080p": true,
             "r720p": true,
             "r480p": false,
@@ -212,7 +212,7 @@
                 "hdtv": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "hevc": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "mpeg": { "fetch": false, "use_custom_rank": false, "rank": 0 },
-                "remux": { "fetch": false, "use_custom_rank": false, "rank": 0 },
+                "remux": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "vhs": { "fetch": false, "use_custom_rank": false, "rank": 0 },
                 "web": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "webdl": { "fetch": true, "use_custom_rank": false, "rank": 0 },
@@ -234,7 +234,7 @@
             },
             "hdr": {
                 "bit10": { "fetch": true, "use_custom_rank": false, "rank": 0 },
-                "dolby_vision": { "fetch": false, "use_custom_rank": false, "rank": 0 },
+                "dolby_vision": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "hdr": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "hdr10plus": { "fetch": true, "use_custom_rank": false, "rank": 0 },
                 "sdr": { "fetch": true, "use_custom_rank": false, "rank": 0 }
