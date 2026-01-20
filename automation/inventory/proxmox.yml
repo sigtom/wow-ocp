@@ -2,7 +2,7 @@
 # This file is used by AAP to discover LXC and VMs
 plugin: community.proxmox.proxmox
 url: "https://172.16.110.101:8006"
-verify_ssl: false
+validate_certs: false
 
 # Credentials will be injected by AAP from the "Proxmox Production" credential
 # via environment variables
