@@ -1,6 +1,6 @@
 # Proxmox Dynamic Inventory Configuration
 # This file is used by AAP to discover LXC and VMs
-plugin: community.general.proxmox
+plugin: community.proxmox.proxmox
 url: "https://172.16.110.101:8006"
 verify_ssl: false
 

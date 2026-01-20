@@ -920,7 +920,9 @@
         source: "scm"
         source_project: "HomeLab Ops"
         source_path: "automation/inventory/proxmox.yml"
-        credential: "Git Read-Only"
+        credentials:
+          - "Git Read-Only"
+          - "Proxmox Production"
         overwrite: true
         update_on_launch: true
         execution_environment: "HomeLab EE"
