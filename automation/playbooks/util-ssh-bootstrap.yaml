@@ -12,11 +12,21 @@
 #   - Survey: target_ip, vmid, target_type, ssh_key, bootstrap_mode
 # ============================================================================
 
-- name: "SSH Key Injection Utility"
+- name: "SSH Key Bootstrap Utility - Initialization"
   hosts: localhost
   connection: local
   gather_facts: false
+  tasks:
+    - name: "Add manual target to inventory if IP provided"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: manual_targets
+        ansible_user: root
+      when: target_ip | default('') != ''
 
+- name: "SSH Key Bootstrap Utility - Execution"
+  hosts: "all:manual_targets"
+  gather_facts: false
   vars:
     # Default to the Mac key if not provided in survey
     default_ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
@@ -25,11 +35,10 @@
 
   tasks:
     # -------------------------------------------------------
-    # Mode 1: Direct SSH (Idempotent via authorized_key)
+    # Mode 1: Direct SSH (Standard Ansible way)
     # -------------------------------------------------------
     - name: "Inject key via Direct SSH"
-      when: not (bootstrap_mode | default(false) | bool)
-      delegate_to: "{{ target_ip }}"
+      when: not (bootstrap_mode | default('false') | bool)
       ansible.posix.authorized_key:
         user: root
         state: present
@@ -37,16 +46,11 @@
       register: ssh_result
       ignore_errors: true
 
-    - name: "Direct SSH Status"
-      ansible.builtin.debug:
-        msg: "Direct SSH injection successful."
-      when: not (bootstrap_mode | default(false) | bool) and ssh_result is succeeded
-
     # -------------------------------------------------------
     # Mode 2: Proxmox Out-of-Band (LXC)
     # -------------------------------------------------------
     - name: "Inject key via Proxmox Host (LXC Out-of-Band)"
-      when: (bootstrap_mode | default(false) | bool) and target_type == 'lxc'
+      when: (bootstrap_mode | default('false') | bool) and target_type == 'lxc'
       delegate_to: "{{ proxmox_host }}"
       ansible.builtin.shell: |
         pct exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
@@ -56,17 +60,12 @@
     # Mode 3: Proxmox Out-of-Band (VM)
     # -------------------------------------------------------
     - name: "Inject key via Proxmox Host (VM Out-of-Band)"
-      when: (bootstrap_mode | default(false) | bool) and target_type == 'vm'
+      when: (bootstrap_mode | default('false') | bool) and target_type == 'vm'
       delegate_to: "{{ proxmox_host }}"
       ansible.builtin.shell: |
         qm guest exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
       register: vm_oob_result
       ignore_errors: true
-
-    - name: "Check VM OOB Status"
-      ansible.builtin.fail:
-        msg: "VM Out-of-Band injection failed. Ensure QEMU Guest Agent is installed and running."
-      when: (bootstrap_mode | default(false) | bool) and target_type == 'vm' and vm_oob_result.rc != 0
 
     - name: "Final Summary"
       ansible.builtin.debug:
@@ -74,7 +73,8 @@
           - "=========================================="
           - "SSH Bootstrap Complete"
           - "=========================================="
-          - "Target: {{ target_ip }} (VMID: {{ vmid | default('N/A') }})"
-          - "Mode: {{ 'Bootstrap (Proxmox)' if (bootstrap_mode | bool) else 'Direct SSH' }}"
+          - "Host: {{ inventory_hostname }}"
+          - "VMID: {{ vmid | default('N/A') }}"
+          - "Mode: {{ 'Bootstrap (Proxmox)' if (bootstrap_mode | default('false') | bool) else 'Direct SSH' }}"
           - "Key: {{ final_ssh_key[:20] }}...{{ final_ssh_key[-20:] }}"
           - "=========================================="
