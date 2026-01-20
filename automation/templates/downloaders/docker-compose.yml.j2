@@ -71,6 +71,8 @@ services:
     volumes:
       - ./config/tautulli:/config
     restart: unless-stopped
+    ports:
+      - "8181:8181"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tautulli.rule=Host(`tautulli.sigtom.io`)"
@@ -83,4 +85,6 @@ services:
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
+    ports:
+      - "8191:8191"
     restart: unless-stopped

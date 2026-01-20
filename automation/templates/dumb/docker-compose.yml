@@ -79,6 +79,8 @@ services:
       - ./config/bazarr:/config
       - ./mnt/debrid:/mnt/debrid
     restart: unless-stopped
+    ports:
+      - "6767:6767"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr.rule=Host(`bazarr.sigtom.io`)"
