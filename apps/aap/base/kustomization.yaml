@@ -4,5 +4,6 @@ resources:
   - secret.yaml
   - external-secret.yaml
   - external-secret-dumb.yaml
+  - external-secret-dumb-fields.yaml
   - external-secret-arrs.yaml
   - platform.yaml

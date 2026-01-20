@@ -110,6 +110,18 @@ spec:
                   name: dumb-secrets
                   key: overseerr_api_key
                   optional: true
+            - name: DUMB_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: dumb_postgres_password
+                  optional: true
+            - name: DUMB_PGADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dumb-secrets
+                  key: dumb_pgadmin_password
+                  optional: true
             - name: SONARR_API_KEY
               valueFrom:
                 secretKeyRef:

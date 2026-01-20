@@ -31,6 +31,8 @@
     riven_api_key: "{{ lookup('env', 'RIVEN_API_KEY') }}"
     plex_token: "{{ lookup('env', 'PLEX_TOKEN') }}"
     overseerr_api_key: "{{ lookup('env', 'OVERSEERR_API_KEY') }}"
+    dumb_postgres_password: "{{ lookup('env', 'DUMB_POSTGRES_PASSWORD') }}"
+    dumb_pgadmin_password: "{{ lookup('env', 'DUMB_PGADMIN_PASSWORD') }}"
     
     # Arr API keys (injected from media-arr-secrets K8s Secret)
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
@@ -143,6 +145,14 @@
               label: Overseerr API Key
               type: string
               secret: true
+            - id: dumb_postgres_password
+              label: DUMB Postgres Password
+              type: string
+              secret: true
+            - id: dumb_pgadmin_password
+              label: DUMB pgAdmin Password
+              type: string
+              secret: true
           required:
             - realdebrid_api_key
             - torbox_api_key
@@ -153,6 +163,8 @@
             riven_api_key: "{% raw %}{{ riven_api_key }}{% endraw %}"
             plex_token: "{% raw %}{{ plex_token }}{% endraw %}"
             overseerr_api_key: "{% raw %}{{ overseerr_api_key }}{% endraw %}"
+            dumb_postgres_password: "{% raw %}{{ dumb_postgres_password }}{% endraw %}"
+            dumb_pgadmin_password: "{% raw %}{{ dumb_pgadmin_password }}{% endraw %}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
@@ -314,6 +326,8 @@
           riven_api_key: "{{ riven_api_key }}"
           plex_token: "{{ plex_token }}"
           overseerr_api_key: "{{ overseerr_api_key }}"
+          dumb_postgres_password: "{{ dumb_postgres_password }}"
+          dumb_pgadmin_password: "{{ dumb_pgadmin_password }}"
         state: present
         controller_host: "{{ controller_host }}"
         controller_username: "{{ controller_username }}"
