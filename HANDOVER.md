@@ -1,31 +1,33 @@
-# SRE Handover - 2026-01-19 (Infrastructure Realignment Complete)
+# Handover Notes - January 20, 2026
 
-## 🎯 Current Mission
-Fully automated, production-grade reverse proxy and SSL termination for Proxmox LXC/VM workloads using Traefik v3.6 and Let's Encrypt Production.
+## 🚀 Recently Completed
+1.  **Resolved 4K Buffering:**
+    *   Enabled `vfs-cache-mode: full` with a `50G` limit on the DUMB LXC.
+    *   Mapped `./cache:/cache` in Docker Compose to ensure the buffer is written to the physical host disk, which is significantly faster than the Docker overlay layer.
+2.  **Automated Token Refresh:**
+    *   Decypharr now proactively refreshes TorBox presigned links every 15 minutes. This eliminates the "Input/Output Error" caused by link expiration.
+3.  **Security Hardening (GitOps):**
+    *   All hardcoded API keys (Riven, Plex, Overseerr, RealDebrid) have been removed from templates and playbooks.
+    *   Keys are now managed via the **Bitwarden -> ESO -> AAP** pipeline.
+    *   **Scrubbed Git History:** Used `git-filter-repo` to purge leaked strings from every historical commit.
+4.  **Stack Expansion:**
+    *   **Bazarr (.20):** Installed as an isolated service on DUMB LXC for subtitle automation.
+    *   **Tautulli (.21):** Installed on Downloader LXC for Plex monitoring.
+    *   **FlareSolverr (.21):** Installed on Downloader LXC to bypass Cloudflare for Prowlarr.
+    *   **DNS/Routing:** Automated `tautulli.sigtom.io` and `bazarr.sigtom.io` via Pi-hole sync and Traefik remote config.
 
-## 🟢 Operational Status
-- **Traefik (LXC 210):** Running v3.6 with **Production Wildcard Certs** for 7 TLDs. All `.io` and `.dev` hosts show "Green Lock."
-- **Media Stack:**
-    - Overseerr (`requests.sigtom.io` / `overseerr.sigtom.io`)
-    - Sabnzbd (`sabnzbd.sigtom.io`)
-    - qBittorrent (`qb.sigtom.io`)
-    - Plex (`plex.sigtom.io`)
-- **DNS:** Primary Pi-holes (`.2`, `.100:20720`) synced with latest records via AAP.
-- **GitOps:** `aap-config` is Synced/Healthy. Slack spam has been resolved.
+## 🛠️ Infrastructure Status
+*   **DUMB LXC (.20):** Running 18 cores, 16GB RAM. Disk space: 70GB free (plenty for 50GB VFS cache).
+*   **Downloader LXC (.21):** Running core download services + FlareSolverr/Tautulli.
+*   **Secrets:** Verified synced from Bitvault to K8s and mapped into AAP Credentials.
 
-## ⏭️ Tasks for Next Session
-1.  **Gitify SABnzbd Fix:**
-    - Update `automation/templates/downloaders/sabnzbd.ini.j2` (or create it) to include the `host_whitelist`.
-    - Ensure redeployments via AAP don't overwrite the manual hostname fix.
-2.  **Swarm Decommissioning:**
-    - Run `docker swarm leave` on .10, .20, .21. 
-    - The Swarm is no longer needed since Traefik is using the File Provider for remote discovery.
-3.  **Resource Cleanup:**
-    - Remove `docker-socket-proxy` containers from `.20` and `.21`.
-    - Delete redundant `automation/playbooks/deploy-socket-proxy.yaml` once Swarm/TCP discovery is fully deprecated in favor of the File Provider.
-4.  **Nautobot IPAM Sync:**
-    - Begin Phase 2 of Nautobot integration: syncing Nautobot IP/DNS entries to Pi-hole automatically.
+## 📋 Next Tasks
+1.  **Monitor VFS Cache:** Observe the `/opt/dumb/cache/decypharr` folder to ensure it cleans up properly once it hits the 50GB threshold.
+2.  **Overseerr Watchlist Fix:** Currently, Overseerr is throwing a `404 Not Found` when trying to sync the Plex Watchlist. This is a known issue with the latest Overseerr build.
+    *   *Plan:* Switch the Overseerr container image to the `:develop` tag in the `downloaders` template to pull the latest upstream fix.
+3.  **Bazarr Tuning:** Ensure Bazarr is correctly scanning the Riven symlink directories. Check for "Path Mapping" errors in the Bazarr UI if subtitles aren't appearing.
+4.  **Tautulli Notifications:** Configure Tautulli to send notifications (via Apprise/Discord) if any stream hits a buffering state to help differentiate between server-side and client-side issues.
+5.  **Git History Maintenance:** Since commit hashes have changed due to the scrub, ensure all other clones of this repo are reset using `git fetch origin` and `git reset --hard origin/main`.
 
-## ⚠️ Known Issues
-- **10.0.0.116:** Currently unreachable from the cluster. Sync job skips this host.
-- **Le staging to prod:** Handled! Ensure no more than one Traefik restart per session to protect rate limits.
+---
+*End of Handover*

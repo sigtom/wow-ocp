@@ -814,6 +814,14 @@
     - Automated Quality Profile seeding (Cloud-Unlimited vs NAS-Archive) via AAP.
     - Deployed Overseerr to LXC 221 as the primary discovery engine.
 
+- [2026-01-20]: **DUMB STACK OPTIMIZATION & SECURITY HARDENING**
+    - **Token Automation**: Implemented 15-minute proactive TorBox token refresh logic in Decypharr to eliminate "Expired Token" I/O errors.
+    - **Streaming Performance**: Enabled **Full VFS Cache (50GB)** on DUMB LXC. Fixed buffering by mapping persistent cache volume to host disk, bypassing Docker overlay overhead.
+    - **Stack Expansion**: Deployed **Bazarr** (.20), **Tautulli** (.21), and **FlareSolverr** (.21). Automated DNS (`.io` domain) and Traefik routing via AAP.
+    - **Riven Fixes**: Corrected Riven `rclone_path` to TorBox and enabled 2160p (4K) and Remux support in ranking profiles.
+    - **Security Cleanup**: Identified and remediated leaked API keys in Git. Transitioned Riven, Plex, and Overseerr secrets to **Bitwarden -> ESO -> AAP** pipeline.
+    - **History Scrubbing**: Used `git-filter-repo` to permanently erase sensitive credential strings from the entire Git history.
+
 - [2026-01-20]: **DUMB DEBRID TOKEN AUTOMATION**
     - **Issue**: Alien Earth S01E01 failed with I/O error due to expired TorBox presigned tokens.
     - **Fix**: Shortened `download_links_refresh_interval` to 15 minutes and `auto_expire_links_after` to 24 hours in Decypharr config.
