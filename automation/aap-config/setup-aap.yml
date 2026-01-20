@@ -918,6 +918,7 @@
         name: "Proxmox Dynamic Sync"
         inventory: "HomeLab Inventory"
         source: "scm"
+        source_project: "HomeLab Ops"
         source_path: "automation/inventory/proxmox.yml"
         credential: "Git Read-Only"
         overwrite: true
