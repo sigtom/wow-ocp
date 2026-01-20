@@ -912,3 +912,23 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
+
+    - name: Create Proxmox Inventory Source
+      ansible.controller.inventory_source:
+        name: "Proxmox Dynamic Sync"
+        inventory: "HomeLab Inventory"
+        source: "proxmox"
+        credential: "Proxmox Production"
+        source_vars:
+          want_proctitle: true
+          group_by_node: true
+          group_by_type: true
+          hostnames:
+            - name
+        overwrite: true
+        update_on_launch: true
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no
