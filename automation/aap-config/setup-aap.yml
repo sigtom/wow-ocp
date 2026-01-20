@@ -861,3 +861,53 @@
         controller_username: "{{ controller_username }}"
         controller_password: "{{ controller_password }}"
         validate_certs: no
+
+    - name: Create SSH Bootstrap Job Template
+      ansible.controller.job_template:
+        name: "Util - SSH Bootstrap"
+        description: "Inject an SSH public key into an LXC or VM on Proxmox"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/util-ssh-bootstrap.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "AAP Executor SSH"
+          - "Proxmox Production"
+        survey_enabled: true
+        survey_spec:
+          name: "SSH Bootstrap Parameters"
+          description: "Configure target and key"
+          spec:
+            - question_name: "Target IP"
+              required: false
+              type: text
+              variable: "target_ip"
+              default: ""
+            - question_name: "VMID"
+              required: false
+              type: integer
+              variable: "vmid"
+            - question_name: "Target Type"
+              required: true
+              type: multiplechoice
+              variable: "target_type"
+              choices: ["lxc", "vm"]
+              default: "lxc"
+            - question_name: "Bootstrap Mode (via Proxmox Host)"
+              required: true
+              type: boolean
+              variable: "bootstrap_mode"
+              default: true
+            - question_name: "SSH Public Key"
+              question_description: "Leave empty to use default Mac key"
+              required: false
+              type: textarea
+              variable: "ssh_key"
+              default: ""
+        state: present
+        controller_host: "{{ controller_host }}"
+        controller_username: "{{ controller_username }}"
+        controller_password: "{{ controller_password }}"
+        validate_certs: no

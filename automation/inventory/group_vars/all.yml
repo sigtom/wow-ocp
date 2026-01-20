@@ -8,6 +8,7 @@ global_ssh_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfMMLr0UIUkpVUghSd4FkVUteUzFOCP1WknScNOrl8u sigtom@localhost.localdomain"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILPyc7oAxzmaymnrZWblYRbTH/hOd+OPaQStsMNi/3bU sigtom@localhost.localdomain"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
 
 # Networking (Legacy - deprecated, use network_profiles instead)
 lab_vlan_mgmt: 110

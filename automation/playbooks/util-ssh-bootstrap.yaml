@@ -1,0 +1,80 @@
+---
+# ============================================================================
+# SSH Key Bootstrap Utility
+# ============================================================================
+# Description: Inject an SSH public key into an LXC or VM on Proxmox.
+#              Supports both direct SSH and Out-of-Band injection via
+#              the Proxmox host (pct exec / qm guest exec).
+#
+# AAP Usage:
+#   - Job Template: "Util - SSH Bootstrap"
+#   - Credentials: "Proxmox Production", "AAP Executor SSH"
+#   - Survey: target_ip, vmid, target_type, ssh_key, bootstrap_mode
+# ============================================================================
+
+- name: "SSH Key Injection Utility"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # Default to the Mac key if not provided in survey
+    default_ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
+    final_ssh_key: "{{ ssh_key | default(default_ssh_key) }}"
+    proxmox_host: "172.16.110.101"
+
+  tasks:
+    # -------------------------------------------------------
+    # Mode 1: Direct SSH (Idempotent via authorized_key)
+    # -------------------------------------------------------
+    - name: "Inject key via Direct SSH"
+      when: not (bootstrap_mode | default(false) | bool)
+      delegate_to: "{{ target_ip }}"
+      ansible.posix.authorized_key:
+        user: root
+        state: present
+        key: "{{ final_ssh_key }}"
+      register: ssh_result
+      ignore_errors: true
+
+    - name: "Direct SSH Status"
+      ansible.builtin.debug:
+        msg: "Direct SSH injection successful."
+      when: not (bootstrap_mode | default(false) | bool) and ssh_result is succeeded
+
+    # -------------------------------------------------------
+    # Mode 2: Proxmox Out-of-Band (LXC)
+    # -------------------------------------------------------
+    - name: "Inject key via Proxmox Host (LXC Out-of-Band)"
+      when: (bootstrap_mode | default(false) | bool) and target_type == 'lxc'
+      delegate_to: "{{ proxmox_host }}"
+      ansible.builtin.shell: |
+        pct exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
+      register: lxc_oob_result
+
+    # -------------------------------------------------------
+    # Mode 3: Proxmox Out-of-Band (VM)
+    # -------------------------------------------------------
+    - name: "Inject key via Proxmox Host (VM Out-of-Band)"
+      when: (bootstrap_mode | default(false) | bool) and target_type == 'vm'
+      delegate_to: "{{ proxmox_host }}"
+      ansible.builtin.shell: |
+        qm guest exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
+      register: vm_oob_result
+      ignore_errors: true
+
+    - name: "Check VM OOB Status"
+      ansible.builtin.fail:
+        msg: "VM Out-of-Band injection failed. Ensure QEMU Guest Agent is installed and running."
+      when: (bootstrap_mode | default(false) | bool) and target_type == 'vm' and vm_oob_result.rc != 0
+
+    - name: "Final Summary"
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "SSH Bootstrap Complete"
+          - "=========================================="
+          - "Target: {{ target_ip }} (VMID: {{ vmid | default('N/A') }})"
+          - "Mode: {{ 'Bootstrap (Proxmox)' if (bootstrap_mode | bool) else 'Direct SSH' }}"
+          - "Key: {{ final_ssh_key[:20] }}...{{ final_ssh_key[-20:] }}"
+          - "=========================================="
