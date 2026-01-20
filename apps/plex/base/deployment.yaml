@@ -108,7 +108,7 @@ spec:
       - name: plex
         image: lscr.io/linuxserver/plex:latest
         securityContext:
-          privileged: true 
+          privileged: true
         env:
         - name: PUID
           value: "1000"

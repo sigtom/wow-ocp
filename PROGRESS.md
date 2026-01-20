@@ -33,13 +33,13 @@
     - **Networking**: Assigned MetalLB IP `172.16.100.210` for DNS traffic.
 - [2026-01-07]: **OADP Activation**: Configured OADP Operator with MinIO S3 backend and verified nightly schedules for vaultwarden, media-stack, and technitium.
 - [2026-01-07]: **Vaultwarden Migration**: Migrated Vaultwarden from SQLite to Postgres 16 (Bitnami/SCL) to resolve NFS locking issues. Verified successful LastPass import.
-- [2026-01-07]: **Technitium VM Migration**: Migrated Technitium DNS from containers to an OpenShift VirtualMachine. 
+- [2026-01-07]: **Technitium VM Migration**: Migrated Technitium DNS from containers to an OpenShift VirtualMachine.
 - [2026-01-07]: **Technitium HA**: Established clustering between OpenShift VM (172.16.130.210) and Proxmox VM (172.16.110.211).
 - [2026-01-07]: **DNS Standardization**: Imported all legacy Pi-hole records into the new Technitium Primary node and verified cluster-wide replication.
 - [2026-01-08]: **DOCUMENTATION: Operational Runbook Library**
     - **Created**: Comprehensive runbook collection covering the top 10 critical/frequent issues encountered in production operations.
     - **Structure**: Standardized format across all runbooks with symptoms, diagnosis, resolution, prevention, and lessons learned sections.
-    - **Coverage**: 
+    - **Coverage**:
         - 001: LVM Operator Deadlock Recovery (post-MCE corruption)
         - 002: Prometheus Storage Expansion (quota exhaustion)
         - 003: FUSE Mount Propagation for Media Apps (sidecar pattern)
@@ -118,7 +118,7 @@
     - **Goal**: Deploy centralized reverse proxy for all Proxmox LXC/VM workloads with automatic SSL for 7 domains
     - **Managed Domains**: nixsysadmin.io, sigtom.com, sigtom.dev, sigtom.info, sigtom.io, sigtomtech.com, tecnixsystems.com
     - **Architecture**: Dedicated LXC (210 @ 172.16.100.10) running Traefik v3.6 + Let's Encrypt DNS-01 via Cloudflare
-    
+
     **✅ COMPLETED**:
     - Full automation playbook: `automation/playbooks/deploy-traefik.yaml`
     - LXC provisioning with correct network (apps profile, native vmbr0, gateway 172.16.100.1)
@@ -128,24 +128,24 @@
     - Fixed Jinja template syntax errors in snapshot_manager and post_provision roles
     - Health checks pass (SSH, package manager, disk space, uptime)
     - Container provisioning completes successfully (Ubuntu 24.04 LTS)
-    
+
     **❌ CURRENT BLOCKER**:
     - **Ansible fact gathering bug**: Container IS Ubuntu 24.04 (verified: `pct exec 210 -- cat /etc/os-release`)
     - BUT Ansible detects it as "Fedora 43" during post_provision phase
     - Root cause: Facts gathered on localhost (Fedora) are cached/bleeding into container fact gathering
     - Docker installation fails because post_provision role runs Debian tasks (ansible_os_family should be "Debian" but shows "RedHat")
-    
+
     **🔍 ROOT CAUSE ANALYSIS**:
     1. Playbook gathers facts on `localhost` first (line 95-98) for timestamp → Gets Fedora facts
     2. Later gathers facts on container (line 138) → Should get Ubuntu facts
     3. post_provision role uses `ansible_distribution` and `ansible_os_family` → Uses CACHED Fedora facts instead of fresh Ubuntu facts
     4. Result: Tries to run `dnf` commands on Ubuntu container (fails)
-    
+
     **🛠️ ATTEMPTED FIXES** (all failed):
     - Limited gather_subset to only date_time on localhost - didn't clear cache
     - Re-gathered facts before post_provision role - cache persisted
     - Used fact_path parameter - didn't help
-    
+
     **✅ NEXT STEPS TO FIX**:
     1. **Option A (Quick)**: Skip provision_lxc_generic role entirely, manually create container, start from Docker installation
         ```bash
@@ -155,12 +155,12 @@
           --features nesting=1 --unprivileged 1 --start 1"
         # Then run playbook starting from Phase 2
         ```
-    
+
     2. **Option B (Proper Fix)**: Clear Ansible fact cache between gather operations
         - Add `meta: clear_facts` task after localhost fact gathering
         - OR use `ansible_facts` dict directly instead of `ansible_` variables (avoids cache)
         - OR run post_provision as separate play with fresh fact gathering
-    
+
     3. **Option C (Workaround)**: Force post_provision to detect OS correctly
         - Modify `automation/roles/post_provision/tasks/profiles/docker_host.yaml`
         - Replace `ansible_os_family == "Debian"` with explicit OS detection:
@@ -168,51 +168,51 @@
         - name: Detect OS family directly
           ansible.builtin.shell: "grep -qi ubuntu /etc/os-release && echo Debian || echo RedHat"
           register: real_os_family
-        
+
         - name: Install Docker prerequisites
           when: real_os_family.stdout == "Debian"
         ```
-    
+
     **📁 KEY FILES**:
     - Playbook: `automation/playbooks/deploy-traefik.yaml` (line 95-150 is problematic area)
     - Post-provision role: `automation/roles/post_provision/tasks/profiles/docker_host.yaml`
     - Traefik templates: `automation/templates/traefik/*` (ready to deploy once Docker works)
     - Credentials in `.env`: Cloudflare token + Proxmox token already configured
-    
+
     **⚠️ IMPORTANT CONTEXT**:
     - Container 210 likely exists in failed state - DESTROY before next run: `ssh root@172.16.110.101 "pct stop 210 && pct destroy 210"`
     - SSH known_hosts needs clearing after container recreation: `ssh-keygen -R 172.16.100.10`
     - Environment vars needed: `CF_DNS_API_TOKEN` and `PROXMOX_SRE_BOT_API_TOKEN` (both in ~/wow-ocp/.env)
-    
+
     **🎯 ONCE DOCKER INSTALLS SUCCESSFULLY**:
     - Phase 2: Copy Traefik configs, generate BasicAuth, create .env
     - Phase 3: Start Traefik, wait for certificate acquisition (2 min), verify 7 certs
     - Phase 4: Deploy whoami test container, validate SSL
     - Phase 5: Deploy Nautobot behind Traefik
-    
+
     **RECOMMENDATION**: Use Option C (workaround) to unblock - fix OS detection in docker_host.yaml to use direct shell check instead of Ansible facts. This gets Traefik deployed NOW, then refactor fact gathering later.
 
 
     **🔧 PROPER FIX STRATEGY (NO WORKAROUNDS)**:
-    
+
     **Root Cause**: Ansible fact caching across delegated tasks causes localhost facts to bleed into container facts
-    
+
     **The Complete Fix**:
     1. **Separate plays for localhost vs container operations**
        - Play 1: Provision LXC (delegates to localhost, gathers localhost facts)
        - Play 2: Configure container (runs on container, gathers container facts only)
        - This creates separate fact namespaces - no cache bleeding
-    
+
     2. **Alternative: Use ansible_facts dict explicitly**
        - Change all role references from `ansible_distribution` to `ansible_facts['distribution']`
        - This bypasses the injected variable cache mechanism
        - Requires updating post_provision and health_check roles
-    
+
     3. **Alternative: Force fact refresh with meta**
        - Add `meta: clear_facts` task after localhost fact gathering
        - Re-gather facts immediately before post_provision role runs
        - Ensure fresh facts for container operations
-    
+
     **Implementation Plan**:
     - [ ] Split deploy-traefik.yaml into two plays (recommended - cleanest separation)
     - [ ] Test LXC provision + health checks complete (Play 1)
@@ -221,7 +221,7 @@
     - [ ] Deploy whoami test containers for ALL 7 domains
     - [ ] Verify SSL certificates acquired for all domains
     - [ ] Document final working playbook structure
-    
+
     **Success Criteria**:
     - ✅ LXC 210 created with Ubuntu 24.04
     - ✅ Docker + Docker Compose installed via apt (not dnf)
@@ -229,7 +229,7 @@
     - ✅ 7 wildcard certificates from Let's Encrypt
     - ✅ Whoami accessible on all 7 domains with valid SSL
     - ✅ Zero manual interventions required
-    
+
     **Expected Timeline**: 1-2 hours to implement split-play architecture and test end-to-end
 
 - [2026-01-09]: **ANSIBLE AUTOMATION: TRAEFIK v3.6 DEPLOYMENT - COMPLETE END-TO-END AUTOMATION**
@@ -242,7 +242,7 @@
         - LXC 210 created @ 172.16.100.10 (Ubuntu 24.04, 1C/512MB/8GB)
         - Docker 29.1.4 + Docker Compose v5.0.1 installed via official repos
         - Traefik v3.6 container running with DNS-01 challenge (NO port forwarding required)
-    - **Certificates**: 
+    - **Certificates**:
         - 7 wildcard Let's Encrypt STAGING certificates acquired successfully via Cloudflare DNS-01
         - Domains: *.nixsysadmin.io, *.sigtom.com, *.sigtom.dev, *.sigtom.info, *.sigtom.io, *.sigtomtech.com, *.tecnixsystems.com
         - Using staging endpoint to avoid rate limits during testing
@@ -267,7 +267,7 @@
         - LXC 210 @ 172.16.100.10 (Ubuntu 24.04, 1C/512MB/8GB)
         - Docker 29.1.4 + Docker Compose v5.0.1 installed via official repos
         - Traefik v3.6 container running with DNS-01 challenge
-    - **Certificates**: 
+    - **Certificates**:
         - 7 production Let's Encrypt certificates (R13 issuer - fully trusted)
         - Domains: traefik.sigtom.dev + 7 whoami test domains across all TLDs
         - No port forwarding required - pure DNS-01 via Cloudflare
@@ -426,7 +426,7 @@
 
 - [2026-01-11]: **BITWARDEN LITE DEPLOYMENT - 60% COMPLETE (BLOCKED BY SSH BUG)**
     - **Goal**: Replace Vaultwarden with official Bitwarden Lite for ESO integration with API keys
-    - **Research Complete**: 
+    - **Research Complete**:
         - ✅ Confirmed Vaultwarden lacks API key support (Bitwarden Cloud feature only)
         - ✅ Discovered Bitwarden Lite (homelab-optimized: 200MB RAM, SQLite, ARM support)
         - ✅ Validated small-hack/bitwarden-eso-provider works with self-hosted Bitwarden
@@ -575,11 +575,11 @@
 - [2026-01-11]: **EXTERNAL SECRETS OPERATOR & BITWARDEN INTEGRATION (COMPLETE)**
     - **Goal**: Enable GitOps-driven secrets management using External Secrets Operator (ESO) pulling from self-hosted Bitwarden Lite.
     - **Challenge**: OLM installation of ESO failed due to version conflicts. Official Bitwarden provider requires paid "Secrets Manager" product.
-    - **The SRE Pivot**: 
+    - **The SRE Pivot**:
         - Bypassed OLM entirely.
         - Deployed ESO `v1.2.1` (Upstream) via "Hydrated Helm" pattern (GitOps managed).
         - Deployed `bitwarden-eso-provider` (Community Bridge) to interface with Bitwarden Vault API.
-    - **Architecture**: 
+    - **Architecture**:
         - **Engine**: ESO v1.2.1 running in `external-secrets` namespace.
         - **Bridge**: `bitwarden-eso-provider` pod acting as a webhook provider.
         - **Store**: `ClusterSecretStore/bitwarden-login` configured to talk to the Bridge.
@@ -588,7 +588,7 @@
         - **OpenShift Security**: Removed hardcoded `runAsUser: 1000` from manifests (`securityContext: null`) to allow SCC defaults.
         - **Container Permissions**: Injected `HOME=/tmp` into provider pod to fix `mkdir /.config` permission denied error (random UID support).
         - **Configuration**: Added missing `BW_APPID` to SealedSecret to satisfy provider config requirement.
-    - **Outcome**: 
+    - **Outcome**:
         - ESO Operator: **Running**
         - Bitwarden Provider: **Running**
         - ClusterSecretStore: **Valid/Ready**
@@ -613,7 +613,7 @@
         - Application: AutomationController with local postgres (`lvms-vg1`) and shared projects (`truenas-nfs`).
         - Networking: Custom Ingress with wildcart cert (`aap.apps.ossus.sigtomtech.com`).
     - **Status**: Database migration running, Web UI accessible.
-    - **Troubleshooting**: 
+    - **Troubleshooting**:
         - Initial Controller reconciliation failed with "Could not find the tower pod's name".
         - Cause: Race condition where Operator checked for pod name before Deployment status was updated.
         - Fix: Force-restarted Operator pod to trigger fresh reconciliation loop.
@@ -623,7 +623,7 @@
         - Action: Deleted `AutomationController` CR and PVCs to force full clean redeployment.
         - Config: Switched to `ingress_type: Route` to ensure Operator runs standard UI setup logic.
         - Status: Migration running (v370/v400+). Waiting for completion to verify UI at `aap.apps.ossus.sigtomtech.com`.
-    - **Architecture Correction**: 
+    - **Architecture Correction**:
         - Diagnosed `TemplateDoesNotExist` error as a result of deploying standalone `AutomationController` 2.6 without the required Platform Gateway.
         - Deployed `AnsibleAutomationPlatform` CR to orchestrate the full stack (Gateway + Controller).
         - Verified Platform dependencies (Redis, Postgres) spinning up.
@@ -644,11 +644,11 @@
         - Seeder Job runs automatically on Git changes via ArgoCD Sync Hook.
     - **Documentation**: Created `docs/AAP-WORKFLOW.md` detailing the entire architecture and how to add new secrets.
 - [2026-01-19]: **TRAEFIK v3.6 MULTI-NODE DISCOVERY & DNS AUTOMATION - COMPLETE ✅**
-    - **DNS Automation**: 
+    - **DNS Automation**:
         - Implemented `sync-pihole-dns.yaml` leveraging Pi-hole v6 REST API with Session ID (SID) authentication.
         - Integrated with Bitvault/ESO to securely pull Pi-hole API tokens into AAP.
         - Successfully synced 8+ `sigtom.io` records across reachable Pi-hole instances.
-    - **Traefik Architectural Upgrade**: 
+    - **Traefik Architectural Upgrade**:
         - Migrated to **Wildcard-First** certificate pattern (`main: "*.domain.tld"`) to resolve Cloudflare race conditions.
         - Successfully deployed **Let's Encrypt Production** wildcard certificates for 7 TLDs (sigtom.io, sigtom.dev, nixsysadmin.io, etc.).
         - Implemented **Hybrid Discovery Model**:
@@ -737,42 +737,42 @@
         - ✅ ESO ExternalSecret `dumb-secrets` synced (TorBox API key)
         - ✅ AAP Job Template "Deploy DUMB" (ID: 16) configured
         - ✅ AAP Project synced with latest playbooks
-    
+
     **STEPS TO COMPLETE DUMB DEPLOYMENT:**
-    
+
     1. **Launch Deploy DUMB Job via AAP**:
        ```bash
        AAP_PASS=$(oc get secret -n ansible-automation-platform aap-controller-secrets -o jsonpath='{.data.password}' | base64 -d)
-       
+
        curl -sk -u "admin:$AAP_PASS" -X POST \
          -H "Content-Type: application/json" \
          -d '{"extra_vars": {"target_ip": "172.16.100.20", "target_hostname": "dumb"}}' \
          "https://aap.apps.ossus.sigtomtech.com/api/controller/v2/job_templates/16/launch/"
        ```
        OR: AAP UI → Templates → Deploy DUMB → Launch
-    
+
     2. **Monitor Job Progress**:
        ```bash
        # Get job ID from launch response, then:
        curl -sk -u "admin:$AAP_PASS" "https://aap.apps.ossus.sigtomtech.com/api/controller/v2/jobs/<JOB_ID>/stdout/?format=txt"
        ```
-    
+
     3. **Verify DUMB is Running**:
        ```bash
        ssh root@172.16.110.101 "pct exec 220 -- docker ps"
        # Should show: dumb container running
-       
+
        # Check DUMB logs
        ssh root@172.16.110.101 "pct exec 220 -- docker logs dumb --tail=50"
        ```
-    
+
     4. **Access DUMB Services**:
        - DUMB Frontend: http://172.16.100.20:3005
        - Riven Frontend: http://172.16.100.20:3000
        - Riven Backend: http://172.16.100.20:8080
        - Zilean: http://172.16.100.20:8182
        - pgAdmin: http://172.16.100.20:5050
-    
+
     5. **Optional: Add Traefik Route for HTTPS**:
        ```bash
        # Create Traefik file provider config on LXC 210
@@ -789,16 +789,16 @@
                servers:
                  - url: \"http://172.16.100.20:3005\"
        EOF'"
-       
+
        # Add DNS: dumb.sigtom.dev → 172.16.100.10 (Traefik IP)
        ```
-    
+
     6. **Configure Riven** (First-time setup):
        - Open http://172.16.100.20:3000
        - Connect to TorBox (key already injected)
        - Configure Plex/media library paths
        - Add content sources (Overseerr, Trakt, etc.)
-    
+
     **TROUBLESHOOTING:**
     - If DUMB fails to start: Check `/dev/fuse` exists in container
     - If Zurg fails: Verify TorBox API key is valid

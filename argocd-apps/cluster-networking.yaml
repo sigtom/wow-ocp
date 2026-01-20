@@ -13,7 +13,7 @@ spec:
     server: https://kubernetes.default.svc
     # NNCPs are cluster-scoped, but we set a destination namespace for the Application resource itself implicitly or explicit default.
     # NNCP resources are cluster-scoped so namespace technically doesn't matter for them, but default is safe.
-    namespace: default 
+    namespace: default
   syncPolicy:
     automated:
       prune: true

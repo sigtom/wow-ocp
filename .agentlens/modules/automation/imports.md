@@ -38,4 +38,3 @@ Dependencies from other modules:
 - `requests`
 - `sys`
 - `typing`
-

@@ -1,8 +1,8 @@
 # Runbook 010: Sealed Secrets Decryption Failures
 
-**Frequency:** Occasional (during secret rotation, controller issues)  
-**Impact:** High - Apps cannot start without secrets  
-**Last Occurred:** Various (secret management operations)  
+**Frequency:** Occasional (during secret rotation, controller issues)
+**Impact:** High - Apps cannot start without secrets
+**Last Occurred:** Various (secret management operations)
 **MTTR:** 5-30 minutes
 
 ---
@@ -108,7 +108,7 @@ oc get secret -n sealed-secrets sealed-secrets-key -o jsonpath='{.data.tls\.crt}
 diff pub-sealed-secrets.pem /tmp/controller-cert.pem
 ```
 
-**Expected:** Files are identical  
+**Expected:** Files are identical
 **Problem:** Files differ (sealed with wrong cert)
 
 ### Step 4: Check Scope and Namespace
@@ -135,7 +135,7 @@ annotations:
 oc apply -f <sealed-secret>.yaml --dry-run=server
 ```
 
-**Expected:** `created (dry run)`  
+**Expected:** `created (dry run)`
 **Problem:** YAML parsing error or field validation failure
 
 ---
@@ -351,13 +351,13 @@ oc get secret -n sealed-secrets sealed-secrets-key -o jsonpath='{.data.tls\.crt}
 # Find all SealedSecret manifests
 find apps/ infrastructure/ -name "*sealed-secret*.yaml" -o -name "*sealed*.yaml" | while read file; do
   echo "Processing $file..."
-  
+
   # This is complex - may need manual intervention per secret
   # For each secret, you need to:
   # 1. Retrieve original plaintext (from password manager/vault)
   # 2. Re-seal with current cert
   # 3. Commit new sealed version
-  
+
   echo "  → Manual intervention required: re-seal and commit"
 done
 
@@ -584,6 +584,6 @@ SealedSecret not creating Secret
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

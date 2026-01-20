@@ -142,7 +142,7 @@ Create script to parse automation/IP-INVENTORY.md and bulk import IPs:
 ## Prompt for Next Instance
 
 ```
-I'm continuing work on Nautobot IPAM integration for my OpenShift homelab. 
+I'm continuing work on Nautobot IPAM integration for my OpenShift homelab.
 
 READ THESE FILES FIRST:
 - ~/wow-ocp/PROGRESS.md (last entry: 2026-01-10 - Nautobot integration planning)

@@ -1,8 +1,8 @@
 # Runbook 009: Image Pull Failures (ImagePullBackOff / ErrImagePull)
 
-**Frequency:** Common (new deployments, Docker Hub rate limits)  
-**Impact:** High - Pod cannot start  
-**Last Occurred:** Ongoing (Docker Hub rate limiting)  
+**Frequency:** Common (new deployments, Docker Hub rate limits)
+**Impact:** High - Pod cannot start
+**Last Occurred:** Ongoing (Docker Hub rate limiting)
 **MTTR:** 5-20 minutes
 
 ---
@@ -106,7 +106,7 @@ podman pull docker.io/library/nginx:latest
 crictl pull docker.io/library/nginx:latest
 ```
 
-**Expected:** Image pulls successfully  
+**Expected:** Image pulls successfully
 **Problem:** Same error as pod (confirms cluster-wide issue)
 
 ### Step 4: Check Pull Secret (If Private Registry)
@@ -561,6 +561,6 @@ ImagePullBackOff
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

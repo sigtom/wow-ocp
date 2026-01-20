@@ -786,7 +786,7 @@ Pi: [loads openshift-debug skill, follows workflow]
 1. **Start with `openshift-debug`** - it will immediately pay dividends
 2. **Have Pi help you build the others:**
    ```
-   You: "Create the sealed-secrets skill based on the template I showed you. 
+   You: "Create the sealed-secrets skill based on the template I showed you.
         Include the interactive seal-secret.sh script."
    ```
 3. **Iterate based on actual usage** - add workflows as you encounter them

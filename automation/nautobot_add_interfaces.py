@@ -27,7 +27,7 @@ def api_request(method: str, endpoint: str, data: Optional[Dict] = None) -> Opti
             response = requests.get(url, headers=HEADERS, timeout=10)
         elif method == "POST":
             response = requests.post(url, headers=HEADERS, json=data, timeout=10)
-        
+
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -53,7 +53,7 @@ def add_interface(device_id: str, name: str, itype: str, description: str = "") 
     if result and result.get('count', 0) > 0:
         print(f"  ✓ {name} (exists)")
         return True
-    
+
     # Create
     status_id = get_status_id()
     data = {
@@ -64,7 +64,7 @@ def add_interface(device_id: str, name: str, itype: str, description: str = "") 
         "description": description,
         "enabled": True
     }
-    
+
     result = api_request("POST", "dcim/interfaces/", data)
     if result:
         print(f"  ✓ {name} (created)")
@@ -77,7 +77,7 @@ def main():
     print("="*70)
     print("Adding Network Interfaces to Nautobot Devices")
     print("="*70)
-    
+
     # pfSense
     print("\n[pfSense]")
     device_id = get_device_id("pfSense")
@@ -87,14 +87,14 @@ def main():
         add_interface(device_id, "em1.110", "virtual", "Proxmox Mgmt - 172.16.110.1")
         add_interface(device_id, "em1.130", "virtual", "Workload - 172.16.130.1")
         add_interface(device_id, "em1.160", "virtual", "Storage - 172.16.160.1")
-    
+
     # Cisco SG300-28
     print("\n[Cisco SG300-28]")
     device_id = get_device_id("cisco-sg300-28")
     if device_id:
         for i in range(1, 29):
             add_interface(device_id, f"gi{i}", "1000base-t", f"Gigabit Ethernet {i}")
-    
+
     # MikroTik CRS317
     print("\n[MikroTik CRS317]")
     device_id = get_device_id("wow-10gb-mik-sw")
@@ -102,14 +102,14 @@ def main():
         add_interface(device_id, "ether1", "1000base-t", "Management - 172.16.100.50")
         for i in range(1, 17):
             add_interface(device_id, f"sfp-plus{i}", "10gbase-x-sfpp", f"10G SFP+ port {i}")
-    
+
     # Proxmox blade
     print("\n[wow-prox1]")
     device_id = get_device_id("wow-prox1")
     if device_id:
         add_interface(device_id, "eno1", "10gbase-x-sfpp", "Machine network - 172.16.110.101")
         add_interface(device_id, "eno2", "10gbase-x-sfpp", "Storage network - 172.16.160.101")
-    
+
     # OpenShift node2
     print("\n[wow-ocp-node2]")
     device_id = get_device_id("wow-ocp-node2")
@@ -117,7 +117,7 @@ def main():
         add_interface(device_id, "eno1", "10gbase-x-sfpp", "Machine network - 172.16.100.102")
         add_interface(device_id, "eno2", "10gbase-x-sfpp", "Storage network - 172.16.160.102")
         add_interface(device_id, "eno3", "10gbase-x-sfpp", "Workload network - 172.16.130.102")
-    
+
     # OpenShift node3
     print("\n[wow-ocp-node3]")
     device_id = get_device_id("wow-ocp-node3")
@@ -125,21 +125,21 @@ def main():
         add_interface(device_id, "eno1", "10gbase-x-sfpp", "Machine network - 172.16.100.103")
         add_interface(device_id, "eno2", "10gbase-x-sfpp", "Storage network - 172.16.160.103")
         add_interface(device_id, "eno3", "10gbase-x-sfpp", "Workload network - 172.16.130.103")
-    
+
     # OpenShift node4
     print("\n[wow-ocp-node4]")
     device_id = get_device_id("wow-ocp-node4")
     if device_id:
         add_interface(device_id, "eno1", "10gbase-x-sfpp", "Machine network")
         add_interface(device_id, "eno2", "10gbase-x-sfpp", "Storage network")
-    
+
     # TrueNAS
     print("\n[wow-ts01]")
     device_id = get_device_id("wow-ts01")
     if device_id:
         add_interface(device_id, "eno1", "1000base-t", "Management - 172.16.110.100")
         add_interface(device_id, "eno2", "10gbase-x-sfpp", "Storage - 172.16.160.100")
-    
+
     print("\n" + "="*70)
     print("✅ Interface creation complete!")
     print("="*70)

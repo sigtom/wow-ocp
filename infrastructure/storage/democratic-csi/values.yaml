@@ -69,7 +69,7 @@ democratic-csi:
       image: { registry: registry.k8s.io/sig-storage/csi-node-driver-registrar, tag: v2.9.0 }
 
     kubeletHostPath: /var/lib/kubelet
-    
+
     rbac:
       enabled: true
       openshift:

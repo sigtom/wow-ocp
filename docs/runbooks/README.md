@@ -1,7 +1,7 @@
 # OpenShift Homelab Runbooks
 
-**Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Version:** 1.0
+**Last Updated:** 2026-01-08
 **Cluster:** OpenShift 4.20 (wow-ocp)
 
 ---
@@ -139,63 +139,63 @@ Incident Detected
 ## Runbook Summaries
 
 ### 001: LVM Operator Deadlock Recovery
-**Problem:** LVM Volume Groups won't initialize due to stale metadata  
-**Common Cause:** Failed initialization attempts leave orphaned thin pools  
-**Quick Fix:** Manually clean LVM metadata on nodes, operator will reinitialize  
+**Problem:** LVM Volume Groups won't initialize due to stale metadata
+**Common Cause:** Failed initialization attempts leave orphaned thin pools
+**Quick Fix:** Manually clean LVM metadata on nodes, operator will reinitialize
 **Key Learning:** Use hardware-specific `by-path` device IDs with `optionalPaths`
 
 ### 002: Prometheus Storage Expansion
-**Problem:** Prometheus crashes with "disk quota exceeded"  
-**Common Cause:** 20Gi PVC too small for cluster with 200+ scrape targets  
-**Quick Fix:** Edit PVC to increase size, restart pod to trigger resize  
+**Problem:** Prometheus crashes with "disk quota exceeded"
+**Common Cause:** 20Gi PVC too small for cluster with 200+ scrape targets
+**Quick Fix:** Edit PVC to increase size, restart pod to trigger resize
 **Key Learning:** Monitor PVC usage monthly, 20Gi insufficient for >1 node
 
 ### 003: FUSE Mount Propagation (Media Apps)
-**Problem:** Media apps can't see rclone mounts from standalone pods  
-**Common Cause:** FUSE namespace isolation prevents cross-pod mount visibility  
-**Quick Fix:** Use sidecar pattern with `mountPropagation: Bidirectional`  
+**Problem:** Media apps can't see rclone mounts from standalone pods
+**Common Cause:** FUSE namespace isolation prevents cross-pod mount visibility
+**Quick Fix:** Use sidecar pattern with `mountPropagation: Bidirectional`
 **Key Learning:** Never use standalone mount pods, always use sidecars
 
 ### 004: PVC Stuck in Pending
-**Problem:** PVC remains `Pending`, pod can't start  
-**Common Cause:** Network connectivity to TrueNAS or CSI driver issues  
-**Quick Fix:** Check network to 172.16.160.100, verify CSI driver running  
+**Problem:** PVC remains `Pending`, pod can't start
+**Common Cause:** Network connectivity to TrueNAS or CSI driver issues
+**Quick Fix:** Check network to 172.16.160.100, verify CSI driver running
 **Key Learning:** 40% of PVC issues are network-related, test connectivity first
 
 ### 005: Cert-Manager Certificate Failures
-**Problem:** Certificate issuance fails, apps show "Not Trusted"  
-**Common Cause:** Cloudflare API token invalid/expired or DNS-01 challenge failure  
-**Quick Fix:** Update API token in sealed secret, restart cert-manager  
+**Problem:** Certificate issuance fails, apps show "Not Trusted"
+**Common Cause:** Cloudflare API token invalid/expired or DNS-01 challenge failure
+**Quick Fix:** Update API token in sealed secret, restart cert-manager
 **Key Learning:** Use wildcard certs to reduce per-app certificate management
 
 ### 006: ArgoCD Sync Failures
-**Problem:** Application shows `OutOfSync`, changes not applying  
-**Common Cause:** Resource already exists with different owner  
-**Quick Fix:** Add ArgoCD labels to adopt resource or delete and recreate  
+**Problem:** Application shows `OutOfSync`, changes not applying
+**Common Cause:** Resource already exists with different owner
+**Quick Fix:** Add ArgoCD labels to adopt resource or delete and recreate
 **Key Learning:** Validate manifests locally with `--dry-run=server` before commit
 
 ### 007: Pod CrashLoopBackOff
-**Problem:** Pod continuously restarts, application unavailable  
-**Common Cause:** OOMKilled (35%), missing env vars (25%), or liveness probe issues (15%)  
-**Quick Fix:** Check `--previous` logs, increase memory limits if OOM  
+**Problem:** Pod continuously restarts, application unavailable
+**Common Cause:** OOMKilled (35%), missing env vars (25%), or liveness probe issues (15%)
+**Quick Fix:** Check `--previous` logs, increase memory limits if OOM
 **Key Learning:** Always check previous container logs to see what caused crash
 
 ### 008: NFS Mount Failures (TrueNAS)
-**Problem:** Pod stuck in `ContainerCreating`, mount timeout  
-**Common Cause:** Network connectivity to TrueNAS on VLAN 160  
-**Quick Fix:** Verify ping and NFS port (2049) reachable from node  
+**Problem:** Pod stuck in `ContainerCreating`, mount timeout
+**Common Cause:** Network connectivity to TrueNAS on VLAN 160
+**Quick Fix:** Verify ping and NFS port (2049) reachable from node
 **Key Learning:** Node 4 uses VLAN trunk, requires NNCP for VLAN 160 interface
 
 ### 009: Image Pull Failures
-**Problem:** Pod shows `ImagePullBackOff`, Docker Hub rate limit  
-**Common Cause:** Rate limit exceeded (100 pulls per 6h anonymous)  
-**Quick Fix:** Add Docker Hub credentials to global pull secret  
+**Problem:** Pod shows `ImagePullBackOff`, Docker Hub rate limit
+**Common Cause:** Rate limit exceeded (100 pulls per 6h anonymous)
+**Quick Fix:** Add Docker Hub credentials to global pull secret
 **Key Learning:** Always authenticate to Docker Hub, even for public images
 
 ### 010: Sealed Secrets Failures
-**Problem:** SealedSecret exists but regular Secret not created  
-**Common Cause:** Wrong public certificate used for sealing  
-**Quick Fix:** Fetch current cert from cluster, re-seal secret  
+**Problem:** SealedSecret exists but regular Secret not created
+**Common Cause:** Wrong public certificate used for sealing
+**Quick Fix:** Fetch current cert from cluster, re-seal secret
 **Key Learning:** Always fetch cert from cluster, don't trust local copy
 
 ---
@@ -341,5 +341,5 @@ Update the runbook and commit changes with clear descriptions.
 
 ---
 
-**Document Maintained By:** SRE Team  
+**Document Maintained By:** SRE Team
 **Review Cycle:** Quarterly or after major incidents

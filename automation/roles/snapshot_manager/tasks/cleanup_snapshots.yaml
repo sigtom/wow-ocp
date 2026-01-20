@@ -17,12 +17,12 @@
         validate_certs: no
       register: snapshot_list
       delegate_to: localhost
-    
+
     - name: Parse snapshots and determine which to delete
       ansible.builtin.set_fact:
         snapshots_to_delete: []
         snapshots_to_keep: []
-    
+
     - name: Check each snapshot for expiration
       ansible.builtin.set_fact:
         snapshots_to_delete: >-
@@ -50,7 +50,7 @@
       loop: "{{ snapshot_list.json.data }}"
       loop_control:
         label: "{{ item.name }}"
-    
+
     - name: Display cleanup plan
       ansible.builtin.debug:
         msg:
@@ -60,13 +60,13 @@
           - "{% if snapshots_to_delete | length > 0 %}  Will delete:"
           - "{% for snap in snapshots_to_delete %}    - {{ snap }}{% endfor %}{% endif %}"
       when: snapshot_verbose
-    
+
     - name: Delete expired snapshots (dry run)
       ansible.builtin.debug:
         msg: "DRY RUN: Would delete snapshot {{ item }}"
       loop: "{{ snapshots_to_delete }}"
       when: snapshot_cleanup_dry_run
-    
+
     - name: Delete expired snapshots (actual)
       ansible.builtin.uri:
         url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot/{{ item }}"
@@ -79,16 +79,16 @@
       register: delete_results
       delegate_to: localhost
       when: not snapshot_cleanup_dry_run
-    
+
     - name: Record cleanup operation
       ansible.builtin.set_fact:
         snapshot_operations_completed: "{{ snapshot_operations_completed + ['Cleaned up ' + (snapshots_to_delete | length | string) + ' VM snapshot(s)'] }}"
-  
+
   rescue:
     - name: Record cleanup failure
       ansible.builtin.set_fact:
         snapshot_operations_failed: "{{ snapshot_operations_failed + ['VM snapshot cleanup failed'] }}"
-  
+
   when: not is_lxc
 
 - name: Cleanup LXC snapshots
@@ -102,12 +102,12 @@
         validate_certs: no
       register: snapshot_list
       delegate_to: localhost
-    
+
     - name: Parse snapshots and determine which to delete
       ansible.builtin.set_fact:
         snapshots_to_delete: []
         snapshots_to_keep: []
-    
+
     - name: Check each snapshot for expiration
       ansible.builtin.set_fact:
         snapshots_to_delete: >-
@@ -135,7 +135,7 @@
       loop: "{{ snapshot_list.json.data }}"
       loop_control:
         label: "{{ item.name }}"
-    
+
     - name: Display cleanup plan
       ansible.builtin.debug:
         msg:
@@ -145,13 +145,13 @@
           - "{% if snapshots_to_delete | length > 0 %}  Will delete:"
           - "{% for snap in snapshots_to_delete %}    - {{ snap }}{% endfor %}{% endif %}"
       when: snapshot_verbose
-    
+
     - name: Delete expired snapshots (dry run)
       ansible.builtin.debug:
         msg: "DRY RUN: Would delete snapshot {{ item }}"
       loop: "{{ snapshots_to_delete }}"
       when: snapshot_cleanup_dry_run
-    
+
     - name: Delete expired snapshots (actual)
       ansible.builtin.uri:
         url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot/{{ item }}"
@@ -164,14 +164,14 @@
       register: delete_results
       delegate_to: localhost
       when: not snapshot_cleanup_dry_run
-    
+
     - name: Record cleanup operation
       ansible.builtin.set_fact:
         snapshot_operations_completed: "{{ snapshot_operations_completed + ['Cleaned up ' + (snapshots_to_delete | length | string) + ' LXC snapshot(s)'] }}"
-  
+
   rescue:
     - name: Record cleanup failure
       ansible.builtin.set_fact:
         snapshot_operations_failed: "{{ snapshot_operations_failed + ['LXC snapshot cleanup failed'] }}"
-  
+
   when: is_lxc

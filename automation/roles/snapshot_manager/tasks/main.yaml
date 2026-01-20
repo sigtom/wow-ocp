@@ -15,7 +15,7 @@
       - snapshot_operation in ['create', 'delete', 'list', 'cleanup']
     fail_msg: |
       Missing required variables for snapshot operations!
-      
+
       Required:
         - vmid: Proxmox VM/LXC ID
         - proxmox_node: Proxmox node name
@@ -60,17 +60,17 @@
 - name: Display snapshot operation summary
   ansible.builtin.debug:
     msg: |
-      
+
       ==========================================
       Snapshot Operation Summary
       ==========================================
       Target: {{ inventory_hostname }}
       Operation: {{ snapshot_operation }}
-      
+
       Results:
         ✅ Completed: {{ snapshot_operations_completed | length }}
         ❌ Failed: {{ snapshot_operations_failed | length }}
-      
+
       {% if snapshot_operations_completed | length > 0 %}
       Completed operations:
       {% for op in snapshot_operations_completed %}
@@ -90,7 +90,7 @@
   ansible.builtin.fail:
     msg: |
       ❌ Snapshot operation FAILED!
-      
+
       {{ snapshot_operations_failed | length }} operation(s) failed:
       {% for op in snapshot_operations_failed %}
         - {{ op }}

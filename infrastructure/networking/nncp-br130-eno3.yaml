@@ -26,7 +26,7 @@ spec:
               enabled: false
           port:
             - name: eno3
-            
+
       # --- VLAN 110 ---
       - name: eno3.110
         type: vlan

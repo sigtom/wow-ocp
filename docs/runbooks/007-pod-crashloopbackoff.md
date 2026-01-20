@@ -1,8 +1,8 @@
 # Runbook 007: Pod CrashLoopBackOff Troubleshooting
 
-**Frequency:** Common (new deployments, config changes, resource exhaustion)  
-**Impact:** High - Application unavailable  
-**Last Occurred:** Ongoing (routine operations)  
+**Frequency:** Common (new deployments, config changes, resource exhaustion)
+**Impact:** High - Application unavailable
+**Last Occurred:** Ongoing (routine operations)
 **MTTR:** 10-45 minutes
 
 ---
@@ -620,6 +620,6 @@ env:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

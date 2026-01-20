@@ -1,8 +1,8 @@
 # Runbook 004: PVC Stuck in Pending State
 
-**Frequency:** Common (during new app deployments)  
-**Impact:** Medium - App cannot start until PVC binds  
-**Last Occurred:** Ongoing (new deployments)  
+**Frequency:** Common (during new app deployments)
+**Impact:** Medium - App cannot start until PVC binds
+**Last Occurred:** Ongoing (new deployments)
 **MTTR:** 5-20 minutes
 
 ---
@@ -439,6 +439,6 @@ PVC Pending
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

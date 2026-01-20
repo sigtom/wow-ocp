@@ -29,12 +29,12 @@
       register: cloud_init_status
       changed_when: false
       failed_when: false
-    
+
     - name: Record Cloud-Init status (Done)
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Cloud-Init Status', 'status': 'PASS', 'details': 'Configuration complete'} ] }}"
       when: "'done' in cloud_init_status.stdout"
-    
+
     - name: Record Cloud-Init status (Running/Error)
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Cloud-Init Status', 'status': 'WARN', 'details': 'Status: ' + cloud_init_status.stdout} ] }}"
@@ -51,12 +51,12 @@
       ansible.builtin.shell: "df -h / | tail -n 1 | awk '{print $5}' | tr -d '%'"
       register: disk_usage
       changed_when: false
-    
+
     - name: Record Disk Space (Healthy)
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Disk Space', 'status': 'PASS', 'details': 'Usage: ' + disk_usage.stdout + '%'} ] }}"
       when: disk_usage.stdout | int < 90
-    
+
     - name: Record Disk Space (Critical)
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Disk Space', 'status': 'FAIL', 'details': 'Critical usage: ' + disk_usage.stdout + '%'} ] }}"
@@ -72,7 +72,7 @@
       ansible.builtin.command: uptime -p
       register: uptime_check
       changed_when: false
-    
+
     - name: Record Uptime
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'System Uptime', 'status': 'PASS', 'details': uptime_check.stdout} ] }}"
@@ -90,18 +90,18 @@
       failed_when: false
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Record apt lock status
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Package Manager', 'status': 'PASS', 'details': 'APT is unlocked'} ] }}"
-      when: 
+      when:
         - ansible_facts['os_family'] == "Debian"
         - "'unlocked' in apt_lock.stdout"
 
     - name: Record apt lock failure
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Package Manager', 'status': 'FAIL', 'details': 'APT is locked (running update?)'} ] }}"
-      when: 
+      when:
         - ansible_facts['os_family'] == "Debian"
         - "'unlocked' not in apt_lock.stdout"
 
@@ -112,10 +112,10 @@
       failed_when: false
       become: yes
       when: ansible_facts['os_family'] == "RedHat"
-    
+
     - name: Record dnf lock status
       ansible.builtin.set_fact:
         health_check_results: "{{ health_check_results + [ {'check': 'Package Manager', 'status': 'PASS', 'details': 'DNF is unlocked'} ] }}"
-      when: 
+      when:
         - ansible_facts['os_family'] == "RedHat"
         - "'unlocked' in dnf_lock.stdout"

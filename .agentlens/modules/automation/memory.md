@@ -38,4 +38,3 @@
 ### `NOTE` (automation/nautobot_import_ips.py:422)
 
 > Nautobot 3.x doesn't have ipam/ip-ranges endpoint
-

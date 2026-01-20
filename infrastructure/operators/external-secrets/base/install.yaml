@@ -6,7 +6,7 @@ metadata:
   name: external-secrets-cert-controller
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
@@ -33,7 +33,7 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
@@ -47,7 +47,7 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
@@ -28948,7 +28948,7 @@ kind: ClusterRole
 metadata:
   name: external-secrets-cert-controller
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
@@ -29312,7 +29312,7 @@ kind: ClusterRoleBinding
 metadata:
   name: external-secrets-cert-controller
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
@@ -29414,14 +29414,14 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
     app.kubernetes.io/version: "v1.2.1"
     app.kubernetes.io/managed-by: Helm
     external-secrets.io/component: webhook
-  
+
 spec:
   type: ClusterIP
   ports:
@@ -29440,7 +29440,7 @@ metadata:
   name: external-secrets-cert-controller
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-cert-controller
     app.kubernetes.io/instance: external-secrets
@@ -29456,7 +29456,7 @@ spec:
   template:
     metadata:
       labels:
-        
+
         helm.sh/chart: external-secrets-1.2.1
         app.kubernetes.io/name: external-secrets-cert-controller
         app.kubernetes.io/instance: external-secrets
@@ -29564,7 +29564,7 @@ metadata:
   name: external-secrets-webhook
   namespace: external-secrets
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
@@ -29580,7 +29580,7 @@ spec:
   template:
     metadata:
       labels:
-        
+
         helm.sh/chart: external-secrets-1.2.1
         app.kubernetes.io/name: external-secrets-webhook
         app.kubernetes.io/instance: external-secrets
@@ -29641,7 +29641,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: secretstore-validate
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets
@@ -29687,7 +29687,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: externalsecret-validate
   labels:
-    
+
     helm.sh/chart: external-secrets-1.2.1
     app.kubernetes.io/name: external-secrets-webhook
     app.kubernetes.io/instance: external-secrets

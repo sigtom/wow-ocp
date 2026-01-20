@@ -60,7 +60,7 @@ def api_request(method: str, endpoint: str, data: Optional[Dict] = None) -> Opti
             response = requests.patch(url, headers=HEADERS, json=data, timeout=10)
         else:
             return None
-        
+
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -84,29 +84,29 @@ def create_if_missing(endpoint: str, name: str, data: Dict, lookup_field: str = 
     if obj_id:
         log(f"Found existing: {name}", "SKIP")
         return obj_id
-    
+
     # Create new
     log(f"Creating: {name}", "INFO")
     result = api_request("POST", f"{endpoint}/", data)
     if result and 'id' in result:
         log(f"Created: {name} (ID: {result['id']})", "SUCCESS")
         return result['id']
-    
+
     return None
 
 def main():
     log(f"{Colors.BOLD}{'='*70}{Colors.RESET}", "INFO")
     log(f"{Colors.BOLD}Nautobot Infrastructure Setup - WOW Homelab (Final){Colors.RESET}", "INFO")
     log(f"{Colors.BOLD}{'='*70}{Colors.RESET}", "INFO")
-    
+
     # Get reusable status ID
     status_id = get_by_name("extras/statuses", "Active")
     if not status_id:
         log("Active status not found - cannot proceed", "ERROR")
         return
-    
+
     log("\n=== Phase 1: Location Setup ===", "INFO")
-    
+
     # Get or create location type
     loc_type_id = get_by_name("dcim/location-types", "Datacenter")
     if not loc_type_id:
@@ -115,7 +115,7 @@ def main():
             "description": "Datacenter or server room",
             "content_types": ["dcim.device", "dcim.rack", "ipam.prefix", "ipam.vlan"]
         })
-    
+
     # Create WOW-DC location
     wowdc_id = create_if_missing("dcim/locations", "WOW-DC", {
         "name": "WOW-DC",
@@ -123,7 +123,7 @@ def main():
         "status": status_id,
         "description": "Main datacenter/server room in Tampa, FL"
     })
-    
+
     # Create RACK 1
     rack_id = create_if_missing("dcim/racks", "RACK 1", {
         "name": "RACK 1",
@@ -134,18 +134,18 @@ def main():
         "width": 19,
         "type": "4-post-frame"
     })
-    
+
     log("\n=== Phase 2: Manufacturers ===", "INFO")
-    
+
     manufacturers = {}
     for name in ["Netgate", "Cisco", "MikroTik", "Dell", "Supermicro"]:
         manufacturers[name] = create_if_missing("dcim/manufacturers", name, {
             "name": name,
             "description": f"{name} manufacturer"
         })
-    
+
     log("\n=== Phase 3: Device Roles ===", "INFO")
-    
+
     roles_data = {
         "Firewall": "ff0000",
         "Switch": "00ff00",
@@ -154,7 +154,7 @@ def main():
         "Compute Node": "9900ff",
         "Storage": "00ffff"
     }
-    
+
     roles = {}
     for name, color in roles_data.items():
         roles[name] = create_if_missing("extras/roles", name, {
@@ -163,11 +163,11 @@ def main():
             "description": f"{name} device role",
             "content_types": ["dcim.device"]
         })
-    
+
     log("\n=== Phase 4: Device Types ===", "INFO")
-    
+
     device_types = {}
-    
+
     # pfSense
     device_types["pfSense"] = create_if_missing("dcim/device-types", "pfSense SG-5100", {
         "model": "pfSense SG-5100",
@@ -176,7 +176,7 @@ def main():
         "u_height": 1,
         "is_full_depth": False
     }, "model")
-    
+
     # Cisco
     device_types["Cisco"] = create_if_missing("dcim/device-types", "SG300-28", {
         "model": "SG300-28",
@@ -185,7 +185,7 @@ def main():
         "u_height": 1,
         "is_full_depth": True
     }, "model")
-    
+
     # MikroTik
     device_types["MikroTik"] = create_if_missing("dcim/device-types", "CRS317-1G-16S+", {
         "model": "CRS317-1G-16S+",
@@ -194,7 +194,7 @@ def main():
         "u_height": 1,
         "is_full_depth": True
     }, "model")
-    
+
     # Dell FX2s Chassis
     device_types["FX2s"] = create_if_missing("dcim/device-types", "PowerEdge FX2s", {
         "model": "PowerEdge FX2s",
@@ -204,7 +204,7 @@ def main():
         "is_full_depth": True,
         "subdevice_role": "parent"
     }, "model")
-    
+
     # Dell FC630 Blade
     device_types["FC630"] = create_if_missing("dcim/device-types", "PowerEdge FC630", {
         "model": "PowerEdge FC630",
@@ -214,7 +214,7 @@ def main():
         "is_full_depth": False,
         "subdevice_role": "child"
     }, "model")
-    
+
     # Supermicro
     device_types["Supermicro"] = create_if_missing("dcim/device-types", "6028U-TR4T+", {
         "model": "6028U-TR4T+",
@@ -223,11 +223,11 @@ def main():
         "u_height": 2,
         "is_full_depth": True
     }, "model")
-    
+
     log("\n=== Phase 5: Physical Devices ===", "INFO")
-    
+
     devices = {}
-    
+
     # U42: pfSense (front only - Cisco goes in different U)
     devices["pfSense"] = create_if_missing("dcim/devices", "pfSense", {
         "name": "pfSense",
@@ -240,7 +240,7 @@ def main():
         "status": status_id,
         "comments": "Primary firewall/router - SSH: sre-bot@10.1.1.1:1815"
     })
-    
+
     # U41: MikroTik Core Switch
     devices["MikroTik"] = create_if_missing("dcim/devices", "wow-10gb-mik-sw", {
         "name": "wow-10gb-mik-sw",
@@ -253,7 +253,7 @@ def main():
         "status": status_id,
         "comments": "10G SFP+ core switch - Web UI: http://172.16.100.50/"
     })
-    
+
     # U40: Cisco SG300-28 (moved from U42 rear to avoid conflicts)
     devices["Cisco"] = create_if_missing("dcim/devices", "cisco-sg300-28", {
         "name": "cisco-sg300-28",
@@ -266,7 +266,7 @@ def main():
         "status": status_id,
         "comments": "28-port gigabit switch - Web UI: http://10.1.1.2/"
     })
-    
+
     # U38-39: Dell FX2s Chassis
     devices["FX2s"] = create_if_missing("dcim/devices", "dell-fx2s-chassis", {
         "name": "dell-fx2s-chassis",
@@ -279,7 +279,7 @@ def main():
         "status": status_id,
         "comments": "Dell FX2s blade chassis with 4x FC630 blades"
     })
-    
+
     # Blades
     blade_configs = [
         ("wow-prox1", 1, "Proxmox VE hypervisor - Mgmt: 172.16.110.101"),
@@ -287,7 +287,7 @@ def main():
         ("wow-ocp-node3", 3, "OpenShift node 3 - Machine: 172.16.100.103"),
         ("wow-ocp-node4", 4, "OpenShift node 4 - Media workloads")
     ]
-    
+
     for blade_name, position, comment in blade_configs:
         devices[blade_name] = create_if_missing("dcim/devices", blade_name, {
             "name": blade_name,
@@ -299,7 +299,7 @@ def main():
             "status": status_id,
             "comments": comment
         })
-    
+
     # U36-37: TrueNAS
     devices["TrueNAS"] = create_if_missing("dcim/devices", "wow-ts01", {
         "name": "wow-ts01",
@@ -312,9 +312,9 @@ def main():
         "status": status_id,
         "comments": "TrueNAS Scale 25.10 - Mgmt: 172.16.110.100, Storage: 172.16.160.100"
     })
-    
+
     log("\n=== Phase 6: VLANs ===", "INFO")
-    
+
     vlan_configs = [
         (100, "Apps", "Primary application network (native VLAN)"),
         (110, "Proxmox-Mgmt", "Proxmox management plane (RESTRICTED)"),
@@ -322,7 +322,7 @@ def main():
         (130, "Workload", "OpenShift workload traffic"),
         (160, "Storage", "NFS/iSCSI storage backend")
     ]
-    
+
     vlans = {}
     for vid, name, description in vlan_configs:
         vlans[vid] = create_if_missing("ipam/vlans", str(vid), {
@@ -331,9 +331,9 @@ def main():
             "status": status_id,
             "description": description
         }, "vid")
-    
+
     log("\n=== Phase 7: IP Prefixes ===", "INFO")
-    
+
     prefix_configs = [
         ("10.1.1.0/24", None, "pfSense management network"),
         ("172.16.100.0/24", vlans[100], "Apps network (native VLAN)"),
@@ -342,7 +342,7 @@ def main():
         ("172.16.130.0/24", vlans[130], "Workload network (OpenShift only)"),
         ("172.16.160.0/24", vlans[160], "Storage network (OFF LIMITS)")
     ]
-    
+
     for prefix, vlan_id, description in prefix_configs:
         data = {
             "prefix": prefix,
@@ -351,9 +351,9 @@ def main():
         }
         if vlan_id:
             data["vlan"] = vlan_id
-        
+
         create_if_missing("ipam/prefixes", prefix, data, "prefix")
-    
+
     log(f"\n{Colors.BOLD}{'='*70}{Colors.RESET}", "INFO")
     log(f"{Colors.BOLD}✅ Setup Complete!{Colors.RESET}", "SUCCESS")
     log(f"{Colors.BOLD}{'='*70}{Colors.RESET}", "INFO")

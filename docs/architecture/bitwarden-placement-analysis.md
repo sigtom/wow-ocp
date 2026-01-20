@@ -74,19 +74,19 @@ Even with ESO, you still need **bootstrap secrets**:
 ## Option 1: Bitwarden ON Cluster
 
 ### Pros
-✅ **Single platform management** - Everything in Kubernetes  
-✅ **GitOps all the way** - Bitwarden deployment in git  
-✅ **Automated backups** - Velero/OADP handles it  
-✅ **High availability** - Multiple replicas possible  
-✅ **Resource sharing** - Use cluster storage, networking  
-✅ **Monitoring integrated** - Prometheus/Grafana already there  
+✅ **Single platform management** - Everything in Kubernetes
+✅ **GitOps all the way** - Bitwarden deployment in git
+✅ **Automated backups** - Velero/OADP handles it
+✅ **High availability** - Multiple replicas possible
+✅ **Resource sharing** - Use cluster storage, networking
+✅ **Monitoring integrated** - Prometheus/Grafana already there
 
 ### Cons
-❌ **Circular dependency** - Cluster needs secrets to run Bitwarden  
-❌ **Bootstrap complexity** - Still need SealedSecrets for Bitwarden's DB password  
-❌ **Disaster recovery** - If cluster is dead, can't access secrets to fix it  
-❌ **Maintenance risk** - Cluster upgrades could break secret access  
-❌ **Single point of failure** - Cluster down = no secret access  
+❌ **Circular dependency** - Cluster needs secrets to run Bitwarden
+❌ **Bootstrap complexity** - Still need SealedSecrets for Bitwarden's DB password
+❌ **Disaster recovery** - If cluster is dead, can't access secrets to fix it
+❌ **Maintenance risk** - Cluster upgrades could break secret access
+❌ **Single point of failure** - Cluster down = no secret access
 
 ### Architecture with Bitwarden ON Cluster
 
@@ -129,20 +129,20 @@ apps/
 ## Option 2: Bitwarden EXTERNAL on Proxmox
 
 ### Pros
-✅ **Break circular dependency** - Bitwarden available before cluster boots  
-✅ **Better disaster recovery** - Cluster dead? Access Bitwarden from anywhere  
-✅ **Simpler bootstrap** - Only need BW_SESSION in cluster, not Bitwarden's own secrets  
-✅ **Lower blast radius** - Cluster issues don't affect secret access  
-✅ **Multi-cluster support** - One Bitwarden for multiple clusters  
-✅ **Dedicated resources** - Doesn't compete with cluster workloads  
+✅ **Break circular dependency** - Bitwarden available before cluster boots
+✅ **Better disaster recovery** - Cluster dead? Access Bitwarden from anywhere
+✅ **Simpler bootstrap** - Only need BW_SESSION in cluster, not Bitwarden's own secrets
+✅ **Lower blast radius** - Cluster issues don't affect secret access
+✅ **Multi-cluster support** - One Bitwarden for multiple clusters
+✅ **Dedicated resources** - Doesn't compete with cluster workloads
 
 ### Cons
-❌ **Another platform to manage** - Proxmox + OpenShift  
-❌ **Separate backups** - Need Proxmox VM backup strategy  
-❌ **Manual deployment** - Ansible playbook, not GitOps  
-❌ **Network dependency** - Cluster needs network access to Proxmox VLAN  
-❌ **Lower availability** - Single VM (but can be HA later)  
-❌ **Split monitoring** - Need to monitor VM separately  
+❌ **Another platform to manage** - Proxmox + OpenShift
+❌ **Separate backups** - Need Proxmox VM backup strategy
+❌ **Manual deployment** - Ansible playbook, not GitOps
+❌ **Network dependency** - Cluster needs network access to Proxmox VLAN
+❌ **Lower availability** - Single VM (but can be HA later)
+❌ **Split monitoring** - Need to monitor VM separately
 
 ### Architecture with Bitwarden EXTERNAL
 

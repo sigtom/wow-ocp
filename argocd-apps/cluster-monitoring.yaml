@@ -13,7 +13,7 @@ spec:
     server: https://kubernetes.default.svc
     # ConfigMaps are in different namespaces, so we let Kustomize/Argo handle namespace matching or use a generic destination.
     # Namespace here is just for the Application CR location.
-    namespace: openshift-monitoring 
+    namespace: openshift-monitoring
   syncPolicy:
     automated:
       prune: true

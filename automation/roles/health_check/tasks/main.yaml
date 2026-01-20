@@ -30,7 +30,7 @@
       - health_check_profile in ['basic', 'docker', 'web', 'database', 'dns', 'custom']
     fail_msg: |
       Invalid health check profile: {{ health_check_profile | default('NOT SET') }}
-      
+
       Available profiles: basic, docker, web, database, dns, custom
     success_msg: "Health check profile '{{ health_check_profile }}' validated"
 
@@ -75,12 +75,12 @@
   ansible.builtin.fail:
     msg: |
       ❌ Health check FAILED!
-      
+
       {{ health_check_failures | length }} critical check(s) failed:
       {% for check in health_check_failures %}
         - {{ check }}
       {% endfor %}
-      
+
       See output above for details.
   when:
     - health_check_fail_on_error

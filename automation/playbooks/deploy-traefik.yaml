@@ -4,11 +4,11 @@
 # ============================================================================
 # Description: Deploy Traefik reverse proxy with complete automation
 # Target: Proxmox LXC container with Docker
-# 
+#
 # Architecture: Split into 2 plays to isolate fact namespaces
 #   Play 1: Provision infrastructure (runs on localhost, creates LXC)
 #   Play 2: Configure services (runs on container, installs Docker + Traefik)
-# 
+#
 # This prevents Ansible fact caching bug where localhost facts (Fedora)
 # bleed into container fact gathering (Ubuntu), causing Docker install to fail.
 #
@@ -48,28 +48,28 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  
+
   vars:
     # Resolve target node (default to wow-prox1 if not provided)
     # Use intermediate variable to avoid recursion with role variables
     resolved_target_node: "{{ target_node_input | default('wow-prox1') }}"
-    
+
     target_vmid: "{{ vmid }}"
     target_ip: "{{ ansible_host }}"
     target_hostname: "traefik.sigtom.dev"
-    
+
     resource_size: "{{ lxc_size | default('small') }}"
     os_template: "{{ lxc_template | default('ubuntu24') }}"
     network: "{{ network_profile | default('apps') }}"
     backup_policy: "{{ snapshot_policy | default('default') }}"
-    
+
     # Cloudflare token (from environment variable)
     cloudflare_api_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
 
   pre_tasks:
     - name: "Debug Credential Injection"
       ansible.builtin.debug:
-        msg: 
+        msg:
           - "PROXMOX_SRE_BOT_API_TOKEN length: {{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') | length }}"
           - "CF_DNS_API_TOKEN length: {{ lookup('env', 'CF_DNS_API_TOKEN') | length }}"
 
@@ -77,10 +77,10 @@
       ansible.builtin.fail:
         msg: |
           ❌ Cloudflare API token not found!
-          
+
           Please set environment variable:
           export CF_DNS_API_TOKEN="your-cloudflare-token-here"
-          
+
           Create token at: https://dash.cloudflare.com/profile/api-tokens
           Permissions: Zone > DNS > Edit (for ALL 7 domains)
       when: cloudflare_api_token == ""
@@ -117,7 +117,7 @@
           - 'date_time'
       delegate_to: localhost
       run_once: true
-    
+
     # Pre-provisioning snapshot removed: Cannot snapshot a container that doesn't exist yet (ID {{ target_vmid }})
     # - name: "Pre-provisioning snapshot"
     #   ansible.builtin.include_role:
@@ -209,26 +209,26 @@
 - name: "PLAY 2: Configure Traefik Services"
   hosts: traefik
   gather_facts: true  # Fresh fact gathering in container context ONLY
-  
+
   vars:
     target_ip: "{{ ansible_host }}"
     target_hostname: "traefik.sigtom.dev"
     backup_policy: "{{ snapshot_policy | default('default') }}"
-    
+
     # Traefik deployment paths
     traefik_base_dir: "/opt/traefik"
     traefik_config_dir: "{{ traefik_base_dir }}/config"
     traefik_certs_dir: "{{ traefik_base_dir }}/letsencrypt"
     traefik_logs_dir: "{{ traefik_base_dir }}/logs"
-    
+
     # Remote Docker Hosts for auto-discovery
     remote_docker_hosts:
       - { name: "dumb", ip: "172.16.100.20" }
       - { name: "downloaders", ip: "172.16.100.21" }
-    
+
     # Cloudflare token (from environment variable)
     cloudflare_api_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') }}"
-    
+
     # Test domains for whoami containers
     test_domains:
       - "whoami.nixsysadmin.io"
@@ -243,7 +243,7 @@
     # ========================================
     # Phase 1: Install Docker
     # ========================================
-    
+
     - name: "Phase 1: Display detected OS info"
       ansible.builtin.debug:
         msg:
@@ -277,7 +277,7 @@
     # ========================================
     # Phase 2: Deploy Traefik Configuration
     # ========================================
-    
+
     - name: "Phase 2: Create Traefik directory structure"
       ansible.builtin.file:
         path: "{{ item }}"
@@ -327,15 +327,15 @@
         content: |
           # Traefik Environment Variables (Auto-generated)
           # Generated: {{ ansible_date_time.iso8601 }}
-          
+
           # Cloudflare API Token for DNS-01 challenge
           CF_DNS_API_TOKEN={{ cloudflare_api_token }}
-          
+
           # Traefik Dashboard BasicAuth
           # Username: admin
           # Password: {{ lookup('password', '/tmp/traefik_admin_pass chars=ascii_letters,digits length=16') }}
           TRAEFIK_DASHBOARD_AUTH={{ basicauth_hash.stdout }}
-          
+
           # Timezone
           TZ=America/New_York
 
@@ -349,7 +349,7 @@
           URL: https://traefik.sigtom.dev
           Username: admin
           Password: {{ lookup('password', '/tmp/traefik_admin_pass chars=ascii_letters,digits length=16') }}
-          
+
           Generated: {{ ansible_date_time.iso8601 }}
       delegate_to: localhost
 
@@ -394,7 +394,7 @@
     # ========================================
     # Phase 3: Start Traefik and Verify
     # ========================================
-    
+
     - name: "Phase 3: Start Traefik container"
       community.docker.docker_compose_v2:
         project_src: "{{ traefik_base_dir }}"
@@ -426,24 +426,24 @@
           echo "ERROR: acme.json not found"
           exit 1
         fi
-        
+
         # Check if acme.json has content
         if [ ! -s {{ traefik_certs_dir }}/acme.json ]; then
           echo "WARNING: acme.json is empty"
           docker logs traefik | tail -50
           exit 1
         fi
-        
+
         # Count certificates (expecting 7 wildcard certs)
         cert_count=$(jq -r '.cloudflare.Certificates // [] | length' {{ traefik_certs_dir }}/acme.json 2>/dev/null || echo "0")
-        
+
         if [ "$cert_count" -lt 7 ]; then
           echo "WARNING: Only $cert_count certificates found (expected 7)"
           echo "Certificate domains:"
           jq -r '.cloudflare.Certificates[]?.domain.main // "unknown"' {{ traefik_certs_dir }}/acme.json 2>/dev/null || echo "Failed to parse domains"
           exit 1
         fi
-        
+
         echo "SUCCESS: $cert_count wildcard certificates acquired"
         jq -r '.cloudflare.Certificates[]?.domain.main' {{ traefik_certs_dir }}/acme.json
       register: cert_check
@@ -468,7 +468,7 @@
     # ========================================
     # Phase 4: Deploy Test Containers (All 7 Domains)
     # ========================================
-    
+
     - name: "Phase 4: Create whoami test compose file for all domains"
       ansible.builtin.copy:
         dest: "{{ traefik_base_dir }}/whoami-compose.yml"
@@ -489,7 +489,7 @@
                 - "traefik.http.routers.whoami-{{ loop.index }}.tls={}"
                 - "traefik.http.services.whoami-{{ loop.index }}.loadbalancer.server.port=80"
           {% endfor %}
-          
+
           networks:
             traefik-proxy:
               external: true
@@ -530,7 +530,7 @@
     # ========================================
     # Phase 5: Post-Deployment Snapshot
     # ========================================
-    
+
     - name: "Phase 5: Post-provisioning snapshot"
       ansible.builtin.include_role:
         name: snapshot_manager
@@ -549,7 +549,7 @@
     # ========================================
     # Final Summary
     # ========================================
-    
+
     - name: "Deployment Complete - Summary"
       ansible.builtin.debug:
         msg:
@@ -598,16 +598,16 @@
           Traefik v3.6 Deployment Summary
           ================================
           Deployed: {{ ansible_date_time.iso8601 }}
-          
+
           Infrastructure:
             - LXC CTID: {{ vmid }}
             - IP Address: {{ target_ip }}
             - Hostname: {{ target_hostname }}
-          
+
           Access:
             - Dashboard: https://traefik.sigtom.dev
             - Credentials: See automation/.traefik-credentials
-          
+
           Managed Domains (7 wildcard certificates):
             - *.nixsysadmin.io
             - *.sigtom.com
@@ -616,13 +616,13 @@
             - *.sigtom.io
             - *.sigtomtech.com
             - *.tecnixsystems.com
-          
+
           Test Domains (whoami containers):
           {% for domain in test_domains %}  - https://{{ domain }}
           {% endfor %}
-          
+
           Certificate Method: DNS-01 via Cloudflare (no port forwarding required)
-          
+
           Status: {{ 'SUCCESS - All certificates acquired' if cert_check.rc == 0 else 'PARTIAL - Check logs' }}
           Test Results: {{ (whoami_tests.results | selectattr('status', 'equalto', 200) | list | length) }}/{{ test_domains | length }} domains accessible
       delegate_to: localhost

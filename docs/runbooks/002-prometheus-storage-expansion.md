@@ -1,8 +1,8 @@
 # Runbook 002: Prometheus Storage Expansion
 
-**Frequency:** Quarterly (as cluster grows)  
-**Impact:** Critical - Metrics collection stops, alerting fails  
-**Last Occurred:** 2025-12-31  
+**Frequency:** Quarterly (as cluster grows)
+**Impact:** Critical - Metrics collection stops, alerting fails
+**Last Occurred:** 2025-12-31
 **MTTR:** 15-30 minutes
 
 ---
@@ -25,7 +25,7 @@ oc logs -n openshift-monitoring prometheus-k8s-0 --tail=20
 
 ## Root Cause
 
-**Technical Explanation:**  
+**Technical Explanation:**
 Prometheus stores metrics in a time-series database (TSDB) on a PVC. When the PVC reaches capacity:
 1. Prometheus can no longer write new samples
 2. WAL (Write-Ahead Log) gets corrupted or locked
@@ -194,7 +194,7 @@ PVC Size (GB) = (Samples/sec × Retention Days × 86400 × Sample Size) / 1,000,
 PVC Size = (1667 × 15 × 86400 × 2) / 1,000,000,000 = ~43 GB
 ```
 
-**Add 50% headroom:** 43 × 1.5 = ~65 GB  
+**Add 50% headroom:** 43 × 1.5 = ~65 GB
 **Round up to:** 100 GB
 
 ---
@@ -248,7 +248,7 @@ spec:
           annotations:
             summary: "Prometheus storage is 80% full"
             description: "PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full"
-        
+
         - alert: PrometheusStorageCritical
           expr: |
             (kubelet_volume_stats_used_bytes{
@@ -373,6 +373,6 @@ zfs set quota=100G tank/k8s/prometheus-k8s-db-prometheus-k8s-0
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

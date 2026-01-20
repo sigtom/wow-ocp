@@ -161,7 +161,7 @@ network_profiles:
       - "Development environments"
       - "General purpose workloads"
     default: true  # Default network if not specified
-  
+
   # Proxmox management plane (VLAN 110 - RESTRICTED)
   proxmox-mgmt:
     bridge: vmbr0
@@ -213,7 +213,7 @@ ip_allocations:
       - ip: "172.16.100.106"
         host: "overseerr"
         description: "OpenShift ingress VIP"
-  
+
   proxmox_mgmt:
     next_available: "172.16.110.10"
     in_use:
@@ -263,17 +263,17 @@ provisioning_timeouts:
   # Clone/Create operations
   vm_clone_wait: 10
   lxc_create_wait: 20
-  
+
   # Boot operations
   vm_boot_wait: 30
   lxc_boot_wait: 15
-  
+
   # Service readiness checks
   ssh_ready_timeout: 120
   http_ready_timeout: 60
   https_ready_timeout: 120
   qemu_agent_timeout: 60
-  
+
   # API operations
   api_timeout: 30
   api_retry_count: 10
@@ -304,7 +304,7 @@ snapshot_policies:
   # No snapshots
   none:
     enabled: false
-  
+
   # Default - pre-provision snapshot only (safety net)
   default:
     pre_provision:
@@ -314,7 +314,7 @@ snapshot_policies:
       description: "Pre-provisioning snapshot"
     post_provision:
       enabled: false
-  
+
   # Standard - pre + post provision snapshots
   standard:
     pre_provision:
@@ -327,7 +327,7 @@ snapshot_policies:
       retention_hours: 168  # 7 days
       vmstate: false
       description: "Post-provisioning baseline"
-  
+
   # Production - pre + post + auto cleanup
   production:
     pre_provision:

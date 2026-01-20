@@ -2,7 +2,7 @@
 # ============================================================================
 # Sync DNS to Pi-hole v6
 # ============================================================================
-# Description: Sync local DNS records to multiple Pi-hole v6 instances via 
+# Description: Sync local DNS records to multiple Pi-hole v6 instances via
 #              the new REST API using Session ID (SID) authentication.
 #
 # AAP Usage:
@@ -18,7 +18,7 @@
   vars:
     # Target Traefik IP for all app aliases
     traefik_ip: "172.16.100.10"
-    
+
     # Credentials injected via AAP Environment Variables
     key_116: "{{ lookup('env', 'PIHOLE_KEY_116') }}"
     key_100_2: "{{ lookup('env', 'PIHOLE_KEY_100_2') }}"

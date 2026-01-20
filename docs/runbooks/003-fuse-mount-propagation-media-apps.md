@@ -1,8 +1,8 @@
 # Runbook 003: FUSE Mount Propagation Failure (Media Apps)
 
-**Frequency:** Common (when deploying new media apps or changing nodes)  
-**Impact:** High - Media apps cannot access cloud content  
-**Last Occurred:** 2025-12-31 (resolved with Sidecar Pattern)  
+**Frequency:** Common (when deploying new media apps or changing nodes)
+**Impact:** High - Media apps cannot access cloud content
+**Last Occurred:** 2025-12-31 (resolved with Sidecar Pattern)
 **MTTR:** 10-15 minutes (if sidecar pattern is used)
 
 ---
@@ -28,7 +28,7 @@ oc get pods -n media-stack -l app=sonarr -o jsonpath='{.items[0].spec.containers
 
 ## Root Cause
 
-**Technical Explanation:**  
+**Technical Explanation:**
 FUSE (Filesystem in Userspace) mounts are isolated to the mount namespace where they're created. When rclone runs in a standalone pod, its mounts are visible only within that pod's namespace. Other pods on the same node cannot see these mounts due to kernel namespace isolation.
 
 **Why Standalone Mounts Fail:**
@@ -161,7 +161,7 @@ spec:
             limits:
               cpu: 1000m
               memory: 1Gi
-        
+
         # Rclone Zurg Sidecar
         - name: rclone-zurg
           image: rclone/rclone:latest
@@ -187,7 +187,7 @@ spec:
             - name: rclone-config
               mountPath: /config
               readOnly: true
-        
+
         # Rclone TorBox Sidecar
         - name: rclone-torbox
           image: rclone/rclone:latest
@@ -210,7 +210,7 @@ spec:
             - name: rclone-config
               mountPath: /config
               readOnly: true
-      
+
       volumes:
         - name: media
           emptyDir: {}  # Shared parent mount
@@ -409,6 +409,6 @@ resources:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

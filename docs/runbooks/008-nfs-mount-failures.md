@@ -1,8 +1,8 @@
 # Runbook 008: NFS Mount Failures (TrueNAS)
 
-**Frequency:** Occasional (network issues, TrueNAS maintenance)  
-**Impact:** High - Pods cannot start, data unavailable  
-**Last Occurred:** Various (network topology changes)  
+**Frequency:** Occasional (network issues, TrueNAS maintenance)
+**Impact:** High - Pods cannot start, data unavailable
+**Last Occurred:** Various (network topology changes)
 **MTTR:** 10-30 minutes
 
 ---
@@ -497,19 +497,19 @@ echo "Testing storage network connectivity from all nodes..."
 
 for node in $(oc get nodes -l node-role.kubernetes.io/worker -o name); do
   echo "=== Testing $node ==="
-  
+
   # Test ping
   oc debug $node -- chroot /host ping -c 1 172.16.160.100 || {
     echo "ERROR: Cannot ping TrueNAS from $node"
     exit 1
   }
-  
+
   # Test NFS port
   oc debug $node -- chroot /host nc -zv 172.16.160.100 2049 || {
     echo "ERROR: Cannot reach NFS port from $node"
     exit 1
   }
-  
+
   echo "✓ $node storage network OK"
 done
 
@@ -595,6 +595,6 @@ NFS Mount Failure
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

@@ -1,8 +1,8 @@
 # Runbook 001: LVM Operator Deadlock Recovery
 
-**Frequency:** Rare (Post-failure initialization attempts)  
-**Impact:** Critical - Prevents LVM storage provisioning cluster-wide  
-**Last Occurred:** 2025-12-31  
+**Frequency:** Rare (Post-failure initialization attempts)
+**Impact:** Critical - Prevents LVM storage provisioning cluster-wide
+**Last Occurred:** 2025-12-31
 **MTTR:** 30-45 minutes
 
 ---
@@ -24,7 +24,7 @@ oc get pods -n openshift-storage | grep vg-manager
 
 ## Root Cause
 
-**Technical Explanation:**  
+**Technical Explanation:**
 When LVM operator initialization fails (power loss, operator crash, MCE deadlock), it leaves orphaned LVM metadata on nodes. The operator cannot automatically clean this up because it uses declarative reconciliation - it expects a clean slate but finds existing volume groups/thin pools that don't match the desired state.
 
 **Why It Happens:**
@@ -86,7 +86,7 @@ pvs
 **Problem Output (Deadlock):**
 ```
 # vgs
-  VG  #PV #LV #SN Attr   VSize   VFree  
+  VG  #PV #LV #SN Attr   VSize   VFree
   vg1   1   1   0 wz--n- 447.13g 447.13g
 
 # lvs
@@ -162,7 +162,7 @@ done
 **Expected Output (Success):**
 ```
 === node/wow-ocp-node2 ===
-  VG  #PV #LV #SN Attr   VSize   VFree  
+  VG  #PV #LV #SN Attr   VSize   VFree
   vg1   1   0   0 wz--n- 447.13g 447.13g
 ```
 
@@ -300,6 +300,6 @@ oc delete lvmcluster --all -n openshift-storage
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

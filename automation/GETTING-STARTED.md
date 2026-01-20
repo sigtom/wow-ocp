@@ -68,7 +68,7 @@ cat > playbooks/deploy-my-service.yaml << 'EOF'
 - name: "Deploy My Service"
   hosts: localhost
   gather_facts: false
-  
+
   vars:
     lxc_vmid: 220
     lxc_hostname: "my-service"
@@ -76,7 +76,7 @@ cat > playbooks/deploy-my-service.yaml << 'EOF'
     proxmox_node: "wow-prox1"
     size_profile: "medium"  # small, medium, large
     network_profile: "apps"  # or "proxmox-mgmt"
-  
+
   roles:
     - role: provision_lxc_generic
     - role: health_check

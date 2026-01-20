@@ -71,19 +71,19 @@ cable_mappings = [
     # MikroTik to Cisco uplinks
     ('wow-10gb-mik-sw', 'sfp-plus16', 'cisco-sg300-28', 'Port24', 'Uplink to Cisco (10G trunk)'),
     ('wow-10gb-mik-sw', 'ether1', 'cisco-sg300-28', 'Port1', 'Management uplink (1G)'),
-    
+
     # MikroTik to Node 2 (SFP1-4 → FN2210S/A1 ports 9-12)
     ('wow-10gb-mik-sw', 'sfp-plus1', 'wow-ocp-node2', 'eno1', 'Node2 Machine network'),
     ('wow-10gb-mik-sw', 'sfp-plus2', 'wow-ocp-node2', 'eno2', 'Node2 Storage network'),
     ('wow-10gb-mik-sw', 'sfp-plus3', 'wow-ocp-node2', 'eno3', 'Node2 Workload network'),
     # SFP4 likely eno4 but we don't have eno4 in Nautobot yet - skip for now
-    
+
     # MikroTik to Node 3 (SFP5-8 → FN2210S/A2 ports 9-12)
     ('wow-10gb-mik-sw', 'sfp-plus5', 'wow-ocp-node3', 'eno1', 'Node3 Machine network'),
     ('wow-10gb-mik-sw', 'sfp-plus6', 'wow-ocp-node3', 'eno2', 'Node3 Storage network'),
     ('wow-10gb-mik-sw', 'sfp-plus7', 'wow-ocp-node3', 'eno3', 'Node3 Workload network'),
     # SFP8 likely eno4 - skip for now
-    
+
     # MikroTik to TrueNAS
     ('wow-10gb-mik-sw', 'sfp-plus10', 'wow-ts01', 'eno1', 'TrueNAS Management'),
     # TrueNAS LACP ports - need to know exact interface names (eno2/3/4?)
@@ -102,7 +102,7 @@ for dev_a, intf_a, dev_b, intf_b, label in cable_mappings:
     if dev_b not in devices:
         print(f"⚠️  Device {dev_b} not found")
         continue
-    
+
     # Check if interfaces exist
     if dev_a not in device_intfs or intf_a not in device_intfs[dev_a]:
         missing_interfaces.append(f"{dev_a}/{intf_a}")
@@ -110,7 +110,7 @@ for dev_a, intf_a, dev_b, intf_b, label in cable_mappings:
     if dev_b not in device_intfs or intf_b not in device_intfs[dev_b]:
         missing_interfaces.append(f"{dev_b}/{intf_b}")
         continue
-    
+
     valid_cables.append({
         'dev_a': dev_a,
         'intf_a': intf_a,
@@ -141,7 +141,7 @@ if not DRY_RUN:
     print("\n⚙️  Creating cables in Nautobot...")
     success = 0
     failed = 0
-    
+
     for cable in valid_cables:
         # Cable data structure for Nautobot API
         data = {
@@ -153,11 +153,11 @@ if not DRY_RUN:
             'type': 'smf',  # Single-mode fiber (10G SFP+)
             'status': active_status
         }
-        
+
         # Override type for copper connections
         if 'ether1' in cable['intf_a'] or 'Port1' in cable['intf_b']:
             data['type'] = 'cat6'  # 1G copper
-        
+
         try:
             resp = requests.post(
                 f"{NAUTOBOT_URL}/dcim/cables/",
@@ -165,7 +165,7 @@ if not DRY_RUN:
                 json=data,
                 verify=True
             )
-            
+
             if resp.status_code == 201:
                 print(f"  ✅ {cable['dev_a']}/{cable['intf_a']} ↔ {cable['dev_b']}/{cable['intf_b']}")
                 success += 1
@@ -175,7 +175,7 @@ if not DRY_RUN:
         except Exception as e:
             print(f"  ❌ Error: {e}")
             failed += 1
-    
+
     print(f"\n✅ Complete: {success} cables created, {failed} failed")
 else:
     print("\n💡 Run without --dry-run to create cables")

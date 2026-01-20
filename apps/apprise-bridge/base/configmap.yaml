@@ -17,25 +17,25 @@ data:
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data.decode('utf-8'))
-            
+
             for alert in data.get('alerts', []):
                 status = alert.get('status', 'unknown').upper()
                 name = alert.get('labels', {}).get('alertname', 'Unknown Alert')
                 summary = alert.get('annotations', {}).get('summary', 'No summary')
-                
+
                 payload = {
                     'urls': SLACK_URL,
                     'title': f"OCP Alert: {name}",
                     'body': f"[{status}] {name}\n{summary}"
                 }
-                
+
                 req = urllib.request.Request(APPRISE_URL, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
                 try:
                     with urllib.request.urlopen(req) as f:
                         pass
                 except Exception as e:
                     print(f"Error sending to Apprise: {e}")
-                    
+
             self.send_response(204)
             self.end_headers()
 

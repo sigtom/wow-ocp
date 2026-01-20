@@ -77,6 +77,3 @@ all:
             - nautobot
             - postgresql
             - redis
-
-    
-

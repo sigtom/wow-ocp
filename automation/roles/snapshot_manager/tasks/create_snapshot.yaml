@@ -7,7 +7,7 @@
       ansible.builtin.set_fact:
         final_snapshot_name: "{{ snapshot_name }}"
         final_snapshot_description: "{{ snapshot_description }}"
-    
+
     - name: Create VM snapshot via Proxmox API
       ansible.builtin.uri:
         url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/snapshot"
@@ -23,30 +23,30 @@
         status_code: [200, 500]
       register: snapshot_create
       delegate_to: localhost
-    
+
     - name: Check if snapshot creation succeeded
       ansible.builtin.fail:
         msg: "Snapshot creation failed: {{ snapshot_create.json.data if snapshot_create.status == 500 else 'Unknown error' }}"
       when: snapshot_create.status != 200
-    
+
     - name: Record successful snapshot creation
       ansible.builtin.set_fact:
         snapshot_operations_completed: "{{ snapshot_operations_completed + ['Created VM snapshot: ' + final_snapshot_name] }}"
-    
+
     - name: Display snapshot creation result
       ansible.builtin.debug:
         msg: "✅ VM snapshot created: {{ final_snapshot_name }}"
       when: snapshot_verbose
-  
+
   rescue:
     - name: Record snapshot creation failure
       ansible.builtin.set_fact:
         snapshot_operations_failed: "{{ snapshot_operations_failed + ['VM snapshot creation failed'] }}"
-    
+
     - name: Display failure
       ansible.builtin.debug:
         msg: "❌ VM snapshot creation failed"
-  
+
   when: not is_lxc
 
 - name: Create snapshot for LXC
@@ -55,7 +55,7 @@
       ansible.builtin.set_fact:
         final_snapshot_name: "{{ snapshot_name }}"
         final_snapshot_description: "{{ snapshot_description }}"
-    
+
     - name: Create LXC snapshot via Proxmox API
       ansible.builtin.uri:
         url: "https://{{ hostvars[proxmox_node].ansible_host }}:8006/api2/json/nodes/{{ proxmox_node }}/lxc/{{ vmid }}/snapshot"
@@ -70,28 +70,28 @@
         status_code: [200, 500]
       register: snapshot_create
       delegate_to: localhost
-    
+
     - name: Check if snapshot creation succeeded
       ansible.builtin.fail:
         msg: "Snapshot creation failed: {{ snapshot_create.json.data if snapshot_create.status == 500 else 'Unknown error' }}"
       when: snapshot_create.status != 200
-    
+
     - name: Record successful snapshot creation
       ansible.builtin.set_fact:
         snapshot_operations_completed: "{{ snapshot_operations_completed + ['Created LXC snapshot: ' + final_snapshot_name] }}"
-    
+
     - name: Display snapshot creation result
       ansible.builtin.debug:
         msg: "✅ LXC snapshot created: {{ final_snapshot_name }}"
       when: snapshot_verbose
-  
+
   rescue:
     - name: Record snapshot creation failure
       ansible.builtin.set_fact:
         snapshot_operations_failed: "{{ snapshot_operations_failed + ['LXC snapshot creation failed'] }}"
-    
+
     - name: Display failure
       ansible.builtin.debug:
         msg: "❌ LXC snapshot creation failed"
-  
+
   when: is_lxc

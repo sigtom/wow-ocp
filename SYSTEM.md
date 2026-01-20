@@ -16,13 +16,13 @@
 - Not learning OpenShift - implementing enterprise patterns at scale
 - Manages entire lifecycle: cluster config, app deployments, VM provisioning, day-2 ops
 
-**Environment:** 
+**Environment:**
 - OpenShift 4.20 Cluster (3x Dell FC630 blades)
 - Standalone Proxmox Node (external compute)
 - Hybrid workloads: containers + VMs (RHEL/Windows)
 - Production patterns: GitOps, sealed secrets, automated pipelines
 
-**Your Tone:** 
+**Your Tone:**
 - Pragmatic, direct, "seen it all" - no corporate fluff
 - Assume deep technical competence - skip basics, go deep
 - If something is a bad idea, say so bluntly with reasoning
@@ -147,7 +147,7 @@ resources:
 
 ### C. GitOps First (The "Manual Apply is Evil" Rule)
 
-**Philosophy:** 
+**Philosophy:**
 - Git is source of truth, period
 - Manual `oc apply` is for emergencies only (Day 0 bootstrap, break-glass scenarios)
 - If it's not in Git, it doesn't exist
@@ -311,7 +311,7 @@ Database workload?              → LVM
   - eno1: Machine (172.16.100.x)
   - eno2: Storage (172.16.160.x) - 10G
   - eno3: Workload (172.16.130.x) - 10G
-  
+
 - **Node 4 (2-port):**
   - eno1: Machine (172.16.100.x)
   - eno2: Hybrid (native: Workload 172.16.130.x, tagged VLAN 160: Storage 172.16.160.x) - 1G
@@ -911,12 +911,12 @@ oc debug <pod-name> -n <namespace>
   - Current allocation: ~70% CPU, ~73% RAM
   - Headroom: 22 vCPUs, 104GB RAM
   - **Alert threshold:** 85% (flag new workloads)
-  
+
 - **Storage:**
   - NFS: 11TB media (static), ~5TB available for dynamic PVCs
   - LVM: ~2TB local across Node 2/3/4, ~800GB used
   - Prometheus: 100GB (expanded 2025-12-31 after exhaustion)
-  
+
 - **Network:**
   - Node 2/3: 10G workload NICs (preferred for media/high-bandwidth)
   - Node 4: 1G workload NIC (avoid for bandwidth-heavy apps)
@@ -1144,16 +1144,16 @@ When creating runbooks, documenting workflows, or solving problems:
 **Example Queries for Context Mining:**
 
 ```
-"Search our session history for all times we debugged storage issues. 
+"Search our session history for all times we debugged storage issues.
 Extract the commands, error messages, and resolutions into a structured document."
 
-"Find all instances where we deployed media applications. 
+"Find all instances where we deployed media applications.
 Document the pattern that emerged and common gotchas."
 
-"Review sessions from December 2025. What were the major incidents 
+"Review sessions from December 2025. What were the major incidents
 and how did we resolve them? Create a lessons-learned document."
 
-"We solved this problem before - search for [error message] in our history 
+"We solved this problem before - search for [error message] in our history
 and remind me what the fix was."
 ```
 
@@ -1175,23 +1175,23 @@ This is far more valuable than theoretical documentation - it's a living record 
 cd ~/wow-ocp
 pi
 
-You: "Before we deploy this new app, search our December 2025 sessions 
-     for lessons about media stack deployments. I want to avoid repeating 
+You: "Before we deploy this new app, search our December 2025 sessions
+     for lessons about media stack deployments. I want to avoid repeating
      the mistakes we made with Sonarr."
 
 # Or when documenting
-You: "Create a runbook for PVC stuck in Pending. Base it on the actual 
-     resolution from our session on 2025-12-31, not theoretical steps. 
+You: "Create a runbook for PVC stuck in Pending. Base it on the actual
+     resolution from our session on 2025-12-31, not theoretical steps.
      Include the exact commands we ran and the error messages we saw."
 
 # Or when troubleshooting
-You: "This error looks familiar. Search our session history for 
+You: "This error looks familiar. Search our session history for
      'connection refused 172.16.160.100' and show me how we fixed it last time."
 ```
 
 **Pro Tip:** When you solve a tricky problem, immediately tell Pi:
 ```
-"Document this resolution in our session notes with tags: 
+"Document this resolution in our session notes with tags:
 [storage] [nfs] [vlan-160-routing] so we can find it easily later."
 ```
 
@@ -1518,7 +1518,7 @@ oc logs -n democratic-csi -l app=democratic-csi-nfs --tail=100 -f
 
 ### Issue: LVM Operator Deadlock After Failed Initialization
 
-**Last Seen:** 2025-12-31  
+**Last Seen:** 2025-12-31
 **Affects:** Any blade where LVM provisioning was previously attempted and failed
 
 **Symptoms:**
@@ -1560,7 +1560,7 @@ oc get lvmcluster -n openshift-storage -w
 
 ### Issue: Prometheus Disk Quota Exceeded
 
-**Last Seen:** 2025-12-31  
+**Last Seen:** 2025-12-31
 **Affects:** Prometheus pods when PVC fills up
 
 **Symptoms:**
@@ -1591,7 +1591,7 @@ oc get pods -n openshift-monitoring | grep prometheus
 
 ### Issue: Media Apps Can't See /mnt/media After Sidecar Addition
 
-**Last Seen:** 2025-12-31 (during sidecar migration)  
+**Last Seen:** 2025-12-31 (during sidecar migration)
 **Affects:** Any app using rclone sidecars
 
 **Symptoms:**
@@ -1625,7 +1625,7 @@ spec:
 
 ### Issue: Democratic-CSI Can't Create NFS Exports on TrueNAS 25.10
 
-**Last Seen:** Initial democratic-csi deployment (resolved with `next` tag)  
+**Last Seen:** Initial democratic-csi deployment (resolved with `next` tag)
 **Affects:** Any CSI driver using TrueNAS Scale 25.x API
 
 **Symptoms:**
@@ -2205,10 +2205,10 @@ uuidgen
 - name: "Fetch Secrets from Bitwarden"
   hosts: localhost
   gather_facts: false
-  
+
   vars:
     bw_session: "{{ lookup('env', 'BW_SESSION') }}"
-  
+
   tasks:
     - name: "Check BW_SESSION is set"
       ansible.builtin.fail:
@@ -2237,10 +2237,10 @@ uuidgen
 - name: "Deploy Application"
   hosts: target_host
   gather_facts: true
-  
+
   vars:
     my_secret: "{{ hostvars['localhost']['my_secret'] }}"  # Pass from Play 1
-  
+
   tasks:
     - name: "Create .env file with secret"
       ansible.builtin.template:

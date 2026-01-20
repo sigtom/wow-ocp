@@ -25,7 +25,7 @@
         update_cache: yes
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Install Docker prerequisites (RedHat/Fedora)
       ansible.builtin.dnf:
         name:
@@ -33,7 +33,7 @@
         state: present
       become: yes
       when: ansible_facts['os_family'] == "RedHat"
-    
+
     - name: Create keyrings directory
       ansible.builtin.file:
         path: /etc/apt/keyrings
@@ -41,7 +41,7 @@
         mode: '0755'
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Add Docker GPG key (Ubuntu/Debian)
       ansible.builtin.shell: |
         curl -fsSL https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -50,7 +50,7 @@
         creates: /etc/apt/keyrings/docker.gpg
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Add Docker repository (Ubuntu/Debian)
       ansible.builtin.apt_repository:
         repo: "deb [arch={{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else ansible_facts['architecture'] }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }} {{ ansible_facts['distribution_release'] }} stable"
@@ -58,7 +58,7 @@
         filename: docker
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Add Docker repository (Fedora)
       ansible.builtin.shell: |
         dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
@@ -66,7 +66,7 @@
         creates: /etc/yum.repos.d/docker-ce.repo
       become: yes
       when: ansible_facts['distribution'] == "Fedora"
-    
+
     - name: Install Docker Engine (Debian/Ubuntu)
       ansible.builtin.apt:
         name:
@@ -79,7 +79,7 @@
         update_cache: yes
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Install Docker Engine (Fedora)
       ansible.builtin.dnf:
         name:
@@ -91,11 +91,11 @@
         state: present
       become: yes
       when: ansible_facts['distribution'] == "Fedora"
-    
+
     - name: Record Docker installation
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker Engine installed'] }}"
-  
+
   when: docker_check.rc != 0 or post_provision_force_reinstall
   rescue:
     - name: Record Docker installation failure
@@ -116,7 +116,7 @@
         mode: '0644'
       become: yes
       register: docker_daemon_config_result
-    
+
     - name: Reload Docker daemon if config changed
       ansible.builtin.systemd:
         name: docker
@@ -124,7 +124,7 @@
         daemon_reload: yes
       become: yes
       when: docker_daemon_config_result.changed
-    
+
     - name: Record Docker daemon configuration
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker daemon configured'] }}"
@@ -141,7 +141,7 @@
         state: started
         enabled: yes
       become: yes
-    
+
     - name: Record Docker service status
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker service started and enabled'] }}"
@@ -158,11 +158,11 @@
         groups: docker
         append: yes
       become: yes
-    
+
     - name: Record user group addition
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['User added to docker group'] }}"
-    
+
     - name: Display group change notice
       ansible.builtin.debug:
         msg: "⚠️  User {{ ansible_user }} added to docker group - may need to re-login for group to take effect"
@@ -177,22 +177,22 @@
       ansible.builtin.command: docker --version
       register: docker_version
       changed_when: false
-    
+
     - name: Get Docker Compose version
       ansible.builtin.command: docker compose version
       register: docker_compose_version
       changed_when: false
-    
+
     - name: Test Docker functionality
       ansible.builtin.command: docker run --rm hello-world
       register: docker_test
       changed_when: false
       become: yes
-    
+
     - name: Record Docker verification
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Docker verification passed'] }}"
-    
+
     - name: Display Docker versions
       ansible.builtin.debug:
         msg:

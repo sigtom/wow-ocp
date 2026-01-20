@@ -151,8 +151,8 @@ Secrets are accessed via Ansible's native Bitwarden lookup plugin:
 # In playbooks
 vars:
   bw_session: "{{ lookup('env', 'BW_SESSION') }}"
-  db_password: "{{ lookup('community.general.bitwarden', 
-                         'nautobot-db-password', 
+  db_password: "{{ lookup('community.general.bitwarden',
+                         'nautobot-db-password',
                          field='password',
                          bw_session=bw_session) }}"
 ```
@@ -318,32 +318,32 @@ When adding new playbooks or roles:
 ## 🌐 Deployed Services
 
 ### Traefik Reverse Proxy
-**LXC:** 210 @ 172.16.100.10  
-**Purpose:** Centralized reverse proxy with automatic SSL  
-**Domains:** *.sigtom.dev, *.sigtom.com, *.sigtom.io, *.nixsysadmin.io, *.tecnixsystems.com, *.sigtom.info, *.sigtomtech.com  
-**Dashboard:** https://traefik.sigtom.dev (BasicAuth)  
+**LXC:** 210 @ 172.16.100.10
+**Purpose:** Centralized reverse proxy with automatic SSL
+**Domains:** *.sigtom.dev, *.sigtom.com, *.sigtom.io, *.nixsysadmin.io, *.tecnixsystems.com, *.sigtom.info, *.sigtomtech.com
+**Dashboard:** https://traefik.sigtom.dev (BasicAuth)
 **Docs:** [TRAEFIK.md](./TRAEFIK.md)
 
 ### Nautobot IPAM/DCIM
-**LXC:** 215 @ 172.16.100.15  
-**Purpose:** Network source of truth and IP address management  
-**URL:** https://ipmgmt.sigtom.dev  
-**Playbooks:** `deploy-nautobot-app.yaml`, `nautobot-create-superuser.yaml`  
-**Stack:** Nautobot + PostgreSQL 15 + Redis 7  
+**LXC:** 215 @ 172.16.100.15
+**Purpose:** Network source of truth and IP address management
+**URL:** https://ipmgmt.sigtom.dev
+**Playbooks:** `deploy-nautobot-app.yaml`, `nautobot-create-superuser.yaml`
+**Stack:** Nautobot + PostgreSQL 15 + Redis 7
 **Secrets:** Managed via Bitwarden (NAUTOBOT_SECRET_KEY, NAUTOBOT_DB_PASSWORD, NAUTOBOT_SUPERUSER_PASSWORD, NAUTOBOT_SUPERUSER_API_TOKEN)
 
 ### Technitium DNS (HA Cluster)
-**Primary:** OpenShift VM @ 172.16.130.210  
-**Secondary:** Proxmox VM @ 172.16.110.211  
-**Purpose:** Authoritative DNS with ad-blocking  
-**Dashboard:** https://dns.sigtom.dev  
+**Primary:** OpenShift VM @ 172.16.130.210
+**Secondary:** Proxmox VM @ 172.16.110.211
+**Purpose:** Authoritative DNS with ad-blocking
+**Dashboard:** https://dns.sigtom.dev
 **Integration:** User Workload Monitoring with Prometheus + Grafana
 
 ### Vaultwarden
-**LXC:** 105 @ 172.16.110.105 (Proxmox, not OpenShift)  
-**Purpose:** Self-hosted password manager (Bitwarden-compatible)  
-**URL:** https://vault.sigtomtech.com  
-**Stack:** Vaultwarden + Caddy (standalone TLS)  
+**LXC:** 105 @ 172.16.110.105 (Proxmox, not OpenShift)
+**Purpose:** Self-hosted password manager (Bitwarden-compatible)
+**URL:** https://vault.sigtomtech.com
+**Stack:** Vaultwarden + Caddy (standalone TLS)
 **Docs:** [VAULTWARDEN.md](./VAULTWARDEN.md)
 
 ## 📖 Additional Documentation

@@ -9,7 +9,7 @@
       - lxc_tshirt_sizes is defined
     fail_msg: |
       Critical error: lxc_templates and lxc_tshirt_sizes not defined!
-      
+
       These should be loaded from group_vars/all.yml
       Check that the file exists and is valid YAML.
     success_msg: "Template registry loaded"
@@ -26,14 +26,14 @@
       - inventory_hostname is defined
     fail_msg: |
       Missing required variables for LXC provisioning!
-      
+
       Required:
         - os_type: Must be one of {{ lxc_templates.keys() | list }}
         - tshirt_size: Must be one of {{ lxc_tshirt_sizes.keys() | list }}
         - vmid: Proxmox container ID (e.g., 350)
         - proxmox_node: Proxmox node name (e.g., wow-prox1)
         - inventory_hostname: Container hostname
-      
+
       Current values:
         os_type: {{ os_type | default('NOT SET') }}
         tshirt_size: {{ tshirt_size | default('NOT SET') }}
@@ -47,7 +47,7 @@
       - ansible_host is defined
     fail_msg: |
       Static network mode requires ansible_host to be defined in inventory!
-      
+
       Either:
         1. Set ansible_host in inventory, OR
         2. Set network_mode: dhcp (IP will be discovered after boot)
@@ -103,15 +103,15 @@
   ansible.builtin.fail:
     msg: |
       ⚠️  SAFETY CHECK FAILED ⚠️
-      
+
       LXC container with CTID {{ vmid }} already exists on {{ proxmox_node }}!
-      
+
       This role is designed to provision NEW containers only.
       To manage existing containers, use a different approach.
-      
+
       If you really want to proceed (dangerous!), set:
         skip_existing_check: true
-      
+
       Current container status: {{ lxc_check.json.data.status if lxc_check.status == 200 else 'unknown' }}
   when:
     - not skip_existing_check
@@ -170,7 +170,7 @@
       {% for mp in lxc_mount_points | default([]) %}
       --mp{{ loop.index0 }} {{ mp }} \
       {% endfor %}
-    
+
     rm /tmp/lxc_keys_{{ vmid }}.pub
     REMOTE
   delegate_to: localhost

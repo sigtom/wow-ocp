@@ -11,20 +11,20 @@
     # Authenticate using the admin password injected via env var
     controller_username: "admin"
     controller_password: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
-    
+
     # Configuration Data
     aap_organization: "Default"
-    
+
     # Secrets injected from K8s Secret
     proxmox_url: "https://172.16.110.101:8006"
     proxmox_user: "{{ lookup('env', 'PROXMOX_USER') | default('sre-bot@pve') }}"
     proxmox_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') | default('sre-token') }}"
     proxmox_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
-    
+
     cloudflare_token: "{{ lookup('env', 'CLOUDFLARE_TOKEN') }}"
-    
+
     ssh_private_key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
-    
+
     # DUMB Debrid secrets (injected from dumb-secrets K8s Secret)
     realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
     torbox_api_key: "{{ lookup('env', 'TORBOX_API_KEY') }}"
@@ -33,12 +33,12 @@
     overseerr_api_key: "{{ lookup('env', 'OVERSEERR_API_KEY') }}"
     dumb_postgres_password: "{{ lookup('env', 'DUMB_POSTGRES_PASSWORD') }}"
     dumb_pgadmin_password: "{{ lookup('env', 'DUMB_PGADMIN_PASSWORD') }}"
-    
+
     # Arr API keys (injected from media-arr-secrets K8s Secret)
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
     radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
     prowlarr_api_key: "{{ lookup('env', 'PROWLARR_API_KEY') }}"
-    
+
     # Image we just built
     ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
 
@@ -495,7 +495,7 @@
     # -------------------------------------------------------
     # 7. Modular Job Templates for Workflow
     # -------------------------------------------------------
-    
+
     - name: Create Validate IP Job Template
       ansible.controller.job_template:
         name: "Validate IP"
@@ -571,7 +571,7 @@
     # -------------------------------------------------------
     # 8. Workflow Templates
     # -------------------------------------------------------
-    
+
     - name: Create Provision Media Docker LXC Workflow
       ansible.controller.workflow_job_template:
         name: "Provision Media Docker LXC"

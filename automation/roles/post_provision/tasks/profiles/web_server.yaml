@@ -19,7 +19,7 @@
         update_cache: yes
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Install nginx and certbot (Fedora)
       ansible.builtin.dnf:
         name:
@@ -29,7 +29,7 @@
         state: present
       become: yes
       when: ansible_facts['distribution'] == "Fedora"
-    
+
     - name: Record nginx installation
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Nginx and certbot installed'] }}"
@@ -46,34 +46,34 @@
         state: present
       become: yes
       when: ansible_facts['os_family'] == "Debian"
-    
+
     - name: Allow SSH
       community.general.ufw:
         rule: allow
         port: '22'
         proto: tcp
       become: yes
-    
+
     - name: Allow HTTP
       community.general.ufw:
         rule: allow
         port: '80'
         proto: tcp
       become: yes
-    
+
     - name: Allow HTTPS
       community.general.ufw:
         rule: allow
         port: '443'
         proto: tcp
       become: yes
-    
+
     - name: Enable UFW
       community.general.ufw:
         state: enabled
         policy: deny
       become: yes
-    
+
     - name: Record firewall configuration
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['UFW firewall configured'] }}"
@@ -90,7 +90,7 @@
         state: started
         enabled: yes
       become: yes
-    
+
     - name: Record nginx service status
       ansible.builtin.set_fact:
         post_provision_tasks_completed: "{{ post_provision_tasks_completed + ['Nginx service started'] }}"

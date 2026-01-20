@@ -62,29 +62,29 @@ mappings = [
     ('172.16.110.1', 'pfSense', 'em1.110'),
     ('172.16.130.1', 'pfSense', 'em1.130'),
     ('172.16.160.1', 'pfSense', 'em1.160'),
-    
+
     # Mikrotik
     ('172.16.100.50', 'wow-10gb-mik-sw', 'ether1'),
-    
+
     # Proxmox
     ('172.16.110.101', 'wow-prox1', 'eno1'),
     ('172.16.160.101', 'wow-prox1', 'eno2'),
-    
+
     # OpenShift Node 2
     ('172.16.100.102', 'wow-ocp-node2', 'eno1'),
     ('172.16.160.102', 'wow-ocp-node2', 'eno2'),
     ('172.16.130.102', 'wow-ocp-node2', 'eno3'),
-    
+
     # OpenShift Node 3
     ('172.16.100.103', 'wow-ocp-node3', 'eno1'),
     ('172.16.160.103', 'wow-ocp-node3', 'eno2'),
     ('172.16.130.103', 'wow-ocp-node3', 'eno3'),
-    
+
     # OpenShift Node 4
     ('172.16.100.104', 'wow-ocp-node4', 'eno1'),
     ('172.16.160.104', 'wow-ocp-node4', 'eno2'),
     ('172.16.130.104', 'wow-ocp-node4', 'eno2'),  # VLAN 130 on eno2 (hybrid port)
-    
+
     # TrueNAS
     ('172.16.110.100', 'wow-ts01', 'eno1'),
     ('172.16.160.100', 'wow-ts01', 'eno2'),
@@ -102,15 +102,15 @@ for ip_addr, dev_name, intf_name in mappings:
     if ip_addr not in ip_lookup:
         print(f"⚠️  IP {ip_addr} not found in Nautobot")
         continue
-    
+
     if dev_name not in device_interfaces:
         print(f"⚠️  Device {dev_name} not found")
         continue
-    
+
     if intf_name not in device_interfaces[dev_name]:
         print(f"⚠️  Interface {dev_name}/{intf_name} not found")
         continue
-    
+
     assignments.append({
         'ip_addr': ip_addr,
         'ip_id': ip_lookup[ip_addr],
@@ -141,13 +141,13 @@ if not DRY_RUN:
     success = 0
     failed = 0
     skipped = 0
-    
+
     for a in assignments:
         data = {
             'ip_address': a['ip_id'],
             'interface': a['intf_id']
         }
-        
+
         try:
             resp = requests.post(
                 f"{NAUTOBOT_URL}/ipam/ip-address-to-interface/",
@@ -155,7 +155,7 @@ if not DRY_RUN:
                 json=data,
                 verify=True
             )
-            
+
             if resp.status_code == 201:
                 print(f"  ✅ {a['ip_addr']} → {a['dev_name']}/{a['intf_name']}")
                 success += 1
@@ -168,7 +168,7 @@ if not DRY_RUN:
         except Exception as e:
             print(f"  ❌ {a['ip_addr']}: {e}")
             failed += 1
-    
+
     print(f"\n✅ Complete: {success} assigned, {skipped} skipped, {failed} failed")
 else:
     print("\n💡 Run without --dry-run to apply changes")

@@ -17,7 +17,7 @@
 
   vars:
     target_ip: "{{ lxc_ip | default('172.16.100.20') }}"
-    
+
     # -------------------------------------------------------
     # Custom Format Definitions (Trash Guides Logic)
     # -------------------------------------------------------
@@ -29,9 +29,9 @@
             implementation: "ReleaseTitleSpecification"
             negate: false
             required: false
-            fields: 
+            fields:
               - { "name": "value", "value": "\\b(x265|hevc)\\b" }
-      
+
       - name: "Remux"
         includeCustomFormatWhenRenaming: true
         specifications:
@@ -39,7 +39,7 @@
             implementation: "ReleaseTitleSpecification"
             negate: false
             required: false
-            fields: 
+            fields:
               - { "name": "value", "value": "\\b(remux)\\b" }
 
   tasks:
@@ -100,7 +100,7 @@
                     'formatItems': [
                       {'format': remux_id, 'name': 'Remux', 'score': 1000},
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-                    ], 
+                    ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
                     'cutoff': 31,
@@ -133,7 +133,7 @@
                     'formatItems': [
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
                       {'format': remux_id, 'name': 'Remux', 'score': 0}
-                    ], 
+                    ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
                     'cutoff': 7,
@@ -203,7 +203,7 @@
                     'formatItems': [
                       {'format': remux_id, 'name': 'Remux', 'score': 1000},
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
-                    ], 
+                    ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
                     'cutoff': 21,
@@ -236,7 +236,7 @@
                     'formatItems': [
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 1000},
                       {'format': remux_id, 'name': 'Remux', 'score': 0}
-                    ], 
+                    ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
                     'cutoff': 7,

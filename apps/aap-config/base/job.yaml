@@ -17,7 +17,7 @@ spec:
             - |
               set -e
               export HOME=/tmp
-              
+
               # Fix UID lookup for OpenShift
               if ! whoami &> /dev/null; then
                 if [ -w /etc/passwd ]; then
@@ -26,26 +26,26 @@ spec:
                   echo "WARNING: /etc/passwd is not writable, git might fail."
                 fi
               fi
-              
+
               echo "----------------------------------------"
               echo "AAP Seeder Job Starting (User: $(whoami))"
               echo "----------------------------------------"
-              
+
               echo "1. Configuring SSH..."
               mkdir -p ~/.ssh
               echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
               chmod 600 ~/.ssh/id_rsa
               ssh-keyscan github.com >> ~/.ssh/known_hosts
-              
+
               export GIT_SSH_COMMAND='ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
-              
+
               echo "2. Cloning Repository..."
               rm -rf /tmp/repo
               # Verify connectivity first
               ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts -T git@github.com || true
-              
+
               git clone git@github.com:sigtom/wow-ocp.git /tmp/repo
-              
+
               echo "3. Running Configuration Playbook..."
               cd /tmp/repo
               ansible-playbook automation/aap-config/setup-aap.yml -v

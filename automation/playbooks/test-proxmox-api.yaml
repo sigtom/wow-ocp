@@ -3,10 +3,10 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  
+
   vars:
     proxmox_node: "wow-prox1"
-    
+
     # Credentials from Env (injected by AAP)
     pve_api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
     pve_api_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"

@@ -1,8 +1,8 @@
 # Runbook 005: Cert-Manager Certificate Issuance Failures
 
-**Frequency:** Occasional (new apps, DNS changes, API token rotation)  
-**Impact:** Medium - Apps unreachable via HTTPS (HTTP still works)  
-**Last Occurred:** 2025-12-23 (during wildcard cert deployment)  
+**Frequency:** Occasional (new apps, DNS changes, API token rotation)
+**Impact:** Medium - Apps unreachable via HTTPS (HTTP still works)
+**Last Occurred:** 2025-12-23 (during wildcard cert deployment)
 **MTTR:** 10-30 minutes
 
 ---
@@ -444,7 +444,7 @@ spec:
           annotations:
             summary: "Certificate expiring in <21 days"
             description: "Certificate {{ $labels.name }} in {{ $labels.namespace }} expires in {{ $value | humanizeDuration }}"
-        
+
         - alert: CertificateNotReady
           expr: |
             certmanager_certificate_ready_status{condition="False"} > 0
@@ -543,6 +543,6 @@ oc delete certificate <cert-name> -n <namespace>
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team

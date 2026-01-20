@@ -192,10 +192,10 @@ spec:
     bitwarden:
       # Point to your Bitwarden instance
       url: https://vault.sigtom.dev
-      
+
       # CLI path in the operator pod
       cliPath: /usr/local/bin/bw
-      
+
       # Reference to the session secret
       auth:
         secretRef:
@@ -225,17 +225,17 @@ metadata:
 spec:
   # Refresh from Bitwarden every hour
   refreshInterval: 1h
-  
+
   # Use the cluster-wide Bitwarden store
   secretStoreRef:
     name: bitwarden-store
     kind: ClusterSecretStore
-  
+
   # Create a Kubernetes Secret with this name
   target:
     name: plex-token
     creationPolicy: Owner
-  
+
   # Map Bitwarden items to Secret keys
   data:
     - secretKey: PLEX_CLAIM
@@ -263,15 +263,15 @@ spec:
     - secretKey: DB_PASSWORD
       remoteRef:
         key: nautobot-db-password
-    
+
     - secretKey: REDIS_PASSWORD
       remoteRef:
         key: nautobot-redis-password
-    
+
     - secretKey: SECRET_KEY
       remoteRef:
         key: nautobot-secret-key
-    
+
     - secretKey: ADMIN_PASSWORD
       remoteRef:
         key: nautobot-admin-password
@@ -298,12 +298,12 @@ spec:
       remoteRef:
         key: torbox-username
         property: login.username  # Access username field
-    
+
     # Get password field (default)
     - secretKey: TORBOX_PASSWORD
       remoteRef:
         key: torbox-password
-    
+
     # Get API key from notes field
     - secretKey: TORBOX_API_KEY
       remoteRef:
@@ -480,7 +480,7 @@ spec:
             - |
               # Login and get new session
               export BW_SESSION=$(bw login --apikey --raw)
-              
+
               # Update the secret
               oc patch secret bitwarden-cli \
                 -n external-secrets \

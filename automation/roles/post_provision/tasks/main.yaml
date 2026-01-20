@@ -27,7 +27,7 @@
       - post_provisioning_profile in ['none', 'docker_host', 'web_server', 'database']
     fail_msg: |
       Invalid post-provisioning profile: {{ post_provisioning_profile | default('NOT SET') }}
-      
+
       Available profiles: none, docker_host, web_server, database
     success_msg: "Post-provisioning profile '{{ post_provisioning_profile }}' validated"
 
@@ -43,18 +43,18 @@
 - name: Display post-provisioning summary
   ansible.builtin.debug:
     msg: |
-      
+
       ==========================================
       Post-Provisioning Summary
       ==========================================
       Target: {{ inventory_hostname }}
       Profile: {{ post_provisioning_profile }}
-      
+
       Results:
         ✅ Completed: {{ post_provision_tasks_completed | length }}
         ⏭️  Skipped: {{ post_provision_tasks_skipped | length }}
         ❌ Failed: {{ post_provision_tasks_failed | length }}
-      
+
       {% if post_provision_tasks_completed | length > 0 %}
       Completed tasks:
       {% for task in post_provision_tasks_completed %}
@@ -74,7 +74,7 @@
       {% endfor %}
       {% endif %}
       ==========================================
-  when: 
+  when:
     - post_provision_summary
     - post_provisioning_profile != 'none'
 
@@ -82,7 +82,7 @@
   ansible.builtin.fail:
     msg: |
       ❌ Post-provisioning FAILED!
-      
+
       {{ post_provision_tasks_failed | length }} task(s) failed:
       {% for task in post_provision_tasks_failed %}
         - {{ task }}

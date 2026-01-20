@@ -1,8 +1,8 @@
 # Runbook 006: ArgoCD Application Sync Failures
 
-**Frequency:** Common (after Git commits, manifest changes)  
-**Impact:** Medium-High - Blocks deployment updates  
-**Last Occurred:** Ongoing (routine operations)  
+**Frequency:** Common (after Git commits, manifest changes)
+**Impact:** Medium-High - Blocks deployment updates
+**Last Occurred:** Ongoing (routine operations)
 **MTTR:** 5-30 minutes
 
 ---
@@ -137,7 +137,7 @@ oc apply -f <manifest>.yaml --dry-run=server
 kustomize build apps/<app-name>/base | oc apply --dry-run=server -f -
 ```
 
-**Expected:** `created (dry run)`  
+**Expected:** `created (dry run)`
 **Problem:** Validation errors explaining what's wrong
 
 ---
@@ -578,6 +578,6 @@ spec:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2026-01-08  
+**Document Version:** 1.0
+**Last Updated:** 2026-01-08
 **Owner:** SRE Team
