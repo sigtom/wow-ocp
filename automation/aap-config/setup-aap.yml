@@ -917,14 +917,9 @@
       ansible.controller.inventory_source:
         name: "Proxmox Dynamic Sync"
         inventory: "HomeLab Inventory"
-        source: "proxmox"
-        credential: "Proxmox Production"
-        source_vars:
-          want_proctitle: true
-          group_by_node: true
-          group_by_type: true
-          hostnames:
-            - name
+        source: "scm"
+        source_path: "automation/inventory/proxmox.yml"
+        credential: "Git Read-Only"
         overwrite: true
         update_on_launch: true
         state: present
