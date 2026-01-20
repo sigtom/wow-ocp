@@ -1,0 +1,71 @@
+{
+  "url_base": "/",
+  "port": "8282",
+  "log_level": "info",
+  "debrids": [
+    {
+      "name": "torbox",
+      "api_key": "{{ torbox_api_key }}",
+      "download_api_keys": [
+        "{{ torbox_api_key }}"
+      ],
+      "folder": "/mnt/debrid/decypharr/torbox/torrents/",
+      "rate_limit": "250/minute",
+      "minimum_free_slot": 1,
+      "use_webdav": true,
+      "torrents_refresh_interval": "15s",
+      "download_links_refresh_interval": "15m",
+      "workers": 50,
+      "auto_expire_links_after": "24h",
+      "folder_naming": "original_no_ext",
+      "rc_url": "http://127.0.0.1:5572"
+    }
+  ],
+  "qbittorrent": {
+    "download_folder": "/mnt/debrid/decypharr_downloads",
+    "refresh_interval": 30
+  },
+  "arrs": [
+    {
+      "name": "sonarr:sonarr",
+      "host": "http://127.0.0.1:8989",
+      "token": "{{ sonarr_api_key }}",
+      "download_uncached": false,
+      "source": "auto"
+    },
+    {
+      "name": "radarr:radarr",
+      "host": "http://127.0.0.1:7878",
+      "token": "{{ radarr_api_key }}",
+      "download_uncached": false,
+      "source": "auto"
+    }
+  ],
+  "repair": {
+    "workers": 1,
+    "strategy": "per_torrent"
+  },
+  "webdav": {},
+  "rclone": {
+    "enabled": true,
+    "mount_path": "/mnt/debrid/decypharr",
+    "rc_port": "5572",
+    "vfs_cache_mode": "off",
+    "vfs_cache_max_age": "1h",
+    "vfs_cache_poll_interval": "1m",
+    "vfs_read_chunk_size": "128M",
+    "vfs_read_chunk_size_limit": "off",
+    "vfs_read_ahead": "128k",
+    "async_read": true,
+    "transfers": 4,
+    "uid": 1000,
+    "gid": 1000,
+    "attr_timeout": "1s",
+    "dir_cache_time": "5m",
+    "log_level": "INFO"
+  },
+  "allowed_file_types": [
+    "3gp", "ac3", "aiff", "alac", "amr", "ape", "asf", "asx", "avc", "avi", "bin", "bivx", "dat", "divx", "dts", "dv", "dvr-ms", "flac", "fli", "flv", "ifo", "m2ts", "m2v", "m3u", "m4a", "m4p", "m4v", "mid", "midi", "mk3d", "mka", "mkv", "mov", "mp2", "mp3", "mp4", "mpa", "mpeg", "mpg", "nrg", "nsv", "nuv", "ogg", "ogm", "ogv", "pva", "qt", "ra", "rm", "rmvb", "strm", "svq3", "ts", "ty", "viv", "vob", "voc", "vp3", "wav", "webm", "wma", "wmv", "wpl", "wtv", "wv", "xvid"
+  ],
+  "use_auth": true
+}

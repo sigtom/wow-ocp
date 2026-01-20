@@ -643,11 +643,27 @@
         - AAP is fully configured: Credentials (Proxmox, Cloudflare, Git, SSH), Project (HomeLab Ops), and EE (HomeLab EE) are present.
         - Seeder Job runs automatically on Git changes via ArgoCD Sync Hook.
     - **Documentation**: Created `docs/AAP-WORKFLOW.md` detailing the entire architecture and how to add new secrets.
-- [2026-01-14]: **SUBAGENT & SKILLS INTEGRATION - Production Readiness**
-    - **Tooling**: Installed `subagent` extension with `gemini-3-flash` (Scout) and `gemini-3-pro-high` (Planner).
-    - **Global Skills**: Promoted project skills (`openshift-debug`, `vm-provisioning`, etc.) to global scope (`~/.pi/agent/skills/`).
-    - **Issue #15 Resolved**: Used Subagent Scout to identify Ansible deprecation warnings (bare facts). Planner designed fix using `ansible_facts[]`. Merged PR #17.
-    - **Issue #16 Resolved**: Used Subagent Planner to modify `health_check` role to skip Cloud-Init checks on LXC containers. Merged PR #18.
+- [2026-01-19]: **TRAEFIK v3.6 MULTI-NODE DISCOVERY & DNS AUTOMATION - COMPLETE ✅**
+    - **DNS Automation**: 
+        - Implemented `sync-pihole-dns.yaml` leveraging Pi-hole v6 REST API with Session ID (SID) authentication.
+        - Integrated with Bitvault/ESO to securely pull Pi-hole API tokens into AAP.
+        - Successfully synced 8+ `sigtom.io` records across reachable Pi-hole instances.
+    - **Traefik Architectural Upgrade**: 
+        - Migrated to **Wildcard-First** certificate pattern (`main: "*.domain.tld"`) to resolve Cloudflare race conditions.
+        - Successfully deployed **Let's Encrypt Production** wildcard certificates for 7 TLDs (sigtom.io, sigtom.dev, nixsysadmin.io, etc.).
+        - Implemented **Hybrid Discovery Model**:
+            - Local containers (.10) via standard Docker provider.
+            - Remote containers (.20, .21) via templated File Provider (`remote-apps.yml`).
+        - Fixed Traefik v3 configuration crash caused by `[[providers.docker]]` array syntax.
+    - **Infrastructure Hardening**:
+        - Deployed modular **Docker Socket Proxies** to media LXCs for future-proof monitoring access.
+        - Fixed AAP SSH access issues on existing containers via "Surgical SSH Key Injection" task.
+    - **GitOps Stabilization**:
+        - Resolved `aap-config` application deadlock by removing transient **Sync Hooks** from the seeder job.
+        - Resolved persistent "OutOfSync" alerts by aligning ExternalSecret manifests with explicit cluster field defaults.
+    - **Service Readiness**:
+        - Manually whitelisted `sabnzbd.sigtom.io` in `sabnzbd.ini` to resolve Hostname Verification failures.
+        - Verified "Green Lock" and routing for Overseerr, Sabnzbd, qBittorrent, and Plex on the `.io` domain.
 
 - [2026-01-14]: **AAP GITOPS MIGRATION - "Cattle" Deployment Pipeline**
     - **Goal**: Move local Ansible CLI workflows (`deploy-traefik.yaml`) to fully managed AAP Job Templates via GitOps.
@@ -792,3 +808,14 @@
     - Added Overseerr as a sidecar container to the Downloaders stack.
     - Configured for port 5055.
     - Maintained isolation of DUMB stack by keeping external apps on dedicated storage LXC.
+- [2026-01-18]: **MODULAR MEDIA ARCHITECTURE IMPLEMENTED ✅**
+    - Split stack into Brain (LXC 220: Plex, Riven, Arrs) and Hands (LXC 221: Sabnzbd, qBit, Overseerr).
+    - Integrated 8TB TrueNAS archive via Proxmox Host Bind Mounts (/mnt/nas).
+    - Automated Quality Profile seeding (Cloud-Unlimited vs NAS-Archive) via AAP.
+    - Deployed Overseerr to LXC 221 as the primary discovery engine.
+
+- [2026-01-20]: **DUMB DEBRID TOKEN AUTOMATION**
+    - **Issue**: Alien Earth S01E01 failed with I/O error due to expired TorBox presigned tokens.
+    - **Fix**: Shortened `download_links_refresh_interval` to 15 minutes and `auto_expire_links_after` to 24 hours in Decypharr config.
+    - **Automation**: Templatized Decypharr `config.json` via Ansible and updated AAP Seeder to map necessary media API credentials.
+    - **Outcome**: Verified tokens are proactively rotated before expiration, resolving streaming errors.

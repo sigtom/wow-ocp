@@ -654,6 +654,7 @@
         credentials:
           - "AAP Executor SSH"
           - "DUMB Debrid Secrets"
+          - "Media Arr API Keys"
         survey_enabled: true
         survey_spec:
           name: "DUMB Deployment Parameters"
