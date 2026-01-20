@@ -897,9 +897,10 @@
               default: "lxc"
             - question_name: "Bootstrap Mode (via Proxmox Host)"
               required: true
-              type: boolean
+              type: multiplechoice
               variable: "bootstrap_mode"
-              default: true
+              choices: ["true", "false"]
+              default: "true"
             - question_name: "SSH Public Key"
               question_description: "Leave empty to use default Mac key"
               required: false
