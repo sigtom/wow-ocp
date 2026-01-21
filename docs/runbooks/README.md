@@ -25,7 +25,6 @@ This directory contains operational runbooks for the top 10 most critical and fr
 | [007](007-pod-crashloopbackoff.md) | Pod CrashLoopBackOff | Common | High | 10-45m |
 | [008](008-nfs-mount-failures.md) | NFS Mount Failures (TrueNAS) | Occasional | High | 10-30m |
 | [009](009-image-pull-failures.md) | Image Pull Failures (Docker Hub) | Common | High | 5-20m |
-| [010](010-sealed-secrets-failures.md) | Sealed Secrets Decryption Failures | Occasional | High | 5-30m |
 
 ---
 
@@ -192,12 +191,6 @@ Incident Detected
 **Quick Fix:** Add Docker Hub credentials to global pull secret
 **Key Learning:** Always authenticate to Docker Hub, even for public images
 
-### 010: Sealed Secrets Failures
-**Problem:** SealedSecret exists but regular Secret not created
-**Common Cause:** Wrong public certificate used for sealing
-**Quick Fix:** Fetch current cert from cluster, re-seal secret
-**Key Learning:** Always fetch cert from cluster, don't trust local copy
-
 ---
 
 ## Common Troubleshooting Commands
@@ -256,7 +249,6 @@ argocd app diff <app-name>
 |------|-----------|-------------------|
 | Check Prometheus storage usage | Monthly | 002 |
 | Review Docker Hub rate limit | Weekly | 009 |
-| Backup Sealed Secrets cert | Monthly | 010 |
 | Test storage network connectivity | Quarterly | 008 |
 | Review ArgoCD sync errors | Weekly | 006 |
 | Capacity planning (CPU/RAM/Storage) | Quarterly | 001, 002 |

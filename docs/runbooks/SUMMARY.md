@@ -1,8 +1,8 @@
 # Runbook Library Summary
 
 **Created:** 2026-01-08
-**Total Runbooks:** 10
-**Total Documentation:** ~127KB
+**Total Runbooks:** 9
+**Total Documentation:** ~120KB
 
 ---
 
@@ -16,10 +16,9 @@
   - 007: Pod CrashLoopBackOff
   - 009: Image Pull Failures
 
-- **Occasional (4):** Issues occurring monthly or during specific operations
+- **Occasional (3):** Issues occurring monthly or during specific operations
   - 005: Cert-Manager Failures
   - 008: NFS Mount Failures
-  - 010: Sealed Secrets Failures
   - 002: Prometheus Storage (quarterly)
 
 - **Rare (1):** Issues occurring only after specific failure conditions
@@ -30,13 +29,12 @@
   - 001: LVM Operator Deadlock
   - 002: Prometheus Storage Expansion
 
-- **High (6):** Single application/namespace impact
+- **High (5):** Single application/namespace impact
   - 003: FUSE Mount Propagation
   - 006: ArgoCD Sync Failures (blocks deployments)
   - 007: Pod CrashLoopBackOff
   - 008: NFS Mount Failures
   - 009: Image Pull Failures
-  - 010: Sealed Secrets Failures
 
 - **Medium-High (1):** Deployment pipeline impact
   - 006: ArgoCD Sync Failures
@@ -51,11 +49,10 @@
   - 004: PVC Stuck Pending (5-20m)
   - 009: Image Pull Failures (5-20m)
 
-- **Moderate (15-30 min):** 4 runbooks
+- **Moderate (3):** 3 runbooks
   - 002: Prometheus Storage (15-30m)
   - 005: Cert-Manager Failures (10-30m)
   - 008: NFS Mount Failures (10-30m)
-  - 010: Sealed Secrets (5-30m)
 
 - **Extended (30+ min):** 3 runbooks
   - 001: LVM Operator Deadlock (30-45m)
@@ -79,7 +76,6 @@
 2. Update/rotate credentials (API tokens, pull secrets)
 3. Verify network connectivity (ping, port checks)
 4. Restart controller/operator pods
-5. Re-seal secrets with correct certificate
 
 ### Prevention Focus Areas
 1. **Monitoring & Alerting:** 8/10 runbooks include custom PrometheusRules
@@ -110,9 +106,8 @@ Based on session history analysis (`~/.pi/agent/sessions/`):
 - Media app mount propagation → Runbook 003
 - NFD pod crashes → Runbook 007
 
-**2026-01-07:** Infrastructure migrations covered by Runbooks 005, 010
+**2026-01-07:** Infrastructure migrations covered by Runbook 005
 - Technitium VM deployment with TLS → Runbook 005
-- Vaultwarden sealed secrets → Runbook 010
 
 ---
 
@@ -167,7 +162,7 @@ Test Validation Scripts → Document Changes
 ## Related Files
 
 - `docs/runbooks/README.md` - Index and usage guide
-- `docs/runbooks/001-010-*.md` - Individual runbooks
+- `docs/runbooks/001-009-*.md` - Individual runbooks
 - `SESSION_HISTORY_SUMMARY.md` - Source incident data
 - `PROGRESS.md` - Incident log
 - `SYSTEM.md` - Operational guidelines

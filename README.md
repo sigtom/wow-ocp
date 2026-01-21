@@ -1,44 +1,52 @@
-# OpenShift 4.20 Homelab Configuration
+# OpenShift 4.20 Homelab Configuration (GitOps)
 
-This repository contains the GitOps configuration and Infrastructure as Code (IaC) for a private OpenShift 4.20 cluster running on Dell FC630 blade servers. It manages a hybrid environment supporting both containerized applications and virtual machines.
+This repository contains the GitOps configuration and Infrastructure as Code (IaC) for a private OpenShift 4.20 cluster and a Proxmox-based "Cattle" infrastructure. It manages a hybrid environment supporting containerized applications, virtual machines, and automated lab operations.
 
-## Architecture
+## 🏛️ Architecture
 
 ### Hardware
-*   **Compute:** 3x Dell FC630 PowerEdge Blades.
-*   **Storage:** TrueNAS Scale 25.10 ("Fangtooth") providing NFS via `democratic-csi`.
-*   **Network:** Hybrid 10G/1G Setup.
-    *   Machine Network: 172.16.100.0/24
-    *   Workload Network: 172.16.130.0/24 (VLAN 130)
-    *   Storage Network: 172.16.160.0/24 (VLAN 160)
+*   **OpenShift (OCP):** 3x Dell FC630 PowerEdge Blades (wow-ocp-node2-4).
+*   **Hypervisor:** Proxmox VE host (wow-prox1) for lightweight workloads and discovery.
+*   **Storage:** TrueNAS Scale 25.10 ("Fangtooth") providing NFS storage.
+*   **Network:** 10G/1G Hybrid. Physical topology is documented in Nautobot.
 
-### Core Stack
-*   **Platform:** Red Hat OpenShift Container Platform 4.20
-*   **Virtualization:** OpenShift Virtualization (KubeVirt) for hybrid workloads (RHEL/Windows).
-*   **GitOps:** ArgoCD using the "App of Apps" pattern.
-*   **Secrets:** Bitnami Sealed Secrets (encrypted at rest in Git).
-*   **Ingress/Certificates:** OpenShift Routes + Cert-Manager (Cloudflare DNS-01).
-*   **Load Balancing:** MetalLB (Layer 2) for LoadBalancer Services.
+### Software Stack
+*   **Platform:** Red Hat OpenShift 4.20 + OpenShift Virtualization.
+*   **Source of Truth:** [Nautobot IPAM/DCIM](https://ipmgmt.sigtom.dev) (Dynamic Inventory).
+*   **Orchestration:** [Ansible Automation Platform (AAP)](https://aap.apps.ossus.sigtomtech.com).
+*   **GitOps:** ArgoCD using the "App of Apps" pattern for cluster services.
+*   **Secrets:** Bitwarden (Vault) + External Secrets Operator (ESO).
+*   **Ingress:** Traefik (Proxmox) & OpenShift Routes (OCP) with Cloudflare DNS-01.
 
-## Repository Structure
+## 📁 Repository Structure
 
-The repository follows a strict Kustomize-based structure:
+*   `apps/`: Active cluster applications (AAP, Technitium, Vaultwarden).
+*   `infrastructure/`: Core cluster services (Storage, Operators, Monitoring).
+*   `automation/`: Ansible roles and playbooks for Proxmox and application lifecycle.
+*   `config_contexts/`: Nautobot configuration specs (T-shirt sizes, app registry).
+*   `jobs/`: Custom Nautobot Python jobs for network discovery.
+*   `argocd-apps/`: ArgoCD Application definitions.
 
-*   `apps/`: User-facing applications (Plex, Media Stack).
-*   `infrastructure/`: Core cluster services (Storage, Operators, Cert-Manager).
-*   `argocd-apps/`: Application definitions for ArgoCD sync.
-*   `conductor/`: AI-driven project management and state tracking.
+## 🚀 Operational Workflows
 
-## Operational Workflow
+### 1. Master Deployment (The "Cattle" Pattern)
+Application deployment on Proxmox is driven by Nautobot metadata.
+1. Define the VM/LXC and its apps in **Nautobot**.
+2. Run the **Master Deploy** playbook in AAP.
+3. Ansible automatically handles Provisioning -> SSH Bootstrap -> Docker -> App Stack.
 
-1.  **GitOps First:** All cluster changes are committed to this repository. Manual `oc apply` is discouraged except for debugging or "Day 0" bootstrapping.
-2.  **Secret Management:** Secrets are encrypted locally using `kubeseal` before being committed. Raw secrets are never tracked.
-3.  **App of Apps:** The `root-app.yaml` bootstraps the cluster infrastructure and applications.
+### 2. Secret Management
+Raw secrets are never committed.
+*   **OCP**: ESO pulls secrets directly from Bitwarden into the cluster.
+*   **Ansible**: The Master Playbook fetches secrets on-demand during deployment.
 
-## AI-Assisted Operations (Gemini)
+### 3. GitOps Loop
+This repository is tied to Nautobot via GitHub Actions. Pushing to `main` automatically triggers a Nautobot Git Sync, ensuring your inventory always matches your code.
 
-This repository is managed with the assistance of the Gemini CLI using the **Conductor** methodology.
+## 📖 Documentation
 
-*   **Role:** The AI acts as a Senior SRE, handling planning, manifest generation, and operational checks. It does not replace the engineer but accelerates execution and enforces standards.
-*   **Context:** The `GEMINI.md` file defines the "Rules of Engagement," ensuring the AI adheres to specific operational constraints (e.g., resource limits, safety checks, hardware specifics) and "Do No Harm" protocols.
-*   **Tracks:** Development follows a structured implementation plan stored in `conductor/tracks/`, ensuring systematic progress on features like networking, monitoring, and app deployment.
+*   [Runbooks](./docs/runbooks/README.md): Troubleshooting guides for common cluster issues.
+*   [Architecture](./docs/architecture/external-secrets-bitwarden.md): Deep dives into the secret management and networking layers.
+
+---
+Managed with ❤️ by SigTomtech.
