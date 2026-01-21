@@ -4,6 +4,7 @@
   connection: local
   gather_facts: false
   collections:
+    - awx.awx
     - infra.controller_configuration
 
   vars:
@@ -60,7 +61,7 @@
     # 1. Credential Types
     # -------------------------------------------------------
     - name: Create Proxmox Credential Type
-      ansible.controller.credential_type:
+      awx.awx.credential_type:
         name: "Proxmox VE"
         description: "Proxmox API Token authentication"
         kind: cloud
@@ -97,7 +98,7 @@
         validate_certs: no
 
     - name: Create Cloudflare Credential Type
-      ansible.controller.credential_type:
+      awx.awx.credential_type:
         name: "Cloudflare API"
         description: "Cloudflare DNS API Token"
         kind: cloud
@@ -119,7 +120,7 @@
         validate_certs: no
 
     - name: Create DUMB Secrets Credential Type
-      ansible.controller.credential_type:
+      awx.awx.credential_type:
         name: "DUMB Debrid Secrets"
         description: "RealDebrid and TorBox API keys for DUMB media stack"
         kind: cloud
@@ -172,7 +173,7 @@
         validate_certs: no
 
     - name: Create Media Arr Secrets Credential Type
-      ansible.controller.credential_type:
+      awx.awx.credential_type:
         name: "Media Arr API Keys"
         description: "API keys for Sonarr, Radarr, and Prowlarr"
         kind: cloud
@@ -206,7 +207,7 @@
         validate_certs: no
 
     - name: Create Pi-hole API Keys Credential Type
-      ansible.controller.credential_type:
+      awx.awx.credential_type:
         name: "Pi-hole API Keys"
         description: "API tokens for all three Pi-hole instances"
         kind: cloud
@@ -243,7 +244,7 @@
     # 2. Execution Environments
     # -------------------------------------------------------
     - name: Create Custom HomeLab EE
-      ansible.controller.execution_environment:
+      awx.awx.execution_environment:
         name: "HomeLab EE"
         description: "Custom EE with Proxmox, Docker, and AAP Config collections"
         image: "{{ ee_image }}"
@@ -259,7 +260,7 @@
     # 3. Credentials
     # -------------------------------------------------------
     - name: Create Proxmox Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "Proxmox Production"
         organization: "{{ aap_organization }}"
         credential_type: "Proxmox VE"
@@ -275,7 +276,7 @@
         validate_certs: no
 
     - name: Create Cloudflare Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "Cloudflare DNS"
         organization: "{{ aap_organization }}"
         credential_type: "Cloudflare API"
@@ -288,7 +289,7 @@
         validate_certs: no
 
     - name: Create AAP SSH Key
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "AAP Executor SSH"
         organization: "{{ aap_organization }}"
         credential_type: "Machine"
@@ -302,7 +303,7 @@
         validate_certs: no
 
     - name: Create Git Read-Only Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "Git Read-Only"
         organization: "{{ aap_organization }}"
         credential_type: "Source Control"
@@ -316,7 +317,7 @@
         validate_certs: no
 
     - name: Create DUMB Secrets Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "DUMB Debrid Secrets"
         organization: "{{ aap_organization }}"
         credential_type: "DUMB Debrid Secrets"
@@ -336,7 +337,7 @@
       when: realdebrid_api_key != '' and torbox_api_key != ''
 
     - name: Create Media Arr Secrets Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "Media Arr API Keys"
         organization: "{{ aap_organization }}"
         credential_type: "Media Arr API Keys"
@@ -352,7 +353,7 @@
       when: sonarr_api_key != '' and radarr_api_key != '' and prowlarr_api_key != ''
 
     - name: Create Pi-hole API Keys Credential
-      ansible.controller.credential:
+      awx.awx.credential:
         name: "Pi-hole API Keys"
         organization: "{{ aap_organization }}"
         credential_type: "Pi-hole API Keys"
@@ -371,7 +372,7 @@
     # 4. Project
     # -------------------------------------------------------
     - name: Create HomeLab Project
-      ansible.controller.project:
+      awx.awx.project:
         name: "HomeLab Ops"
         organization: "{{ aap_organization }}"
         scm_type: git
@@ -389,7 +390,7 @@
         validate_certs: no
 
     - name: Force Project Sync to discover new playbooks
-      ansible.controller.project_update:
+      awx.awx.project_update:
         project: "HomeLab Ops"
         wait: yes
         controller_host: "{{ controller_host }}"
@@ -401,7 +402,7 @@
     # 5. Inventory
     # -------------------------------------------------------
     - name: Create HomeLab Inventory
-      ansible.controller.inventory:
+      awx.awx.inventory:
         name: "HomeLab Inventory"
         organization: "{{ aap_organization }}"
         state: present
@@ -414,7 +415,7 @@
     # 6. Job Templates
     # -------------------------------------------------------
     - name: Create Test AAP Flow Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Test AAP Flow"
         job_type: run
         organization: "{{ aap_organization }}"
@@ -429,7 +430,7 @@
         validate_certs: no
 
     - name: Create Deploy Traefik Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Deploy Traefik"
         job_type: run
         organization: "{{ aap_organization }}"
@@ -475,7 +476,7 @@
         validate_certs: no
 
     - name: Create Setup Proxmox NFS Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Setup Proxmox NFS"
         description: "Mount TrueNAS NFS share on Proxmox host"
         job_type: run
@@ -497,7 +498,7 @@
     # -------------------------------------------------------
 
     - name: Create Validate IP Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Validate IP"
         description: "Check if IP is available (ping + rDNS)"
         job_type: run
@@ -513,7 +514,7 @@
         validate_certs: no
 
     - name: Create Provision LXC Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Provision LXC"
         description: "Create LXC container on Proxmox"
         job_type: run
@@ -532,7 +533,7 @@
         validate_certs: no
 
     - name: Create Provision Media LXC Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Provision Media LXC"
         description: "Create LXC container on Proxmox with NAS mount"
         job_type: run
@@ -551,7 +552,7 @@
         validate_certs: no
 
     - name: Create Install Docker Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Install Docker"
         description: "Install Docker and Docker Compose on target host"
         job_type: run
@@ -573,7 +574,7 @@
     # -------------------------------------------------------
 
     - name: Create Provision Media Docker LXC Workflow
-      ansible.controller.workflow_job_template:
+      awx.awx.workflow_job_template:
         name: "Provision Media Docker LXC"
         description: "Complete workflow: Validate IP → Create Media LXC → Install Docker"
         organization: "{{ aap_organization }}"
@@ -613,7 +614,7 @@
     - name: Setup Workflow Nodes for Media LXC
       block:
         - name: Create Node - Validate IP
-          ansible.controller.workflow_job_template_node:
+          awx.awx.workflow_job_template_node:
             workflow_job_template: "Provision Media Docker LXC"
             identifier: "validate_ip"
             unified_job_template: "Validate IP"
@@ -625,7 +626,7 @@
             validate_certs: no
 
         - name: Create Node - Provision Media LXC
-          ansible.controller.workflow_job_template_node:
+          awx.awx.workflow_job_template_node:
             workflow_job_template: "Provision Media Docker LXC"
             identifier: "provision_media_lxc"
             unified_job_template: "Provision Media LXC"
@@ -637,7 +638,7 @@
             validate_certs: no
 
         - name: Create Node - Install Docker
-          ansible.controller.workflow_job_template_node:
+          awx.awx.workflow_job_template_node:
             workflow_job_template: "Provision Media Docker LXC"
             identifier: "install_docker"
             unified_job_template: "Install Docker"
@@ -649,7 +650,7 @@
             validate_certs: no
 
         - name: Link Node 1 → Node 2
-          ansible.controller.workflow_job_template_node:
+          awx.awx.workflow_job_template_node:
             workflow_job_template: "Provision Media Docker LXC"
             identifier: "validate_ip"
             success_nodes: ["provision_media_lxc"]
@@ -661,7 +662,7 @@
             validate_certs: no
 
         - name: Link Node 2 → Node 3
-          ansible.controller.workflow_job_template_node:
+          awx.awx.workflow_job_template_node:
             workflow_job_template: "Provision Media Docker LXC"
             identifier: "provision_media_lxc"
             success_nodes: ["install_docker"]
@@ -677,7 +678,7 @@
     # -------------------------------------------------------
 
     - name: Create Deploy DUMB Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Deploy DUMB"
         description: "Deploy DUMB (Debrid Unlimited Media Bridge) to Docker LXC"
         job_type: run
@@ -718,7 +719,7 @@
         validate_certs: no
 
     - name: Create Deploy Downloaders Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Deploy Downloaders"
         description: "Deploy qBittorrent and Sabnzbd to Docker LXC"
         job_type: run
@@ -751,7 +752,7 @@
         validate_certs: no
 
     - name: Create Deploy Docker Socket Proxy Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Deploy Docker Socket Proxy"
         description: "Deploy secure Docker socket proxy for remote Traefik discovery"
         job_type: run
@@ -782,7 +783,7 @@
         validate_certs: no
 
     - name: Create Seed Arr Configs Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Seed Arr Configs"
         description: "Configure Quality Profiles and Custom Formats in Sonarr and Radarr"
         job_type: run
@@ -810,7 +811,7 @@
         validate_certs: no
 
     - name: Create Sync DNS to Pi-holes Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Sync DNS to Pi-holes"
         description: "Synchronize local DNS records across all Pi-hole instances"
         job_type: run
@@ -828,7 +829,7 @@
         validate_certs: no
 
     - name: Create Setup Docker Swarm Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Setup Docker Swarm"
         description: "Initialize Docker Swarm across LXC nodes for Traefik discovery"
         job_type: run
@@ -846,7 +847,7 @@
         validate_certs: no
 
     - name: Create Debug Traefik Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Debug Traefik"
         job_type: run
         organization: "{{ aap_organization }}"
@@ -863,7 +864,7 @@
         validate_certs: no
 
     - name: Create SSH Bootstrap Job Template
-      ansible.controller.job_template:
+      awx.awx.job_template:
         name: "Util - SSH Bootstrap"
         description: "Inject an SSH public key into an LXC or VM on Proxmox"
         job_type: run
@@ -905,7 +906,7 @@
         validate_certs: no
 
     - name: Create Proxmox Inventory Source
-      ansible.controller.inventory_source:
+      awx.awx.inventory_source:
         name: "Proxmox Dynamic Sync"
         inventory: "HomeLab Inventory"
         source: "scm"
