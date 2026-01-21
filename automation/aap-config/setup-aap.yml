@@ -880,27 +880,18 @@
           name: "SSH Bootstrap Parameters"
           description: "Configure target and key"
           spec:
-            - question_name: "Target IP"
+            - question_name: "Target IP (Override)"
+              question_description: "Only use if host is not in inventory"
               required: false
               type: text
               variable: "target_ip"
               default: ""
-            - question_name: "VMID"
-              required: false
-              type: integer
-              variable: "vmid"
-            - question_name: "Target Type"
-              required: true
-              type: multiplechoice
-              variable: "target_type"
-              choices: ["lxc", "vm"]
-              default: "lxc"
             - question_name: "Bootstrap Mode (via Proxmox Host)"
               required: true
               type: multiplechoice
               variable: "bootstrap_mode"
               choices: ["true", "false"]
-              default: "true"
+              default: "false"
             - question_name: "SSH Public Key"
               question_description: "Leave empty to use default Mac key"
               required: false
@@ -919,7 +910,7 @@
         inventory: "HomeLab Inventory"
         source: "scm"
         source_project: "HomeLab Ops"
-        source_path: "automation/inventory/proxmox.yml"
+        source_path: "automation/inventory/main.proxmox.yml"
         credentials:
           - "Git Read-Only"
           - "Proxmox Production"

@@ -1,0 +1,19 @@
+# Proxmox Dynamic Inventory Configuration
+plugin: community.proxmox.proxmox
+url: "https://172.16.110.101:8006"
+validate_certs: false
+
+# Credentials will be injected by AAP from the "Proxmox Production" credential
+# via environment variables
+user: "{{ lookup('env', 'PROXMOX_USER') }}"
+token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"
+token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
+
+# Host discovery settings
+want_proctitle: true
+group_by_node: true
+group_by_type: true
+
+# Map the Proxmox Name to the Ansible Hostname
+hostnames:
+  - name

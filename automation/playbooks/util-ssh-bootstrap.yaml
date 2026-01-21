@@ -1,15 +1,15 @@
 ---
 # ============================================================================
-# SSH Key Bootstrap Utility
+# SSH Key Bootstrap Utility (Fact-Driven)
 # ============================================================================
 # Description: Inject an SSH public key into an LXC or VM on Proxmox.
-#              Supports both direct SSH and Out-of-Band injection via
-#              the Proxmox host (pct exec / qm guest exec).
+#              Uses dynamic inventory facts (proxmox_vmid, proxmox_vmtype)
+#              to automatically determine the correct injection method.
 #
 # AAP Usage:
 #   - Job Template: "Util - SSH Bootstrap"
 #   - Credentials: "Proxmox Production", "AAP Executor SSH"
-#   - Survey: target_ip, vmid, target_type, ssh_key, bootstrap_mode
+#   - Survey: target_ip, bootstrap_mode, ssh_key
 # ============================================================================
 
 - name: "SSH Key Bootstrap Utility - Initialization"
@@ -25,7 +25,7 @@
       when: target_ip | default('') != ''
 
 - name: "SSH Key Bootstrap Utility - Execution"
-  hosts: "all:manual_targets"
+  hosts: "all:manual_targets:!localhost"
   gather_facts: false
   vars:
     # Default to the Mac key if not provided in survey
@@ -47,34 +47,28 @@
       ignore_errors: true
 
     # -------------------------------------------------------
-    # Mode 2: Proxmox Out-of-Band (LXC)
+    # Mode 2: Proxmox Out-of-Band (Fact-Driven)
     # -------------------------------------------------------
-    - name: "Inject key via Proxmox Host (LXC Out-of-Band)"
-      when: (bootstrap_mode | default('false') | bool) and target_type == 'lxc'
-      delegate_to: "{{ proxmox_host }}"
-      ansible.builtin.shell: |
-        pct exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
-      register: lxc_oob_result
+    - name: "Determine Proxmox Command"
+      ansible.builtin.set_fact:
+        proxmox_cmd: "{{ 'pct exec' if proxmox_vmtype | default('lxc') == 'lxc' else 'qm guest exec' }}"
+      when: (bootstrap_mode | default('false') | bool)
 
-    # -------------------------------------------------------
-    # Mode 3: Proxmox Out-of-Band (VM)
-    # -------------------------------------------------------
-    - name: "Inject key via Proxmox Host (VM Out-of-Band)"
-      when: (bootstrap_mode | default('false') | bool) and target_type == 'vm'
-      delegate_to: "{{ proxmox_host }}"
+    - name: "Inject key via Proxmox Host (Out-of-Band)"
+      when: (bootstrap_mode | default('false') | bool) and proxmox_vmid is defined
+      delegate_to: "{{ proxmox_node | default(proxmox_host) }}"
       ansible.builtin.shell: |
-        qm guest exec {{ vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
-      register: vm_oob_result
-      ignore_errors: true
+        {{ proxmox_cmd }} {{ proxmox_vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
+      register: oob_result
 
     - name: "Final Summary"
       ansible.builtin.debug:
         msg:
           - "=========================================="
-          - "SSH Bootstrap Complete"
+          - "SSH Bootstrap Summary"
           - "=========================================="
           - "Host: {{ inventory_hostname }}"
-          - "VMID: {{ vmid | default('N/A') }}"
+          - "VMID: {{ proxmox_vmid | default('N/A') }}"
           - "Mode: {{ 'Bootstrap (Proxmox)' if (bootstrap_mode | default('false') | bool) else 'Direct SSH' }}"
-          - "Key: {{ final_ssh_key[:20] }}...{{ final_ssh_key[-20:] }}"
+          - "Status: {{ 'Success' if (ssh_result is succeeded or oob_result is succeeded) else 'Failed' }}"
           - "=========================================="
