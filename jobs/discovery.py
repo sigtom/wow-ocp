@@ -1,4 +1,4 @@
-from nautobot.apps.jobs import Job, TextVar
+from nautobot.apps.jobs import Job, register_jobs
 from nautobot.dcim.models import Device, Interface, Cable
 from nautobot.extras.models import Status
 from nautobot.virtualization.models import VirtualMachine
