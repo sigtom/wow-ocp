@@ -1,5 +1,11 @@
 # Project Progress (v1.9)
 
+- [2026-01-21]: **MAINTENANCE: CODIFIED MASTER WORKFLOW**
+    - **Change**: Updated `SYSTEM.md` (v2.2) to formally codify the **"Master Engine" Pattern** for Proxmox and application lifecycle management.
+    - **Documentation**: Defined the strict GitOps loop (Git -> Nautobot -> AAP -> Proxmox) and the execution order of the Master Deploy playbook.
+    - **Standardization**: Set the "Prime Directive" for new applications: metadata-first, generic-role execution, no more individual playbooks.
+    - **Result**: Future sessions and AI assistants have a clear, immutable reference for how to expand and maintain the homelab.
+
 - [2026-01-21]: **MAJOR ARCHITECTURAL REFACTOR: METADATA-DRIVEN INFRASTRUCTURE**
     - **Inventory Source of Truth**: Successfully migrated from static files/surveys to **Nautobot Dynamic Inventory**.
     - **Nautobot Enrichment**: Surgically aligned Nautobot with the lab state. 14+ hosts (OCP, Proxmox, TrueNAS, MikroTik) are now fully enriched with Primary IPs, hardware specs (CPU/RAM/Disk), and 17+ service definitions.

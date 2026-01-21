@@ -2555,3 +2555,42 @@ Playbooks creating new infrastructure MUST use the **Two-Play Pattern**:
 **Credential Injection:**
 - Secrets flow: Bitwarden -> ESO -> K8s Secret -> Seeder Env -> AAP Credential -> Job Env -> Playbook.
 - **Verification**: If 401 Unauthorized, check the Credential Type injector mapping in `setup-aap.yml`.
+
+---
+
+## 12. PROXMOX & APPLICATION LIFECYCLE (The "Master Engine" Pattern)
+
+**Implemented: 2026-01-21**
+
+### A. The "Gold Standard" Workflow
+We have transitioned from manual surveys and individual playbooks to a **Metadata-Driven Engine**.
+
+**The Cycle:**
+1.  **Define in Git**: Update `config_contexts/apps.yaml` (App specs) or `config_contexts/vm_specs.yaml` (T-shirt sizes).
+2.  **Sync to Nautobot**: Pushing to `main` triggers a GitHub Action that syncs the repo to Nautobot.
+3.  **Document in Nautobot**: Create the VM/LXC record in Nautobot and assign the `app_list` (e.g., `[dumb, traefik]`).
+4.  **Execute via AAP**: Run the **`Master Deploy`** playbook (`automation/playbooks/master-deploy.yaml`).
+
+### B. The State Engine (Master Deploy)
+The Master Playbook is an orchestrator that reconciles the host state against the Nautobot metadata.
+
+**Execution Order:**
+1.  **Infrastructure**: `provision_lxc_generic` or `provision_vm_generic` (Uses native Proxmox modules).
+2.  **Access**: `bootstrap_ssh` (Intelligent fallback to Proxmox API if SSH is locked).
+3.  **Runtime**: `post_provision` (Installs Docker CE + Compose).
+4.  **Application**: `docker_app` (Generic role that renders .env and starts the Compose stack).
+
+### C. Rules for New Applications
+1.  **NEVER** create a new `deploy-<app>.yaml` playbook.
+2.  **ADD** the app metadata to `config_contexts/apps.yaml`.
+3.  **CREATE** the docker-compose template in `automation/templates/<app>/`.
+4.  **RUN** the `Master Deploy` playbook targeting that host.
+
+### D. Inventory Management (Nautobot)
+*   **Dynamic Inventory**: Ansible pulls hosts from Nautobot via the `networktocode.nautobot.inventory` plugin.
+*   **Source of Variables**: `vmid`, `ansible_host`, `tshirt_size`, and `app_list` are all derived from Nautobot custom fields.
+*   **Physical Topology**: Documented via "Cables" in Nautobot. Use the **`Discover Physical Cables`** job in Nautobot to update port mappings.
+
+### E. Safety & Idempotency
+*   **Native Modules**: We use `community.general.proxmox` and `proxmox_kvm`. They check for existence before acting.
+*   **Check Mode**: The Master Playbook supports `--check`. It will accurately simulate the deployment without creating resources.
