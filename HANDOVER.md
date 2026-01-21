@@ -1,28 +1,29 @@
-# Handover Notes - January 21, 2026 (Automation Refactor Update)
+# Handover Notes - January 21, 2026 (Nautobot Structure Update)
 
 ## 🚀 Session Achievements
-1.  **Automation Refactored:** Successfully transitioned `provision_lxc_generic` and `provision_vm_generic` roles to native Proxmox modules (`community.general.proxmox_lxc` and `community.general.proxmox_kvm`).
-2.  **Idempotency Improved:** Removed manual `shell` and `ssh` blocks, leveraging the module's native state management.
-3.  **Mountpoint Support:** Added dynamic list-to-dict conversion for LXC mount points.
-4.  **Targeting modern Ansible:** Refactored for **Ansible Core 2.20.1** and modern `community.general` collections used in `HomeLab EE`.
+1.  **Nautobot Stack Repaired:** Added Celery Worker and Scheduler to the `docker-compose.yml` on LXC 215. Background jobs and Git syncing are now functional.
+2.  **GitOps Structure Standardized:** Flattened the repository by moving `jobs/`, `config_contexts/`, and `export_templates/` to the root. This is required for Nautobot's Git integration.
+3.  **Job Module Fix:** Added `jobs/__init__.py` to enable Nautobot to discover the Python jobs in the repository.
+4.  **Security:** Verified Nautobot API authentication and successfully enriched 9+ Virtual Machines with hardware and application metadata.
 
 ## 🛠️ Current Status & Blockers
-*   **Feature Branch:** Refactoring is in `refactor/proxmox-native-modules`.
-*   **Verification:** The new roles need to be tested with a test deployment (e.g., `test-aap-flow.yaml`).
-*   **OCP Decommissioning:** This work is on `main` and is complete from a GitOps perspective.
+*   **Feature Branch:** Current changes are in `refactor/nautobot-git-structure`.
+*   **Nautobot UI:** The Git Repository `HomeLab-GitOps` should be updated to point to the `refactor/nautobot-git-structure` branch for testing, or wait for merge to `main`.
+*   **Storage:** OCP `media-library-pv` deletion and TrueNAS surgical cleanup are pending manual execution.
 
 ## 📋 Next Session Plan
-Use the following prompt to test and finalize the refactor:
+Use the following prompt to finalize the Nautobot integration:
 
-> "Reference the **HANDOVER.md** and **PROGRESS.md** files. The automation refactor to native Proxmox modules is ready for testing.
+> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We have repaired the Nautobot stack and flattened the GitOps structure.
 >
-> **Goal:** Verify the new native Proxmox modules and merge to main.
+> **Goal:** Verify Nautobot Git Sync and begin the `docker_app` role refactor.
 >
 > **Tasks:**
-> 1. Run a test LXC provisioning job via AAP using the `refactor/proxmox-native-modules` branch.
-> 2. Verify that idempotency works by re-running the job on an existing container.
-> 3. Verify that mount points are correctly configured for Media LXCs.
-> 4. Once verified, merge the refactor branch into `main`."
+> 1. Merge `refactor/nautobot-git-structure` to `main`.
+> 2. Perform a Git Sync in the Nautobot UI.
+> 3. Verify that the "Discover Physical Cables" job appears in **Extensibility -> Jobs**.
+> 4. Verify that Config Contexts are being correctly attached to devices (e.g., `dumb` LXC).
+> 5. Start the creation of the generic **`docker_app`** role to replace individual app deployment playbooks."
 
 ---
 *End of Handover*
