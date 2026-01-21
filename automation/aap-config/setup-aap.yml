@@ -42,6 +42,12 @@
     # Execution Environment
     ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
 
+  environment:
+    CONTROLLER_HOST: "{{ controller_host }}"
+    CONTROLLER_USERNAME: "{{ controller_username }}"
+    CONTROLLER_PASSWORD: "{{ controller_password }}"
+    CONTROLLER_VERIFY_SSL: "false"
+
   tasks:
     - name: Wait for AAP to be ready
       uri:
