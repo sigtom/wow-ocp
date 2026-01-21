@@ -1,4 +1,4 @@
-from nautobot.apps.jobs import Job, TextVar
+from nautobot.apps.jobs import Job, register_jobs
 from nautobot.dcim.models import Device, Interface, Cable
 from nautobot.extras.models import Status
 from nautobot.virtualization.models import VirtualMachine
@@ -109,5 +109,4 @@ class DiscoverPhysicalCables(Job):
             except Exception as e:
                 self.logger.error(f"Failed to create cable for {name}: {e}")
 
-jobs = [DiscoverPhysicalCables]
-register_jobs = [DiscoverPhysicalCables]
+register_jobs(DiscoverPhysicalCables)
