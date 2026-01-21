@@ -821,6 +821,7 @@
     - **Riven Fixes**: Corrected Riven `rclone_path` to TorBox and enabled 2160p (4K) and Remux support in ranking profiles.
     - **Security Cleanup**: Identified and remediated leaked API keys in Git. Transitioned Riven, Plex, and Overseerr secrets to **Bitwarden -> ESO -> AAP** pipeline.
     - **History Scrubbing**: Used `git-filter-repo` to permanently erase sensitive credential strings from the entire Git history.
+    - **Automation Engine**: Upgraded Execution Environment (HomeLab EE) to **Ansible Core 2.20.1** using the community `dev-tools` Fedora-based image for better collection compatibility.
 
 - [2026-01-20]: **DUMB DEBRID TOKEN AUTOMATION**
     - **Issue**: Alien Earth S01E01 failed with I/O error due to expired TorBox presigned tokens.
