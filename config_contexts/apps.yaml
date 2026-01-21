@@ -27,3 +27,6 @@ app_registry:
     category: "Infrastructure"
     ports: [443, 8080]
     compose_path: "automation/templates/nautobot/docker-compose.yml"
+  webhook-test:
+    category: "Test"
+    description: "Used to verify GitHub Actions sync"
