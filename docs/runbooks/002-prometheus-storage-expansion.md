@@ -322,7 +322,7 @@ exit
 oc scale statefulset prometheus-k8s -n openshift-monitoring --replicas=2
 ```
 
-**⚠️ WARNING:** This loses unwritten metrics (usually <5 minutes).
+** WARNING:** This loses unwritten metrics (usually <5 minutes).
 
 ### Issue: TrueNAS Refuses to Expand Quota
 

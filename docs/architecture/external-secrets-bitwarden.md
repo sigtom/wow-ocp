@@ -7,38 +7,38 @@ Replace SealedSecrets with **External Secrets Operator (ESO)** to sync secrets f
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Bitwarden Vault (vault.sigtom.dev)           │
-│  Items: proxmox-token, nautobot-db-password, argocd-admin, etc  │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-                         │ bw CLI (authenticated with BW_SESSION)
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              External Secrets Operator (OpenShift)              │
-│                                                                  │
-│  ┌──────────────────┐         ┌──────────────────┐             │
-│  │  SecretStore     │────────▶│  ExternalSecret  │             │
-│  │  (Bitwarden      │         │  (References     │             │
-│  │   connection)    │         │   BW items)      │             │
-│  └──────────────────┘         └────────┬─────────┘             │
-│                                         │                        │
-│                                         ▼                        │
-│                              ┌──────────────────┐                │
-│                              │  Kubernetes      │                │
-│                              │  Secret          │                │
-│                              │  (Auto-created)  │                │
-│                              └──────────────────┘                │
-└─────────────────────────────────────────────────────────────────┘
-                                         │
-                                         │ Used by Pods
-                                         ▼
-                              ┌──────────────────┐
-                              │  Applications    │
-                              │  (Plex, Sonarr,  │
-                              │   ArgoCD, etc)   │
-                              └──────────────────┘
+
+                    Bitwarden Vault (vault.sigtom.dev)
+  Items: proxmox-token, nautobot-db-password, argocd-admin, etc
+
+
+                          bw CLI (authenticated with BW_SESSION)
+
+
+
+              External Secrets Operator (OpenShift)
+
+
+    SecretStore       ExternalSecret
+    (Bitwarden                 (References
+     connection)                BW items)
+
+
+
+
+                                Kubernetes
+                                Secret
+                                (Auto-created)
+
+
+
+                                          Used by Pods
+
+
+                                Applications
+                                (Plex, Sonarr,
+                                 ArgoCD, etc)
+
 ```
 
 ## Key Concepts
@@ -70,11 +70,11 @@ git add sealed-secret.yaml && git commit -m "Add sealed secret"
 ```
 
 **Problems:**
-- ❌ Secrets stored encrypted in git (still visible structure)
-- ❌ Manual sealing process
-- ❌ Rotation requires re-sealing
-- ❌ Backup/restore complexity
-- ❌ Can't easily share secrets across namespaces/clusters
+-  Secrets stored encrypted in git (still visible structure)
+-  Manual sealing process
+-  Rotation requires re-sealing
+-  Backup/restore complexity
+-  Can't easily share secrets across namespaces/clusters
 
 ### New Way (ESO + Bitwarden):
 ```bash
@@ -107,12 +107,12 @@ git add external-secret.yaml && git commit -m "Add external secret"
 ```
 
 **Benefits:**
-- ✅ Single source of truth (Bitwarden)
-- ✅ No secrets in git (not even encrypted)
-- ✅ Automatic rotation (just update in Bitwarden)
-- ✅ Multi-cluster support (same Bitwarden vault)
-- ✅ Audit trail (Bitwarden logs)
-- ✅ Easy backup/restore (Bitwarden handles it)
+-  Single source of truth (Bitwarden)
+-  No secrets in git (not even encrypted)
+-  Automatic rotation (just update in Bitwarden)
+-  Multi-cluster support (same Bitwarden vault)
+-  Audit trail (Bitwarden logs)
+-  Easy backup/restore (Bitwarden handles it)
 
 ## Do We Still Use SealedSecrets?
 
@@ -344,31 +344,31 @@ spec:
 ### Repository Structure
 ```
 wow-ocp/
-├── bootstrap/
-│   └── sealed-secret-bitwarden-cli.yaml  # Only SealedSecret needed
-│
-├── gitops/
-│   ├── core/
-│   │   └── external-secrets/
-│   │       ├── namespace.yaml
-│   │       ├── cluster-secret-store.yaml
-│   │       └── session-renewal-cronjob.yaml  # Optional: auto-renew BW_SESSION
-│   │
-│   └── apps/
-│       ├── media/
-│       │   ├── plex/
-│       │   │   ├── external-secret.yaml      # ESO config
-│       │   │   ├── deployment.yaml           # Unchanged
-│       │   │   └── service.yaml
-│       │   ├── sonarr/
-│       │   │   └── external-secret.yaml
-│       │   └── radarr/
-│       │       └── external-secret.yaml
-│       │
-│       └── nautobot/
-│           ├── external-secret.yaml
-│           ├── deployment.yaml
-│           └── service.yaml
+ bootstrap/
+    sealed-secret-bitwarden-cli.yaml  # Only SealedSecret needed
+
+ gitops/
+    core/
+       external-secrets/
+           namespace.yaml
+           cluster-secret-store.yaml
+           session-renewal-cronjob.yaml  # Optional: auto-renew BW_SESSION
+
+    apps/
+        media/
+           plex/
+              external-secret.yaml      # ESO config
+              deployment.yaml           # Unchanged
+              service.yaml
+           sonarr/
+              external-secret.yaml
+           radarr/
+               external-secret.yaml
+
+        nautobot/
+            external-secret.yaml
+            deployment.yaml
+            service.yaml
 ```
 
 ### Git Commits
@@ -506,23 +506,23 @@ spec:
 
 ```
 Bitwarden Collections:
-├── Homelab-Core
-│   ├── proxmox-sre-token
-│   ├── argocd-admin-password
-│   └── vault-unseal-key
-│
-├── Homelab-Media
-│   ├── plex-claim
-│   ├── sonarr-api-key
-│   ├── radarr-api-key
-│   ├── torbox-api-key
-│   └── real-debrid-api-key
-│
-└── Homelab-Apps
-    ├── nautobot-db-password
-    ├── nautobot-redis-password
-    ├── nautobot-secret-key
-    └── nautobot-admin-password
+ Homelab-Core
+    proxmox-sre-token
+    argocd-admin-password
+    vault-unseal-key
+
+ Homelab-Media
+    plex-claim
+    sonarr-api-key
+    radarr-api-key
+    torbox-api-key
+    real-debrid-api-key
+
+ Homelab-Apps
+     nautobot-db-password
+     nautobot-redis-password
+     nautobot-secret-key
+     nautobot-admin-password
 ```
 
 Filter ExternalSecrets by collection:
@@ -656,12 +656,12 @@ ESO exposes metrics for monitoring:
 **ESO + Bitwarden completely replaces SealedSecrets for cluster workloads.**
 
 **Benefits:**
-- ✅ No secrets in git (not even encrypted)
-- ✅ Single source of truth (Bitwarden)
-- ✅ Automatic rotation
-- ✅ Multi-cluster support
-- ✅ Better audit trail
-- ✅ Easier operational management
+-  No secrets in git (not even encrypted)
+-  Single source of truth (Bitwarden)
+-  Automatic rotation
+-  Multi-cluster support
+-  Better audit trail
+-  Easier operational management
 
 **Keep SealedSecrets only for:**
 - ESO's bootstrap credentials (BW_SESSION)

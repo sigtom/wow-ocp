@@ -108,7 +108,7 @@ oc get lvmcluster -n openshift-storage -o yaml > /tmp/lvmcluster-backup.yaml
 oc delete lvmcluster -n openshift-storage <lvmcluster-name>
 ```
 
-**⚠️ WARNING:** This does NOT delete data on existing PVCs. It only removes the CRD instance.
+** WARNING:** This does NOT delete data on existing PVCs. It only removes the CRD instance.
 
 ### Step 3: Clean LVM Metadata on Affected Nodes
 
@@ -268,7 +268,7 @@ oc scale deployment lvms-operator -n openshift-storage --replicas=0
 oc delete lvmcluster --all -n openshift-storage
 ```
 
-**⚠️ Impact:** All LVM-backed PVCs will become unusable until operator is restored.
+** Impact:** All LVM-backed PVCs will become unusable until operator is restored.
 
 ---
 

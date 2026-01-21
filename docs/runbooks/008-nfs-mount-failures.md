@@ -151,7 +151,7 @@ ssh truenas "systemctl status nfs-server"
 
 **Expected:**
 ```
-● nfs-server.service - NFS server
+ nfs-server.service - NFS server
    Loaded: loaded
    Active: active (running)
 ```
@@ -510,10 +510,10 @@ for node in $(oc get nodes -l node-role.kubernetes.io/worker -o name); do
     exit 1
   }
 
-  echo "✓ $node storage network OK"
+  echo " $node storage network OK"
 done
 
-echo "✓ All nodes can reach TrueNAS"
+echo " All nodes can reach TrueNAS"
 ```
 
 **Usage:**
@@ -527,10 +527,10 @@ echo "✓ All nodes can reach TrueNAS"
 
 ```
 Storage Network (VLAN 160 - 172.16.160.0/24)
-├─ TrueNAS: 172.16.160.100 (NFS Server)
-├─ Node 2: 172.16.160.102 (eno2 - Dedicated 10G)
-├─ Node 3: 172.16.160.103 (eno2 - Dedicated 10G)
-└─ Node 4: 172.16.160.104 (eno2.160 - VLAN Tagged 1G)
+ TrueNAS: 172.16.160.100 (NFS Server)
+ Node 2: 172.16.160.102 (eno2 - Dedicated 10G)
+ Node 3: 172.16.160.103 (eno2 - Dedicated 10G)
+ Node 4: 172.16.160.104 (eno2.160 - VLAN Tagged 1G)
 
 Notes:
 - Node 2/3: Direct Layer 2 on eno2
@@ -543,25 +543,25 @@ Notes:
 
 ```
 NFS Mount Failure
-    │
-    ├─ Can ping 172.16.160.100 from node?
-    │   ├─ No → Fix network (VLAN 160 configuration)
-    │   └─ Yes → Continue
-    │
-    ├─ Can connect to port 2049?
-    │   ├─ No → Check TrueNAS NFS service
-    │   └─ Yes → Continue
-    │
-    ├─ Does showmount -e show the export?
-    │   ├─ No → Recreate export on TrueNAS
-    │   └─ Yes → Continue
-    │
-    ├─ Can manual mount from node work?
-    │   ├─ No → Check export permissions (root_squash?)
-    │   └─ Yes → Pod security context or stale mount
-    │
-    └─ Stale mount in kubelet directory?
-        └─ Yes → Force unmount and restart kubelet
+
+     Can ping 172.16.160.100 from node?
+        No → Fix network (VLAN 160 configuration)
+        Yes → Continue
+
+     Can connect to port 2049?
+        No → Check TrueNAS NFS service
+        Yes → Continue
+
+     Does showmount -e show the export?
+        No → Recreate export on TrueNAS
+        Yes → Continue
+
+     Can manual mount from node work?
+        No → Check export permissions (root_squash?)
+        Yes → Pod security context or stale mount
+
+     Stale mount in kubelet directory?
+         Yes → Force unmount and restart kubelet
 ```
 
 ---

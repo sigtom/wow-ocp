@@ -112,25 +112,25 @@ cat docs/runbooks/README.md
 
 ```
 Incident Detected
-    │
-    ├─ Identify Symptoms
-    │   └─ Match to Runbook Quick Reference
-    │
-    ├─ Execute Quick Check
-    │   ├─ Issue confirmed → Continue
-    │   └─ Issue not found → Check other runbooks
-    │
-    ├─ Run Diagnosis Steps
-    │   └─ Identify Root Cause
-    │
-    ├─ Execute Resolution
-    │   ├─ Test fix
-    │   └─ Verify with checklist
-    │
-    └─ Post-Incident
-        ├─ Update PROGRESS.md
-        ├─ Review lessons learned
-        └─ Implement prevention measures
+
+     Identify Symptoms
+        Match to Runbook Quick Reference
+
+     Execute Quick Check
+        Issue confirmed → Continue
+        Issue not found → Check other runbooks
+
+     Run Diagnosis Steps
+        Identify Root Cause
+
+     Execute Resolution
+        Test fix
+        Verify with checklist
+
+     Post-Incident
+         Update PROGRESS.md
+         Review lessons learned
+         Implement prevention measures
 ```
 
 ---

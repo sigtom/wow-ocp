@@ -6,36 +6,36 @@ Where should Bitwarden (vault.sigtom.dev) run when it becomes a critical depende
 
 ```
 Option 1: Keep on OpenShift Cluster
-┌─────────────────────────────────────┐
-│   OpenShift Cluster                 │
-│                                     │
-│   ┌──────────────┐    ┌──────────┐ │
-│   │ Bitwarden    │◄───│ ESO      │ │
-│   │ (vault)      │    │ Operator │ │
-│   └──────────────┘    └────┬─────┘ │
-│                            │       │
-│                            ▼       │
-│                     ┌──────────────┐│
-│                     │ Apps need    ││
-│                     │ secrets      ││
-│                     └──────────────┘│
-└─────────────────────────────────────┘
+
+   OpenShift Cluster
+
+
+    Bitwarden     ESO
+    (vault)           Operator
+
+
+
+
+                      Apps need
+                      secrets
+
+
 
 Option 2: External Proxmox VM
-┌─────────────────────┐       ┌────────────────────┐
-│ Proxmox VM          │       │ OpenShift Cluster  │
-│                     │       │                    │
-│ ┌─────────────┐     │       │  ┌──────────┐     │
-│ │ Bitwarden   │◄────┼───────┼──│ ESO      │     │
-│ │ (vault)     │     │       │  │ Operator │     │
-│ └─────────────┘     │       │  └────┬─────┘     │
-│                     │       │       │           │
-└─────────────────────┘       │       ▼           │
-                              │ ┌──────────────┐  │
-                              │ │ Apps need    │  │
-                              │ │ secrets      │  │
-                              │ └──────────────┘  │
-                              └────────────────────┘
+
+ Proxmox VM                  OpenShift Cluster
+
+
+  Bitwarden    ESO
+  (vault)                    Operator
+
+
+
+
+                                Apps need
+                                secrets
+
+
 ```
 
 ## Analysis
@@ -48,7 +48,7 @@ Option 2: External Proxmox VM
 2. ESO operator starts
 3. ESO tries to fetch secrets from Bitwarden
 4. But Bitwarden pod needs secrets to start!
-5. 🔴 DEADLOCK
+5.  DEADLOCK
 ```
 
 **Example deadlock scenario:**
@@ -56,7 +56,7 @@ Option 2: External Proxmox VM
 - PostgreSQL needs storage (needs CSI driver)
 - CSI driver needs TrueNAS credentials (from where?)
 - TrueNAS credentials should be in Bitwarden...
-- 💥 Circular dependency!
+-  Circular dependency!
 
 ### The Bootstrap Problem
 
@@ -74,45 +74,45 @@ Even with ESO, you still need **bootstrap secrets**:
 ## Option 1: Bitwarden ON Cluster
 
 ### Pros
-✅ **Single platform management** - Everything in Kubernetes
-✅ **GitOps all the way** - Bitwarden deployment in git
-✅ **Automated backups** - Velero/OADP handles it
-✅ **High availability** - Multiple replicas possible
-✅ **Resource sharing** - Use cluster storage, networking
-✅ **Monitoring integrated** - Prometheus/Grafana already there
+ **Single platform management** - Everything in Kubernetes
+ **GitOps all the way** - Bitwarden deployment in git
+ **Automated backups** - Velero/OADP handles it
+ **High availability** - Multiple replicas possible
+ **Resource sharing** - Use cluster storage, networking
+ **Monitoring integrated** - Prometheus/Grafana already there
 
 ### Cons
-❌ **Circular dependency** - Cluster needs secrets to run Bitwarden
-❌ **Bootstrap complexity** - Still need SealedSecrets for Bitwarden's DB password
-❌ **Disaster recovery** - If cluster is dead, can't access secrets to fix it
-❌ **Maintenance risk** - Cluster upgrades could break secret access
-❌ **Single point of failure** - Cluster down = no secret access
+ **Circular dependency** - Cluster needs secrets to run Bitwarden
+ **Bootstrap complexity** - Still need SealedSecrets for Bitwarden's DB password
+ **Disaster recovery** - If cluster is dead, can't access secrets to fix it
+ **Maintenance risk** - Cluster upgrades could break secret access
+ **Single point of failure** - Cluster down = no secret access
 
 ### Architecture with Bitwarden ON Cluster
 
 ```yaml
 # Bootstrap layer (still need SealedSecrets)
 bootstrap/
-├── sealed-secret-bitwarden-db-password.yaml    # Bitwarden's PostgreSQL
-├── sealed-secret-csi-driver-creds.yaml         # TrueNAS access
-├── sealed-secret-registry-pull-secret.yaml     # Image registry
-└── sealed-secret-argocd-admin.yaml             # Break-glass access
+ sealed-secret-bitwarden-db-password.yaml    # Bitwarden's PostgreSQL
+ sealed-secret-csi-driver-creds.yaml         # TrueNAS access
+ sealed-secret-registry-pull-secret.yaml     # Image registry
+ sealed-secret-argocd-admin.yaml             # Break-glass access
 
 # Core services (after bootstrap)
 core/
-├── postgresql/                                  # For Bitwarden
-├── bitwarden/                                   # Vaultwarden deployment
-└── external-secrets-operator/
-    ├── namespace.yaml
-    ├── cluster-secret-store.yaml                # Points to Bitwarden on cluster
-    └── sealed-secret-bw-session.yaml            # ESO's session token
+ postgresql/                                  # For Bitwarden
+ bitwarden/                                   # Vaultwarden deployment
+ external-secrets-operator/
+     namespace.yaml
+     cluster-secret-store.yaml                # Points to Bitwarden on cluster
+     sealed-secret-bw-session.yaml            # ESO's session token
 
 # Applications (ESO managed)
 apps/
-├── media/
-│   └── plex/external-secret.yaml                # Fetches from Bitwarden
-└── nautobot/
-    └── external-secret.yaml
+ media/
+    plex/external-secret.yaml                # Fetches from Bitwarden
+ nautobot/
+     external-secret.yaml
 ```
 
 **Workflow:**
@@ -129,49 +129,49 @@ apps/
 ## Option 2: Bitwarden EXTERNAL on Proxmox
 
 ### Pros
-✅ **Break circular dependency** - Bitwarden available before cluster boots
-✅ **Better disaster recovery** - Cluster dead? Access Bitwarden from anywhere
-✅ **Simpler bootstrap** - Only need BW_SESSION in cluster, not Bitwarden's own secrets
-✅ **Lower blast radius** - Cluster issues don't affect secret access
-✅ **Multi-cluster support** - One Bitwarden for multiple clusters
-✅ **Dedicated resources** - Doesn't compete with cluster workloads
+ **Break circular dependency** - Bitwarden available before cluster boots
+ **Better disaster recovery** - Cluster dead? Access Bitwarden from anywhere
+ **Simpler bootstrap** - Only need BW_SESSION in cluster, not Bitwarden's own secrets
+ **Lower blast radius** - Cluster issues don't affect secret access
+ **Multi-cluster support** - One Bitwarden for multiple clusters
+ **Dedicated resources** - Doesn't compete with cluster workloads
 
 ### Cons
-❌ **Another platform to manage** - Proxmox + OpenShift
-❌ **Separate backups** - Need Proxmox VM backup strategy
-❌ **Manual deployment** - Ansible playbook, not GitOps
-❌ **Network dependency** - Cluster needs network access to Proxmox VLAN
-❌ **Lower availability** - Single VM (but can be HA later)
-❌ **Split monitoring** - Need to monitor VM separately
+ **Another platform to manage** - Proxmox + OpenShift
+ **Separate backups** - Need Proxmox VM backup strategy
+ **Manual deployment** - Ansible playbook, not GitOps
+ **Network dependency** - Cluster needs network access to Proxmox VLAN
+ **Lower availability** - Single VM (but can be HA later)
+ **Split monitoring** - Need to monitor VM separately
 
 ### Architecture with Bitwarden EXTERNAL
 
 ```yaml
 # Proxmox VM (Ansible deployed)
 proxmox/
-└── vms/
-    └── vault.sigtom.dev/
-        ├── vaultwarden (Docker Compose)
-        ├── postgresql (dedicated)
-        ├── nginx (reverse proxy + SSL)
-        └── backups → TrueNAS
+ vms/
+     vault.sigtom.dev/
+         vaultwarden (Docker Compose)
+         postgresql (dedicated)
+         nginx (reverse proxy + SSL)
+         backups → TrueNAS
 
 # OpenShift bootstrap (minimal!)
 bootstrap/
-└── sealed-secret-bw-session.yaml                # Only this!
+ sealed-secret-bw-session.yaml                # Only this!
 
 # Core services (clean!)
 core/
-└── external-secrets-operator/
-    ├── namespace.yaml
-    └── cluster-secret-store.yaml                # Points to external Bitwarden
+ external-secrets-operator/
+     namespace.yaml
+     cluster-secret-store.yaml                # Points to external Bitwarden
 
 # Applications (ESO managed)
 apps/
-├── media/
-│   └── plex/external-secret.yaml
-└── nautobot/
-    └── external-secret.yaml
+ media/
+    plex/external-secret.yaml
+ nautobot/
+     external-secret.yaml
 ```
 
 **Workflow:**
@@ -290,18 +290,18 @@ Result: Clean multi-cluster architecture
 
 ```
 Infrastructure Layer (Proxmox):
-├── vault.sigtom.dev (VM)           ← Bitwarden
-├── ipmgmt.sigtom.dev (VM)          ← Nautobot (already external)
-└── dns1.sigtom.dev (LXC)           ← Technitium (already external)
+ vault.sigtom.dev (VM)           ← Bitwarden
+ ipmgmt.sigtom.dev (VM)          ← Nautobot (already external)
+ dns1.sigtom.dev (LXC)           ← Technitium (already external)
 
 Kubernetes Layer (OpenShift):
-├── Bootstrap: 1 SealedSecret (BW_SESSION)
-└── Everything else: ESO → External Bitwarden
+ Bootstrap: 1 SealedSecret (BW_SESSION)
+ Everything else: ESO → External Bitwarden
 
 Future Growth:
-├── wow-ocp-prod (OpenShift cluster 1)  ┐
-├── wow-ocp-dev (OpenShift cluster 2)   ├─→ All use same Bitwarden
-└── wow-k3s-edge (K3s cluster)          ┘
+ wow-ocp-prod (OpenShift cluster 1)
+ wow-ocp-dev (OpenShift cluster 2)   → All use same Bitwarden
+ wow-k3s-edge (K3s cluster)
 ```
 
 ## Implementation Plan
@@ -382,11 +382,11 @@ oc delete namespace vaultwarden
 
 ```
 Primary: External Bitwarden on Proxmox
-└─ Used by ESO for all secrets
+ Used by ESO for all secrets
 
 Backup: Bitwarden on Cluster
-└─ Manual fallback if Proxmox is down
-└─ Periodic sync from primary
+ Manual fallback if Proxmox is down
+ Periodic sync from primary
 ```
 
 But this adds complexity. Start simple with external only.
@@ -440,12 +440,12 @@ ansible-playbook playbooks/backup-critical-vms.yaml
 **Recommendation: Move Bitwarden to External Proxmox VM**
 
 **Reasons:**
-1. ✅ Eliminates circular dependencies
-2. ✅ Better disaster recovery story
-3. ✅ Enables multi-cluster future
-4. ✅ Follows infrastructure layer pattern (like Nautobot, DNS)
-5. ✅ Lower blast radius
-6. ✅ Homelab best practice: critical infrastructure outside the cluster
+1.  Eliminates circular dependencies
+2.  Better disaster recovery story
+3.  Enables multi-cluster future
+4.  Follows infrastructure layer pattern (like Nautobot, DNS)
+5.  Lower blast radius
+6.  Homelab best practice: critical infrastructure outside the cluster
 
 **Trade-offs accepted:**
 - Need to manage VM separately (but you're already doing this for Nautobot, DNS)

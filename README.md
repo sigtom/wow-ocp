@@ -2,7 +2,7 @@
 
 This repository contains the GitOps configuration and Infrastructure as Code (IaC) for a private OpenShift 4.20 cluster and a Proxmox-based "Cattle" infrastructure. It manages a hybrid environment supporting containerized applications, virtual machines, and automated lab operations.
 
-## 🏛️ Architecture
+##  Architecture
 
 ### Hardware
 *   **OpenShift (OCP):** 3x Dell FC630 PowerEdge Blades (wow-ocp-node2-4).
@@ -18,7 +18,7 @@ This repository contains the GitOps configuration and Infrastructure as Code (Ia
 *   **Secrets:** Bitwarden (Vault) + External Secrets Operator (ESO).
 *   **Ingress:** Traefik (Proxmox) & OpenShift Routes (OCP) with Cloudflare DNS-01.
 
-## 📁 Repository Structure
+##  Repository Structure
 
 *   `apps/`: Active cluster applications (AAP, Technitium, Vaultwarden).
 *   `infrastructure/`: Core cluster services (Storage, Operators, Monitoring).
@@ -27,7 +27,7 @@ This repository contains the GitOps configuration and Infrastructure as Code (Ia
 *   `jobs/`: Custom Nautobot Python jobs for network discovery.
 *   `argocd-apps/`: ArgoCD Application definitions.
 
-## 🚀 Operational Workflows
+##  Operational Workflows
 
 ### 1. Master Deployment (The "Cattle" Pattern)
 Application deployment on Proxmox is driven by Nautobot metadata.
@@ -43,10 +43,9 @@ Raw secrets are never committed.
 ### 3. GitOps Loop
 This repository is tied to Nautobot via GitHub Actions. Pushing to `main` automatically triggers a Nautobot Git Sync, ensuring your inventory always matches your code.
 
-## 📖 Documentation
+##  Documentation
 
 *   [Runbooks](./docs/runbooks/README.md): Troubleshooting guides for common cluster issues.
 *   [Architecture](./docs/architecture/external-secrets-bitwarden.md): Deep dives into the secret management and networking layers.
 
 ---
-Managed with ❤️ by SigTomtech.

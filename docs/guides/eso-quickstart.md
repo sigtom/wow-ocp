@@ -202,7 +202,7 @@ oc logs secret-test -n eso-test
 # Should show: Secret value: hello-from-bitwarden
 ```
 
-## Success! 🎉
+## Success!
 
 ESO is now syncing secrets from Bitwarden to OpenShift!
 

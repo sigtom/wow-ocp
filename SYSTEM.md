@@ -39,17 +39,17 @@ Every manifest, command, or recommendation you provide must adhere to these non-
 **CRITICAL RULE:** DO NOT write ad-hoc bash scripts that directly modify deployed resources. Use the proper automation tooling:
 
 **For OpenShift Resources:**
-- ✅ GitOps workflow (commit → push → ArgoCD sync)
-- ✅ `oc` commands for emergency break-glass only
-- ❌ NEVER: ssh into nodes and modify configs
-- ❌ NEVER: one-off scripts that bypass Git
+-  GitOps workflow (commit → push → ArgoCD sync)
+-  `oc` commands for emergency break-glass only
+-  NEVER: ssh into nodes and modify configs
+-  NEVER: one-off scripts that bypass Git
 
 **For Proxmox/LXC/VM Resources:**
-- ✅ Ansible playbooks in `automation/playbooks/`
-- ✅ Reuse existing playbooks where possible
-- ✅ Discuss before creating new one-off playbooks
-- ❌ NEVER: ssh scripts that modify configs directly
-- ❌ NEVER: manual `pct exec` or `qm` commands outside playbooks
+-  Ansible playbooks in `automation/playbooks/`
+-  Reuse existing playbooks where possible
+-  Discuss before creating new one-off playbooks
+-  NEVER: ssh scripts that modify configs directly
+-  NEVER: manual `pct exec` or `qm` commands outside playbooks
 
 **Rationale:**
 - Configuration drift is the enemy
@@ -63,16 +63,16 @@ Every manifest, command, or recommendation you provide must adhere to these non-
 **CRITICAL RULE:** DO NOT create temporary markdown files in `/tmp/` to organize your thoughts. Talk directly to the user.
 
 **For communication/planning:**
-- ✅ Use markdown formatting directly in responses
-- ✅ Structure your thoughts inline (lists, headers, code blocks)
-- ✅ User can scroll back in terminal if they need to reference
-- ❌ NEVER: Create `/tmp/*.md` files for planning/discussion
-- ❌ NEVER: Write files just to `cat` them back
+-  Use markdown formatting directly in responses
+-  Structure your thoughts inline (lists, headers, code blocks)
+-  User can scroll back in terminal if they need to reference
+-  NEVER: Create `/tmp/*.md` files for planning/discussion
+-  NEVER: Write files just to `cat` them back
 
 **For documentation:**
-- ✅ Save to Git only if it's permanent (runbooks, architecture docs)
-- ✅ Proper location: `docs/`, `automation/`, `.pi/skills/`
-- ✅ Discuss file location/content with user first
+-  Save to Git only if it's permanent (runbooks, architecture docs)
+-  Proper location: `docs/`, `automation/`, `.pi/skills/`
+-  Discuss file location/content with user first
 
 **Rationale:**
 - Clutters the filesystem with throwaway files
@@ -155,13 +155,13 @@ resources:
 **Structure:**
 ```
 apps/
-  ├── <app-name>/
-  │   ├── base/           # Standard manifests
-  │   └── overlays/prod/  # Environment-specific patches
+   <app-name>/
+      base/           # Standard manifests
+      overlays/prod/  # Environment-specific patches
 infrastructure/
-  ├── storage/
-  ├── operators/
-  └── networking/
+   storage/
+   operators/
+   networking/
 argocd-apps/              # Application CRDs for sync
 ```
 
@@ -180,9 +180,9 @@ argocd-apps/              # Application CRDs for sync
 
 ### D. Secrets Management (The "Loose Lips Sink Ships" Rule)
 
-**Tools:**
-1. **Bitnami Sealed Secrets:** For "bootstrap" secrets (e.g., cloud API keys, git credentials, Bitwarden access). Encrypted at rest in Git.
-2. **External Secrets Operator (ESO):** For application secrets (e.g., database passwords, app keys). Synced from Bitwarden Vault.
+**Preferred Strategy (2026-01-11):** Use **External Secrets Operator (ESO)** for all application and infrastructure secrets. Secrets are managed in Bitwarden and synced dynamically.
+
+**Legacy/Bootstrap Strategy:** **Bitnami Sealed Secrets** is only used for "bootstrap" secrets required to stand up the cluster or ESO itself.
 
 **Absolute Rules:**
 - NEVER output a raw Kubernetes Secret manifest
@@ -259,10 +259,10 @@ We have **two storage backends** with different characteristics:
   - Media libraries (read-heavy)
   - Any workload needing multi-pod access
 
-**Special: 11TB Media Library**
-- Do NOT provision dynamically
-- Use static PV/PVC mapping to existing NFS share: `172.16.160.100:/mnt/tank/media`
-- ReclaimPolicy: **Retain** (DO NOT DELETE MY MOVIES)
+**Legacy: 11TB Media Library (OCP)**
+- **STATUS (2026-01-21): DECOMMISSIONED on OCP.**
+- This storage is now managed via **Proxmox Host Bind Mounts** for the DUMB stack.
+- Documentation for physical layout and mapping is maintained in **Nautobot**.
 
 #### LVM (Local Storage via LVMS)
 - **StorageClass:** `lvms-vg1`
@@ -430,9 +430,10 @@ spec:
 
 ## 3. WORKLOAD PATTERNS
 
-### Type A: Media Stack (Containers)
+### Type A: Media Stack (Containers on OpenShift) [LEGACY]
 
-**Apps:** Plex, Sonarr, Radarr, Prowlarr, Bazarr, Sabnzbd, Overseerr, Riven, Rdt-client
+**STATUS (2026-01-21): DEPRECATED.**
+All media stack workloads have been migrated to the **"Master Engine" Pattern on Proxmox** (See Section 12). This section remains for historical reference only. DO NOT deploy new media containers to OpenShift.
 
 **CRITICAL ARCHITECTURAL PATTERN (Deployed 2025-12-23):**
 
@@ -447,9 +448,9 @@ Every media app MUST use sidecar containers for cloud mounts:
 **Mount Structure:**
 ```
 /mnt/media                 # Parent mount (emptyDir shared volume)
-├── __all__/               # Zurg cloud content (movies/TV)
-├── torrents/              # TorBox downloads
-└── local/                 # Local storage (if used)
+ __all__/               # Zurg cloud content (movies/TV)
+ torrents/              # TorBox downloads
+ local/                 # Local storage (if used)
 ```
 
 **Scheduling Strategy:**
@@ -554,9 +555,9 @@ Heavy VM:     8 vCPU, 16-32GB    (databases, Windows with desktop)
 
 ## 4. OPERATIONAL WORKFLOWS
 
-### Workflow: Deploy New Application
+### Workflow: Deploy New Application (Core Cluster Services)
 
-**Prerequisites:**
+**NOTE (2026-01-21):** This workflow applies **ONLY** to core cluster infrastructure and services (e.g., AAP, Operators). All general workload applications (Media, Utilities) MUST use the **Master Engine Pattern** on Proxmox (Section 12).
 - Container image identified and tested
 - Resource requirements estimated (CPU, RAM, storage)
 - Configuration requirements documented (env vars, secrets, config files)
@@ -1077,7 +1078,7 @@ delete, destroy, remove, prune, purge, -f (force flag), truncate, drop
 
 **Prompt Format:**
 ```
-⚠️  DESTRUCTIVE OPERATION DETECTED ⚠️
+  DESTRUCTIVE OPERATION DETECTED
 
 Command: oc delete pvc media-library -n plex
 Impact: Will delete 11TB media library PVC (UNRECOVERABLE if Retain policy not set)
@@ -1402,114 +1403,114 @@ oc logs -n democratic-csi -l app=democratic-csi-nfs --tail=100 -f
 ### Storage Backend Selection
 
 ```
-┌─────────────────────────────────────────────┐
-│ Do multiple pods need to access this data?  │
-└─────────────────┬───────────────────────────┘
-                  │
-        ┌─────────┴─────────┐
-        │                   │
+
+ Do multiple pods need to access this data?
+
+
+
+
        YES                 NO
-        │                   │
-        ▼                   ▼
-   ┌────────┐         ┌─────────┐
-   │  NFS   │         │   LVM?  │
-   └────────┘         └────┬────┘
-        │                  │
-        │         ┌────────┴────────┐
-        │        YES               NO
-        │         │                 │
-        │    ┌────▼────┐       ┌────▼────┐
-        │    │ High    │       │ Default │
-        │    │ IOPS?   │       │  NFS    │
-        │    └────┬────┘       └─────────┘
-        │         │
-        │    ┌────┴────┐
-        │   YES       NO
-        │    │         │
-        │ ┌──▼──┐  ┌───▼───┐
-        │ │ LVM │  │  NFS  │
-        │ └─────┘  └───────┘
-        │
-        ▼
-  ┌──────────────────────────────────────┐
-  │ Examples:                            │
-  │ - VM disks (live migration) → NFS    │
-  │ - Config shared by replicas → NFS    │
-  │ - PostgreSQL database → LVM          │
-  │ - Prometheus metrics → LVM           │
-  │ - Media library (read) → NFS         │
-  │ - Build caches → LVM                 │
-  └──────────────────────────────────────┘
+
+
+
+     NFS               LVM?
+
+
+
+                YES               NO
+
+
+             High            Default
+             IOPS?            NFS
+
+
+
+           YES       NO
+
+
+          LVM     NFS
+
+
+
+
+   Examples:
+   - VM disks (live migration) → NFS
+   - Config shared by replicas → NFS
+   - PostgreSQL database → LVM
+   - Prometheus metrics → LVM
+   - Media library (read) → NFS
+   - Build caches → LVM
+
 ```
 
 ### Node Scheduling Strategy
 
 ```
-┌───────────────────────────────────────────┐
-│ Does this app need specific hardware?    │
-└─────────────────┬─────────────────────────┘
-                  │
-        ┌─────────┴─────────┐
-        │                   │
+
+ Does this app need specific hardware?
+
+
+
+
        YES                 NO
-        │                   │
-        ▼                   ▼
-   ┌────────┐         ┌─────────┐
-   │  Use   │         │  Don't  │
-   │nodeAff │         │ specify │
-   │inity   │         │ (sched  │
-   │(prefer)│         │ decides)│
-   └────────┘         └─────────┘
-        │
-        ▼
-  ┌──────────────────────────────────────┐
-  │ Examples:                            │
-  │                                      │
-  │ High bandwidth (media) → Node 2/3   │
-  │   (10G NICs)                         │
-  │                                      │
-  │ GPU workload → Node with GPU         │
-  │                                      │
-  │ NEVER use hard nodeSelector          │
-  │ (Learned Dec 2025: breaks migration) │
-  └──────────────────────────────────────┘
+
+
+
+     Use              Don't
+   nodeAff           specify
+   inity             (sched
+   (prefer)          decides)
+
+
+
+
+   Examples:
+
+   High bandwidth (media) → Node 2/3
+     (10G NICs)
+
+   GPU workload → Node with GPU
+
+   NEVER use hard nodeSelector
+   (Learned Dec 2025: breaks migration)
+
 ```
 
 ### Ingress vs MetalLB Decision
 
 ```
-┌───────────────────────────────────────────┐
-│ What protocol does this app use?         │
-└─────────────────┬─────────────────────────┘
-                  │
-        ┌─────────┴─────────┐
-        │                   │
+
+ What protocol does this app use?
+
+
+
+
     HTTP/HTTPS          UDP/TCP
-        │              (non-HTTP)
-        ▼                   │
-   ┌────────┐               │
-   │Ingress │               │
-   │ with   │               │
-   │cert-mgr│               │
-   └────────┘               ▼
-        │             ┌──────────┐
-        │             │ MetalLB  │
-        │             │ LoadBal  │
-        │             │ Service  │
-        │             └──────────┘
-        │                   │
-        ▼                   ▼
-  ┌────────────────────────────────────┐
-  │ Examples:                          │
-  │                                    │
-  │ Web apps → Ingress                 │
-  │   (Sonarr, Radarr, Technitium UI)  │
-  │                                    │
-  │ Plex DLNA (UDP) → MetalLB          │
-  │ Game servers (UDP) → MetalLB       │
-  │ DNS (UDP/TCP 53) → MetalLB         │
-  │ VPN (UDP) → MetalLB                │
-  └────────────────────────────────────┘
+                      (non-HTTP)
+
+
+   Ingress
+    with
+   cert-mgr
+
+
+                      MetalLB
+                      LoadBal
+                      Service
+
+
+
+
+   Examples:
+
+   Web apps → Ingress
+     (Sonarr, Radarr, Technitium UI)
+
+   Plex DLNA (UDP) → MetalLB
+   Game servers (UDP) → MetalLB
+   DNS (UDP/TCP 53) → MetalLB
+   VPN (UDP) → MetalLB
+
 ```
 
 ---
@@ -1677,7 +1678,7 @@ spec:
 - Challenge my recommendations if they don't fit context
 - Teach me about your environment (I learn from corrections)
 
-**Let's build a reliable, scalable, production-grade homelab. 🚀**
+**Let's build a reliable, scalable, production-grade homelab. **
 
 ---
 
@@ -1914,20 +1915,20 @@ nautobot:
 
 ```
 automation/
-├── group_vars/
-│   └── all.yml              # Global standards (templates, sizes, networks)
-├── inventory/
-│   └── hosts.yaml           # Declarative host definitions
-├── playbooks/
-│   ├── deploy-{app}.yaml    # App-specific deployment
-│   └── health-check.yaml    # Standalone troubleshooting
-└── roles/
-    ├── provision_vm_generic/    # Generic VM provisioning
-    ├── provision_lxc_generic/   # Generic LXC provisioning
-    ├── health_check/            # Health verification
-    ├── post_provision/          # Post-provision automation
-    ├── snapshot_manager/        # Snapshot operations
-    └── {app}_deploy/            # App-specific deployment roles
+ group_vars/
+    all.yml              # Global standards (templates, sizes, networks)
+ inventory/
+    hosts.yaml           # Declarative host definitions
+ playbooks/
+    deploy-{app}.yaml    # App-specific deployment
+    health-check.yaml    # Standalone troubleshooting
+ roles/
+     provision_vm_generic/    # Generic VM provisioning
+     provision_lxc_generic/   # Generic LXC provisioning
+     health_check/            # Health verification
+     post_provision/          # Post-provision automation
+     snapshot_manager/        # Snapshot operations
+     {app}_deploy/            # App-specific deployment roles
 ```
 
 **Do NOT create:**
@@ -1958,7 +1959,7 @@ pct stop 350 && pct destroy 350   # LXC
 
 ### H. Common Anti-Patterns to Avoid
 
-**❌ Bad:**
+** Bad:**
 ```yaml
 # Playbook named after specific host
 playbooks/deploy-nautobot-vm-212.yaml
@@ -1976,7 +1977,7 @@ playbooks/deploy-nautobot-vm-212.yaml
         # ... 100 more lines of hardcoded config
 ```
 
-**✅ Good:**
+** Good:**
 ```yaml
 # Generic playbook
 playbooks/deploy-vm.yaml
@@ -1994,12 +1995,12 @@ hosts:
     - provision_vm_generic
 ```
 
-**❌ Bad:**
+** Bad:**
 - Roles that install Docker AND deploy the app
 - Secrets in vars files
 - Per-host playbooks
 
-**✅ Good:**
+** Good:**
 - `post_provision: docker_host` prepares VM
 - Separate app deployment role/playbook
 - Bitwarden lookup for secrets
@@ -2116,10 +2117,10 @@ ansible-playbook -i inventory/hosts.yaml playbooks/deploy-traefik.yaml
 - **Ansible:** Orchestrates secret fetching and deployment
 
 **Benefits:**
-- ✅ No secrets in Git (safe to commit playbooks)
-- ✅ Audit trail (Bitwarden logs who accessed what)
-- ✅ Rotation friendly (change secret in BW, redeploy)
-- ✅ Shared across team (everyone uses same BW org)
+-  No secrets in Git (safe to commit playbooks)
+-  Audit trail (Bitwarden logs who accessed what)
+-  Rotation friendly (change secret in BW, redeploy)
+-  Shared across team (everyone uses same BW org)
 
 ---
 
@@ -2327,21 +2328,21 @@ ansible-playbook -i inventory/hosts.yaml playbooks/deploy-nautobot-app.yaml
 ### G. Security Best Practices
 
 **DO:**
-- ✅ Use `no_log: true` on secret-handling tasks
-- ✅ Set file mode `0600` on .env files (root-only readable)
-- ✅ Add `.env` to `.gitignore`
-- ✅ Use `BW_SESSION` (expires after inactivity)
-- ✅ Lock Bitwarden when done: `bw lock`
-- ✅ Validate secrets before use (length, format)
-- ✅ Use Bitwarden folders for organization
+-  Use `no_log: true` on secret-handling tasks
+-  Set file mode `0600` on .env files (root-only readable)
+-  Add `.env` to `.gitignore`
+-  Use `BW_SESSION` (expires after inactivity)
+-  Lock Bitwarden when done: `bw lock`
+-  Validate secrets before use (length, format)
+-  Use Bitwarden folders for organization
 
 **DON'T:**
-- ❌ Log secret values (even in debug output)
-- ❌ Commit `.env` files to Git
-- ❌ Hardcode `BW_SESSION` in scripts
-- ❌ Store `BW_SESSION` in shell history (use `export`)
-- ❌ Use plain variables in playbooks (use templates)
-- ❌ Run playbooks without `BW_SESSION` set
+-  Log secret values (even in debug output)
+-  Commit `.env` files to Git
+-  Hardcode `BW_SESSION` in scripts
+-  Store `BW_SESSION` in shell history (use `export`)
+-  Use plain variables in playbooks (use templates)
+-  Run playbooks without `BW_SESSION` set
 
 ---
 
@@ -2398,11 +2399,11 @@ ssh root@TARGET "cd /opt/app && docker compose config | grep PASSWORD"
 
 **Old Way (INSECURE):**
 ```yaml
-# ❌ Hardcoded in playbook
+#  Hardcoded in playbook
 vars:
   db_password: "supersecretpassword"  # NEVER DO THIS
 
-# ❌ Prompted at runtime
+#  Prompted at runtime
 vars_prompt:
   - name: db_password
     prompt: "Enter database password"  # Manual intervention required
@@ -2410,7 +2411,7 @@ vars_prompt:
 
 **New Way (SECURE):**
 ```yaml
-# ✅ Fetched from Bitwarden
+#  Fetched from Bitwarden
 - name: "Fetch DB password"
   ansible.builtin.shell: |
     bw get item "DB_PASSWORD" --session "{{ bw_session }}" | jq -r '.login.password'

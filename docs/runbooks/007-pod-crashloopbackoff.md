@@ -322,7 +322,7 @@ livenessProbe:
 #     port: 8080
 ```
 
-**⚠️ WARNING:** Remove only for testing. Production apps MUST have probes.
+** WARNING:** Remove only for testing. Production apps MUST have probes.
 
 ### Fix 4: Application Waiting for Dependency (Database/Service)
 
@@ -529,27 +529,27 @@ livenessProbe:
 
 ```
 Pod CrashLoopBackOff
-    │
-    ├─ Events show "OOMKilled"?
-    │   └─ Yes → Increase memory limits (Fix 1)
-    │
-    ├─ Logs show "Permission denied"?
-    │   └─ Yes → Fix fsGroup/runAsUser (Fix 5)
-    │
-    ├─ Logs show "connection refused"?
-    │   └─ Yes → Check dependency health (Fix 4)
-    │
-    ├─ Logs show "environment variable not set"?
-    │   └─ Yes → Check secret/configmap (Fix 2)
-    │
-    ├─ Logs empty or exits immediately?
-    │   └─ Yes → Check previous logs: oc logs --previous
-    │
-    ├─ Events show "exec format error"?
-    │   └─ Yes → Wrong image architecture (Fix 6)
-    │
-    └─ Pod restarts every X seconds?
-        └─ Yes → Liveness probe too aggressive (Fix 3)
+
+     Events show "OOMKilled"?
+        Yes → Increase memory limits (Fix 1)
+
+     Logs show "Permission denied"?
+        Yes → Fix fsGroup/runAsUser (Fix 5)
+
+     Logs show "connection refused"?
+        Yes → Check dependency health (Fix 4)
+
+     Logs show "environment variable not set"?
+        Yes → Check secret/configmap (Fix 2)
+
+     Logs empty or exits immediately?
+        Yes → Check previous logs: oc logs --previous
+
+     Events show "exec format error"?
+        Yes → Wrong image architecture (Fix 6)
+
+     Pod restarts every X seconds?
+         Yes → Liveness probe too aggressive (Fix 3)
 ```
 
 ---

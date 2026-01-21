@@ -363,7 +363,7 @@ metadata:
     cert-manager.io/cluster-issuer: cloudflare-staging  # Use staging
 ```
 
-**⚠️ Staging certs are NOT TRUSTED by browsers** - only for testing.
+** Staging certs are NOT TRUSTED by browsers** - only for testing.
 
 ### Fix 5: Missing or Wrong Ingress Annotation
 

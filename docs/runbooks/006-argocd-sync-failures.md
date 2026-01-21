@@ -329,7 +329,7 @@ oc patch <resource-type> <resource-name> -n <namespace> \
   -p '{"metadata":{"finalizers":[]}}' --type=merge
 ```
 
-**⚠️ WARNING:** Only remove finalizers if you understand the impact (e.g., orphaned cloud resources).
+** WARNING:** Only remove finalizers if you understand the impact (e.g., orphaned cloud resources).
 
 ### Fix 6: Immutable Field Change
 
@@ -404,7 +404,7 @@ for dir in $(find apps/ -type f -name kustomization.yaml -exec dirname {} \;); d
   kustomize build "$dir" | oc apply --dry-run=server -f - || exit 1
 done
 
-echo "✓ All validations passed"
+echo " All validations passed"
 ```
 
 **Make executable:**

@@ -5,7 +5,7 @@
 
 ---
 
-## 🏛️ Core Infrastructure
+##  Core Infrastructure
 
 | Component | URL / Host | IP / Network | Role |
 | :--- | :--- | :--- | :--- |
@@ -18,7 +18,7 @@
 
 ---
 
-## 🚀 Active Application Stack (DUMB)
+##  Active Application Stack (DUMB)
 
 | Application | Hostname | IP | Port |
 | :--- | :--- | :--- | :--- |
@@ -30,7 +30,7 @@
 
 ---
 
-## 🔑 Common Logic & Pattern Reference
+##  Common Logic & Pattern Reference
 
 *   **Deployment**: Always use `automation/playbooks/master-deploy.yaml`.
 *   **Secrets**: Pulled from **Bitwarden** via **ESO** into OCP/AAP.
@@ -40,7 +40,7 @@
 
 ---
 
-## 🛠️ Maintenance & Discovery
+##  Maintenance & Discovery
 *   **Physical Topology**: Documented via Nautobot Cables.
 *   **Re-Discovery**: Run the "Discover Physical Cables" Job in Nautobot to sync SNMP data.
 *   **Alerting**: OCP Alertmanager -> Apprise (Currently Silent).

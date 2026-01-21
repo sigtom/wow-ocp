@@ -330,7 +330,7 @@ oc debug node/$(oc get nodes -l node-role.kubernetes.io/worker -o name | head -n
   exit 1
 }
 
-echo "✓ All validations passed"
+echo " All validations passed"
 ```
 
 **Usage:**
@@ -381,31 +381,31 @@ ssh truenas "zfs list -o name,used,avail,refer tank/k8s"
 
 ```
 PVC Pending
-    │
-    ├─ Events show "ProvisioningFailed"?
-    │   ├─ Yes → Check CSI driver logs (Step 3)
-    │   │   ├─ "Connection refused" → Fix network (Runbook 005)
-    │   │   ├─ "Dataset exists" → Delete orphaned dataset
-    │   │   └─ "API version" → Update driver image to 'next'
-    │   └─ No → Continue
-    │
-    ├─ Events show "Waiting for volume"?
-    │   ├─ Yes → Driver hasn't processed yet
-    │   │   ├─ Wait 5 more minutes
-    │   │   └─ If >10 min, restart CSI driver
-    │   └─ No → Continue
-    │
-    ├─ StorageClass exists?
-    │   ├─ No → Fix PVC manifest or create StorageClass
-    │   └─ Yes → Continue
-    │
-    ├─ Namespace quota exceeded?
-    │   ├─ Yes → Increase quota or delete unused PVCs
-    │   └─ No → Continue
-    │
-    └─ CSI driver pods running?
-        ├─ No → Restart driver pods, check logs
-        └─ Yes → Check TrueNAS manually (API creds, space)
+
+     Events show "ProvisioningFailed"?
+        Yes → Check CSI driver logs (Step 3)
+           "Connection refused" → Fix network (Runbook 005)
+           "Dataset exists" → Delete orphaned dataset
+           "API version" → Update driver image to 'next'
+        No → Continue
+
+     Events show "Waiting for volume"?
+        Yes → Driver hasn't processed yet
+           Wait 5 more minutes
+           If >10 min, restart CSI driver
+        No → Continue
+
+     StorageClass exists?
+        No → Fix PVC manifest or create StorageClass
+        Yes → Continue
+
+     Namespace quota exceeded?
+        Yes → Increase quota or delete unused PVCs
+        No → Continue
+
+     CSI driver pods running?
+         No → Restart driver pods, check logs
+         Yes → Check TrueNAS manually (API creds, space)
 ```
 
 ---

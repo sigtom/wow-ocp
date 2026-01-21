@@ -477,7 +477,7 @@ if [ "${REMAINING%%/*}" -lt 20 ]; then
   exit 1
 fi
 
-echo "✓ Rate limit OK"
+echo " Rate limit OK"
 ```
 
 **Run daily:**
@@ -491,21 +491,21 @@ echo "✓ Rate limit OK"
 
 ```
 ImagePullBackOff
-    │
-    ├─ Error: "rate limit exceeded"?
-    │   └─ Yes → Add Docker Hub credentials (Fix 1)
-    │
-    ├─ Error: "manifest unknown"?
-    │   └─ Yes → Check image name/tag exists (Fix 2)
-    │
-    ├─ Error: "unauthorized"?
-    │   └─ Yes → Add pull secret (Fix 3)
-    │
-    ├─ Error: "dial tcp timeout"?
-    │   └─ Yes → Check network/DNS (Fix 4)
-    │
-    └─ Pod crashes with "exec format error"?
-        └─ Yes → Wrong architecture (Fix 5)
+
+     Error: "rate limit exceeded"?
+        Yes → Add Docker Hub credentials (Fix 1)
+
+     Error: "manifest unknown"?
+        Yes → Check image name/tag exists (Fix 2)
+
+     Error: "unauthorized"?
+        Yes → Add pull secret (Fix 3)
+
+     Error: "dial tcp timeout"?
+        Yes → Check network/DNS (Fix 4)
+
+     Pod crashes with "exec format error"?
+         Yes → Wrong architecture (Fix 5)
 ```
 
 ---
