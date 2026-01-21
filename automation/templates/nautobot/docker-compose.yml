@@ -34,6 +34,56 @@ services:
     networks:
       - nautobot-net
 
+  nautobot-worker:
+    image: networktocode/nautobot:latest-py3.12
+    container_name: nautobot-worker
+    restart: unless-stopped
+    user: "0:0"
+    command: nautobot-server celery worker
+    environment:
+      NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
+      NAUTOBOT_DB_HOST: postgres
+      NAUTOBOT_DB_PORT: 5432
+      NAUTOBOT_DB_NAME: nautobot
+      NAUTOBOT_DB_USER: nautobot
+      NAUTOBOT_DB_PASSWORD: ${NAUTOBOT_DB_PASSWORD}
+      NAUTOBOT_REDIS_HOST: redis
+      NAUTOBOT_REDIS_PORT: 6379
+      NAUTOBOT_REDIS_PASSWORD: ""
+      NAUTOBOT_SECRET_KEY: ${NAUTOBOT_SECRET_KEY}
+      NAUTOBOT_ALLOWED_HOSTS: "*"
+    depends_on:
+      - nautobot
+    volumes:
+      - nautobot-media:/opt/nautobot/media
+    networks:
+      - nautobot-net
+
+  nautobot-scheduler:
+    image: networktocode/nautobot:latest-py3.12
+    container_name: nautobot-scheduler
+    restart: unless-stopped
+    user: "0:0"
+    command: nautobot-server celery beat
+    environment:
+      NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
+      NAUTOBOT_DB_HOST: postgres
+      NAUTOBOT_DB_PORT: 5432
+      NAUTOBOT_DB_NAME: nautobot
+      NAUTOBOT_DB_USER: nautobot
+      NAUTOBOT_DB_PASSWORD: ${NAUTOBOT_DB_PASSWORD}
+      NAUTOBOT_REDIS_HOST: redis
+      NAUTOBOT_REDIS_PORT: 6379
+      NAUTOBOT_REDIS_PASSWORD: ""
+      NAUTOBOT_SECRET_KEY: ${NAUTOBOT_SECRET_KEY}
+      NAUTOBOT_ALLOWED_HOSTS: "*"
+    depends_on:
+      - nautobot
+    volumes:
+      - nautobot-media:/opt/nautobot/media
+    networks:
+      - nautobot-net
+
   postgres:
     image: postgres:15-alpine
     container_name: nautobot-postgres
