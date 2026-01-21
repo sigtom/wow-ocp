@@ -1,0 +1,94 @@
+---
+# SSH Bootstrap Role - Main Tasks
+# Ensures Ansible and User access to Proxmox LXCs/VMs
+
+- name: Initialize bootstrap status
+  ansible.builtin.set_fact:
+    ssh_connectivity_working: false
+
+- name: Test current SSH connectivity
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 22
+    state: started
+    timeout: 3
+  register: conn_check
+  ignore_errors: yes
+  delegate_to: localhost
+  check_mode: no
+
+- name: Set connectivity flag
+  ansible.builtin.set_fact:
+    ssh_connectivity_working: "{{ conn_check is succeeded }}"
+
+- name: "MODE 1: Standard SSH Sync (Reachable)"
+  block:
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: /root/.ssh
+        state: directory
+        mode: '0700'
+
+    - name: Sync global SSH keys via authorized_key module
+      ansible.posix.authorized_key:
+        user: root
+        state: present
+        key: "{{ item }}"
+        exclusive: no
+      loop: "{{ global_ssh_keys }}"
+  when: ssh_connectivity_working
+
+- name: "MODE 2: Proxmox API Bootstrap (Unreachable or Forced)"
+  block:
+    - name: Validate Proxmox facts are available
+      ansible.builtin.assert:
+        that:
+          - proxmox_vmid is defined
+          - proxmox_node is defined
+        fail_msg: "Cannot bootstrap via API: proxmox_vmid or proxmox_node not found in facts!"
+
+    - name: Inject keys into LXC via Proxmox API
+      community.general.proxmox:
+        api_host: "{{ hostvars[proxmox_node].ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_token_id: "{{ pve_api_token_id }}"
+        api_token_secret: "{{ pve_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ proxmox_vmid }}"
+        hostname: "{{ inventory_hostname }}"
+        pubkey: "{{ global_ssh_keys | join('\n') }}"
+        validate_certs: no
+        state: present
+      delegate_to: localhost
+      when: proxmox_vmtype | default('lxc') == 'lxc'
+
+    - name: Inject keys into VM via Proxmox API
+      community.general.proxmox_kvm:
+        api_host: "{{ hostvars[proxmox_node].ansible_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_token_id: "{{ pve_api_token_id }}"
+        api_token_secret: "{{ pve_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ proxmox_vmid }}"
+        name: "{{ inventory_hostname }}"
+        sshkeys: "{{ global_ssh_keys | join('\n') }}"
+        validate_certs: no
+        state: present
+      delegate_to: localhost
+      when: proxmox_vmtype | default('lxc') == 'qemu'
+
+    - name: Wait for SSH access to be restored
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        timeout: 60
+      delegate_to: localhost
+      when: not ansible_check_mode
+  when: not ssh_connectivity_working or (bootstrap_force | default(false) | bool)
+
+- name: Final verification of SSH access
+  ansible.builtin.command: id
+  register: id_res
+  changed_when: false
+  when: not ansible_check_mode

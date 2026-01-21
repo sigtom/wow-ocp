@@ -1,15 +1,14 @@
 ---
 # ============================================================================
-# SSH Key Bootstrap Utility (Fact-Driven)
+# SSH Key Bootstrap Utility (Refactored)
 # ============================================================================
 # Description: Inject an SSH public key into an LXC or VM on Proxmox.
-#              Uses dynamic inventory facts (proxmox_vmid, proxmox_vmtype)
-#              to automatically determine the correct injection method.
+#              Uses the bootstrap_ssh role for reliable injection.
 #
 # AAP Usage:
 #   - Job Template: "Util - SSH Bootstrap"
 #   - Credentials: "Proxmox Production", "AAP Executor SSH"
-#   - Survey: target_ip, bootstrap_mode, ssh_key
+#   - Survey: target_ip, bootstrap_force
 # ============================================================================
 
 - name: "SSH Key Bootstrap Utility - Initialization"
@@ -19,48 +18,21 @@
   tasks:
     - name: "Add manual target to inventory if IP provided"
       ansible.builtin.add_host:
-        # The ', true' ensures the default is used even if target_ip is an empty string
-        name: "{{ target_ip | default('validation_placeholder', true) }}"
+        name: "{{ target_ip }}"
         groups: manual_targets
         ansible_user: root
-      when: target_ip | default('', true) | length > 0
+      when: target_ip | default('') | length > 0
 
 - name: "SSH Key Bootstrap Utility - Execution"
   hosts: "all:manual_targets:!localhost"
   gather_facts: false
-  vars:
-    # Default to the Mac key if not provided in survey
-    default_ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
-    final_ssh_key: "{{ ssh_key | default(default_ssh_key) }}"
-    proxmox_host: "172.16.110.101"
-
   tasks:
-    # -------------------------------------------------------
-    # Mode 1: Direct SSH (Standard Ansible way)
-    # -------------------------------------------------------
-    - name: "Inject key via Direct SSH"
-      when: not (bootstrap_mode | default('false') | bool)
-      ansible.posix.authorized_key:
-        user: root
-        state: present
-        key: "{{ final_ssh_key }}"
-      register: ssh_result
-      ignore_errors: true
-
-    # -------------------------------------------------------
-    # Mode 2: Proxmox Out-of-Band (Fact-Driven)
-    # -------------------------------------------------------
-    - name: "Determine Proxmox Command"
-      ansible.builtin.set_fact:
-        proxmox_cmd: "{{ 'pct exec' if proxmox_vmtype | default('lxc') == 'lxc' else 'qm guest exec' }}"
-      when: (bootstrap_mode | default('false') | bool)
-
-    - name: "Inject key via Proxmox Host (Out-of-Band)"
-      when: (bootstrap_mode | default('false') | bool) and proxmox_vmid is defined
-      delegate_to: "{{ proxmox_node | default(proxmox_host) }}"
-      ansible.builtin.shell: |
-        {{ proxmox_cmd }} {{ proxmox_vmid }} -- bash -c "mkdir -p /root/.ssh && chmod 700 /root/.ssh && touch /root/.ssh/authorized_keys && grep -qxF '{{ final_ssh_key }}' /root/.ssh/authorized_keys || echo '{{ final_ssh_key }}' >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys"
-      register: oob_result
+    - name: "Run SSH Bootstrap Role"
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+      vars:
+        # Allow force mode from survey
+        bootstrap_force: "{{ bootstrap_mode | default('false') | bool }}"
 
     - name: "Final Summary"
       ansible.builtin.debug:
@@ -70,6 +42,5 @@
           - "=========================================="
           - "Host: {{ inventory_hostname }}"
           - "VMID: {{ proxmox_vmid | default('N/A') }}"
-          - "Mode: {{ 'Bootstrap (Proxmox)' if (bootstrap_mode | default('false') | bool) else 'Direct SSH' }}"
-          - "Status: {{ 'Success' if (ssh_result is succeeded or oob_result is succeeded) else 'Failed' }}"
+          - "Access Level: {{ id_res.stdout | default('Failed') }}"
           - "=========================================="
