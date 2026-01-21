@@ -1,0 +1,24 @@
+name: Nautobot GitOps Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'jobs/**'
+      - 'config_contexts/**'
+      - 'export_templates/**'
+      - 'automation/templates/nautobot/**'
+
+jobs:
+  sync:
+    name: Trigger Nautobot Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: API Call to Nautobot
+        run: |
+          curl -sk -X POST \
+            -H "Authorization: Token ${{ secrets.NAUTOBOT_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            "https://ipmgmt.sigtom.dev/api/extras/git-repositories/01557f55-9058-49f7-a2ed-e876a6258cc2/sync/"
