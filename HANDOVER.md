@@ -1,35 +1,29 @@
-# Handover Notes - January 20, 2026 (Evening Update)
+# Handover Notes - January 21, 2026 (Decommissioning Update)
 
 ## 🚀 Session Achievements
-1.  **Resolved 4K Buffering:** Enabled 50GB VFS cache mapped to host disk on DUMB LXC.
-2.  **Automated Token Refresh:** 15-minute rotation for TorBox links in Decypharr.
-3.  **Security Hardening:** Moved all media API keys to Bitwarden/ESO/AAP and scrubbed Git history.
-4.  **Stack Expansion:** Deployed Bazarr, Tautulli, and FlareSolverr via AAP.
-5.  **Platform Upgrade:** Successfully upgraded **HomeLab EE** to **Ansible Core 2.20.1 (Fedora-based)**.
+1.  **OCP Media Stack Decommissioned (Branch):** Successfully prepped the removal of all legacy media components from OpenShift.
+2.  **GitOps Cleanup:** Deleted 53 files, including redundant ArgoCD Applications and their source manifests in `apps/`.
+3.  **Monitoring Detached:** Successfully updated Alertmanager to stop sending notifications to the legacy Apprise bridge.
+4.  **Backup Alignment:** Removed the `media-stack-weekly` backup schedule from Kustomize.
 
 ## 🛠️ Current Status & Blockers
-*   **Proxmox Dynamic Inventory:** The sync is currently **failing** with an "Unknown Plugin" or "Dependency" error in AAP.
-    *   *Root Cause:* The Seeder (`setup-aap.yml`) is still using `ansible.controller.*` module names, but the new 2.20 EE requires the **`awx.awx.*`** collection names.
-    *   *Files Involved:* `automation/aap-config/setup-aap.yml`, `automation/inventory/main.proxmox.yml`.
-*   **SSH Bootstrap Utility:** Ready but dependent on the inventory facts (`proxmox_vmid`) which require the sync to work first.
+*   **Feature Branch:** All cleanup changes are staged in `feature/decommission-ocp-media-stack`.
+*   **Monitoring:** Alertmanager is now in a "silent" state (Default receiver) to prevent errors during decommissioning.
+*   **Storage:** `media-library-pv` is still present in OCP and set to `Retain`. Data is preserved on TrueNAS.
 
-## 📋 Next Session Plan (The "Fix it" Prompt)
-Use the following prompt to pick up where we left off:
+## 📋 Next Session Plan
+Use the following prompt to finalize the decommissioning:
 
-> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We are mid-way through a platform upgrade.
+> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We are in the middle of decommissioning the OCP media stack.
 >
-> **Goal:** Fix the Proxmox Dynamic Inventory sync in AAP.
->
-> **Context:**
-> 1. We just upgraded the **HomeLab EE** to Ansible 2.20.1 (based on `ghcr.io/ansible/community-ansible-dev-tools`).
-> 2. The seeder (`automation/aap-config/setup-aap.yml`) needs to be refactored to use the **`awx.awx`** collection instead of `ansible.controller`.
-> 3. The Proxmox inventory config is at `automation/inventory/main.proxmox.yml`.
+> **Goal:** Finalize the removal of the OCP media stack and redirect DNS to DUMB.
 >
 > **Tasks:**
-> 1. Refactor the seeder to use `awx.awx` modules.
-> 2. Ensure the `Proxmox Dynamic Sync` source in the seeder points to the correct `source_project` ('HomeLab Ops') and `source_path` ('automation/inventory/main.proxmox.yml').
-> 3. Update the AAP Job Template for the seeder pod if needed.
-> 4. Verify the inventory sync and then run the `Util - SSH Bootstrap` playbook against 'all' hosts."
+> 1. Review and merge the `feature/decommission-ocp-media-stack` branch to `main`.
+> 2. Verify ArgoCD prunes the deleted applications and the `media-stack` namespace.
+> 3. Manually delete the `media-library-pv` in OCP (`oc delete pv media-library-pv`).
+> 4. Perform surgical cleanup of OCP config folders on TrueNAS (keep `docker-media`, delete `riven-data`, `zurg`, `homepage`, `rdt-client` configs).
+> 5. Update Pi-hole and Cloudflare DNS records for media services to point to Proxmox Traefik (172.16.100.10)."
 
 ---
 *End of Handover*

@@ -665,8 +665,13 @@
         - Manually whitelisted `sabnzbd.sigtom.io` in `sabnzbd.ini` to resolve Hostname Verification failures.
         - Verified "Green Lock" and routing for Overseerr, Sabnzbd, qBittorrent, and Plex on the `.io` domain.
 
-- [2026-01-14]: **AAP GITOPS MIGRATION - "Cattle" Deployment Pipeline**
-    - **Goal**: Move local Ansible CLI workflows (`deploy-traefik.yaml`) to fully managed AAP Job Templates via GitOps.
+- [2026-01-21]: **OCP MEDIA STACK DECOMMISSIONING - IN PROGRESS**
+    - **Context**: Migrated media stack to DUMB on Proxmox (LXC 220/221).
+    - **Cleanup**: Deleted redundant ArgoCD applications (Plex, managers, discovery, stack, homepage, apprise) and their source manifests in `apps/`.
+    - **Monitoring**: Detached OCP Alertmanager from Apprise bridge. Updated `alertmanager-main` secret to remove the `apprise` receiver and reset routes to `Default`.
+    - **Storage**: Prepared for PV/PVC reclamation. PV `media-library-pv` is set to `Retain` to preserve data during OCP deletion.
+    - **DNS**: Prepared for redirection of media service domains to Proxmox Traefik IP (172.16.100.10).
+    - **Outcome**: OpenShift cluster footprint reduced; legacy media components removed from GitOps source of truth.
     - **Repo Alignment**: Imported untracked playbooks (`deploy-traefik.yaml`, `deploy-bitwarden-lite.yaml`) from remote dev box to Git.
     - **Seeder Integration**: Updated `setup-aap.yml` (Configuration as Code) to automatically create Job Templates with Surveys.
     - **Architecture Fixes**:
@@ -829,8 +834,14 @@
     - **Automation**: Templatized Decypharr `config.json` via Ansible and updated AAP Seeder to map necessary media API credentials.
     - **Outcome**: Verified tokens are proactively rotated before expiration, resolving streaming errors.
 
-- [2026-01-20]: **EXPANDED MEDIA AUTOMATION STACK**
-    - **Bazarr**: Added Bazarr to DUMB LXC (.20) as an isolated service for subtitle management.
-    - **FlareSolverr**: Added FlareSolverr to Downloader LXC (.21) to solve Cloudflare challenges for indexers.
-    - **Tautulli**: Added Tautulli to Downloader LXC (.21) for Plex monitoring and history.
-    - **Traefik/DNS**: Automated DNS records and Traefik routing for new services via AAP pipeline.
+- [2026-01-20]: **AAP PLATFORM & INVENTORY REPAIR (PHASE 4)**
+    - **Seeder Refactor**: Successfully refactored `setup-aap.yml` to use the `awx.awx` collection, resolving "Unknown Plugin" errors post-2.20 upgrade.
+    - **Inventory IP Discovery**: Fixed Proxmox Dynamic Inventory by implementing explicit `ansible_host` mapping from `proxmox_net0.ip`. AAP now correctly targets hosts via IP instead of unresolvable names.
+    - **Metadata Enrichment**: Added `proxmox_vmid`, `proxmox_vmtype`, and `proxmox_node` facts to all discovered hosts for automated OOB management.
+    - **SSH Bootstrap Fix**: Resolved `add_host` validation crashes in AAP by moving conditional logic to the Play level. Utility now handles manual IPs and inventory hosts safely.
+    - **ESO Stabilization**:
+        - Fixed `external-secrets` ComparisonError in ArgoCD by removing redundant/conflicting ClusterSecretStore manifests.
+        - Resolved `pathconf: Permission denied` restart loop by converting liveness/readiness probes from `exec` (wget) to native `httpGet`.
+    - **Security Recovery**: Successfully rotated leaked TorBox API keys across the entire pipeline (Bitvault -> ESO -> AAP -> DUMB LXC).
+    - **Zilean Integration**: Discovered and verified the Torznab endpoint (`/torznab`) for Zilean and integrated it into the Prowlarr/Sonarr search flow for instant cache hits.
+    - **Status**: AAP Platform is 100% operational; Proxmox inventory is synced with 14 hosts; Media stack is fully restored.
