@@ -21,7 +21,7 @@ hostnames:
 
 # Map critical connection info and metadata
 compose:
-  ansible_host: find_ip
+  ansible_host: proxmox_net0.ip | default('') | split('/') | first
   proxmox_vmid: vmid
   proxmox_vmtype: type
   proxmox_node: node
