@@ -1,30 +1,30 @@
-# Handover Notes - January 21, 2026 (Final Session Update)
+# Handover Notes - January 21, 2026 (Refactor & Cleanup Complete)
 
 ## 🚀 Session Achievements
-1.  **Nautobot Fully Synchronized:** Nautobot is now the "Operational Source of Truth." Every host (OCP, Proxmox, TrueNAS, Networking) is documented with its primary IP and services.
-2.  **Physical Topology Codified:** Successfully "cabled up" the MikroTik switch ports in Nautobot. You now have a complete map of your SFP+ connections.
-3.  **GitOps Structure Standardized:** Flattened the repository structure (`jobs/`, `config_contexts/`) to support Nautobot's native Git integration.
-4.  **Nautobot Stack Repaired:** Added the missing Celery Worker and Scheduler to the Docker stack. Git syncing and background jobs are now fully operational.
-5.  **OCP Decommissioned:** Successfully removed all media-stack resources from the OpenShift cluster and GitOps source code.
+1.  **Metadata-Driven Infrastructure**: Nautobot is now the **"Operational Source of Truth."** All hosts are fully enriched with hardware specs, services, and physical cabling data.
+2.  **Inventory-First Workflow**: Ansible Dynamic Inventory is live. No more manual survey typing in AAP.
+3.  **Master Application Engine**: Deployed the `Master Deploy` playbook and generic `docker_app` role. Any app can now be deployed via a single, data-driven entry in Git.
+4.  **Bulletproof SSH**: The `bootstrap_ssh` role handles unreachable hosts via the Proxmox API, removing a major bottleneck in lab automation.
+5.  **Repo Optimization**: Purged 6,000+ lines of legacy code, discovery scripts, and outdated documentation. Root directory is now lean and professional.
+6.  **Nautobot GitOps Loop**: Set up GitHub Actions to auto-sync the repo. Pushing to `main` updates the inventory in real-time.
 
 ## 🛠️ Current Status & Blockers
-*   **Infrastructure:** Everything is on `main`. Nautobot should be pointed to the `main` branch for Git syncing.
-*   **Dynamic Inventory:** Ansible is now configured to pull your lab data directly from Nautobot.
-*   **GitHub Sync**: A GitHub Action is in place but failing (Error 6) because the lab is not public. A Self-Hosted GitHub Runner needs to be deployed locally to bridge this gap.
-*   **Manual Task Remaining:** Perform surgical cleanup of OCP config folders on TrueNAS (keep `docker-media`, delete `riven-data`, `zurg`, `homepage`, `rdt-client` configs).
+*   **GitHub Runner**: The Nautobot Sync action is failing (Error 6) because the lab is private. A **Self-Hosted GitHub Runner** is needed.
+*   **Storage Cleanup**: OCP surgical cleanup on TrueNAS `/mnt/Media/docker-media` is ready for manual execution (delete `zurg`, `riven-data`, `homepage`, `rdt-client` folders).
+*   **Network Transition**: Nautobot contains the physical map required for the upcoming **UDM Pro Max / Unifi XG 24** swap.
 
 ## 📋 Next Session Plan
-Use the following prompt to begin the "Master Playbook" automation:
+Use the following prompt to finalize the lab's "Hands-Off" capabilities:
 
-> "Reference the **HANDOVER.md** and **PROGRESS.md** files. Nautobot is now the source of truth for our dynamic inventory.
+> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We have completed the major architectural refactor.
 >
-> **Goal:** Build the generic `docker_app` role and the `Master Deploy` playbook.
+> **Goal:** Deploy the Self-Hosted GitHub Runner and verify the Master Playbook.
 >
 > **Tasks:**
-> 1. Verify that the Nautobot Git Sync is pulling the latest `main` branch.
-> 2. Create the **`docker_app`** role to standardize application deployments (mkdir, .env template, docker-compose).
-> 3. Create the **`master-deploy.yaml`** playbook that chains Provisioning -> SSH Bootstrap -> Docker -> App Deployment.
-> 4. Test the master playbook by re-deploying one of the existing apps (like `traefik` or `dumb`) using the new data-driven role."
+> 1. Deploy a **Self-Hosted GitHub Runner** on a lightweight LXC to enable internal Nautobot syncing.
+> 2. Run the **Master Deploy** playbook in AAP against an existing host (e.g., `traefik` or `downloaders`) to verify the generic role logic.
+> 3. Perform the surgical cleanup of legacy OCP config folders on the TrueNAS share.
+> 4. Plan the transition of the physical switch map from MikroTik to the new Unifi XG 24 gear."
 
 ---
 *End of Handover*
