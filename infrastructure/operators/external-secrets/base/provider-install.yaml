@@ -126,25 +126,24 @@ spec:
               containerPort: 8087
               protocol: TCP
           livenessProbe:
-            exec:
-              command:
-                - wget
-                - -q
-                - http://127.0.0.1:8087/sync
-                - --post-data=''
+            httpGet:
+              path: /status
+              port: 8087
             initialDelaySeconds: 20
             failureThreshold: 30
             timeoutSeconds: 1
             periodSeconds: 10
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /status
               port: 8087
             initialDelaySeconds: 20
             failureThreshold: 30
             timeoutSeconds: 1
             periodSeconds: 10
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /status
               port: 8087
             initialDelaySeconds: 20
             failureThreshold: 30
