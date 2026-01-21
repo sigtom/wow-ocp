@@ -16,13 +16,14 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  when: target_ip is defined and target_ip | string | length > 0
   tasks:
     - name: "Add manual target to inventory if IP provided"
       ansible.builtin.add_host:
-        name: "{{ target_ip }}"
+        # The ', true' ensures the default is used even if target_ip is an empty string
+        name: "{{ target_ip | default('validation_placeholder', true) }}"
         groups: manual_targets
         ansible_user: root
+      when: target_ip | default('', true) | length > 0
 
 - name: "SSH Key Bootstrap Utility - Execution"
   hosts: "all:manual_targets:!localhost"
