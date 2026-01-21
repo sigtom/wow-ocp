@@ -11,9 +11,24 @@ token_secret: "{{ lookup('env', 'PROXMOX_SRE_BOT_API_TOKEN') }}"
 
 # Host discovery settings
 want_proctitle: true
+want_facts: true
 group_by_node: true
 group_by_type: true
 
 # Map the Proxmox Name to the Ansible Hostname
 hostnames:
   - name
+
+# Map critical connection info and metadata
+compose:
+  ansible_host: find_ip
+  proxmox_vmid: vmid
+  proxmox_vmtype: type
+  proxmox_node: node
+
+# Create smart groups for easier targeting
+keyed_groups:
+  - prefix: tag
+    key: proxmox_tags
+  - prefix: status
+    key: proxmox_status
