@@ -10,60 +10,18 @@ global_ssh_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEEJZzVG6rJ1TLR0LD2Rf1F/Wd6LdSEa9FoEvcdTqDRd sigtom@ilum"
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
 
-# Networking (Legacy - deprecated, use network_profiles instead)
-lab_vlan_mgmt: 110
-lab_bridge: "vmbr0"
-lab_gw: "172.16.110.1"
+# Proxmox Storage Backends - Per-node storage configuration
+proxmox_storage_backends:
+  wow-prox1:
+    vm_storage: "TSVMDS01"
+    lxc_storage: "TSVMDS01"
+    iso_storage: "local"
+    template_storage: "TSVMDS01"
+    backup_storage: "TSVMDS01"
 
-# ============================================================================
-# Phase 1: T-Shirt Sizes and OS Templates (Cattle, Not Pets)
-# ============================================================================
-
-# VM T-Shirt Sizes - Standard resource allocations
-vm_tshirt_sizes:
-  small:
-    cores: 1
-    memory: 1024      # 1GB RAM
-    disk: 20          # 20GB disk
-    description: "Lightweight services, testing"
-  medium:
-    cores: 2
-    memory: 2048      # 2GB RAM
-    disk: 50          # 50GB disk
-    description: "Standard applications, dev environments"
-  large:
-    cores: 4
-    memory: 4096      # 4GB RAM
-    disk: 100         # 100GB disk
-    description: "Database servers, resource-intensive apps"
-  xlarge:
-    cores: 8
-    memory: 8192      # 8GB RAM
-    disk: 200         # 200GB disk
-    description: "Heavy workloads, analytics, large databases"
-
-# LXC T-Shirt Sizes - More conservative for containers
-lxc_tshirt_sizes:
-  small:
-    cores: 1
-    memory: 512       # 512MB RAM
-    disk: 8           # 8GB disk
-    description: "Minimal services, proxies"
-  medium:
-    cores: 2
-    memory: 2048      # 2GB RAM
-    disk: 20          # 20GB disk
-    description: "Docker hosts, web applications"
-  large:
-    cores: 4
-    memory: 4096      # 4GB RAM
-    disk: 50          # 50GB disk
-    description: "Multi-container stacks"
-  xlarge:
-    cores: 8
-    memory: 8192      # 8GB RAM
-    disk: 100         # 100GB disk
-    description: "Container orchestration, heavy loads"
+# Default storage backend (can be overridden per-host)
+default_vm_storage: "TSVMDS01"
+default_lxc_storage: "TSVMDS01"
 
 # VM OS Templates - Maps OS types to Proxmox template VMIDs
 vm_templates:
@@ -116,131 +74,6 @@ lxc_templates:
     filename: "debian-12-standard_12.7-1_amd64.tar.zst"
     default_user: "root"
     description: "Debian 12 (Bookworm) Container"
-
-# Proxmox Storage Backends - Per-node storage configuration
-proxmox_storage_backends:
-  wow-prox1:
-    vm_storage: "TSVMDS01"
-    lxc_storage: "TSVMDS01"
-    iso_storage: "local"
-    template_storage: "TSVMDS01"
-    backup_storage: "TSVMDS01"
-
-# Default storage backend (can be overridden per-host)
-default_vm_storage: "TSVMDS01"
-default_lxc_storage: "TSVMDS01"
-
-# ============================================================================
-# Phase 2: Network Profiles, Connection Defaults, and Timeouts
-# ============================================================================
-
-# Network Profiles - Standardized network configurations
-network_profiles:
-  # Primary application network (Native VLAN on vmbr0)
-  apps:
-    bridge: vmbr0
-    vlan: null  # Native/untagged
-    subnet: "172.16.100.0/24"
-    gateway: 172.16.100.1
-    dns_servers:
-      - 172.16.100.2   # wow-pihole1 (primary)
-      - 172.16.110.100 # TrueNAS Pi-hole (secondary)
-    ntp_servers:
-      - 10.1.1.1       # pfSense NTP
-    description: "Primary application network for VMs and containers"
-    ip_allocation:
-      static_range: "172.16.100.10-172.16.100.49"  # 40 IPs for static assignment
-      dhcp_range: "172.16.100.50-172.16.100.99"     # DHCP pool (configured on pfSense)
-      reserved:
-        - "172.16.100.2-172.16.100.9"     # Infrastructure (DNS, etc.)
-        - "172.16.100.100-172.16.100.119" # OpenShift nodes
-        - "172.16.100.200-172.16.100.220" # MetalLB machine-pool
-    use_cases:
-      - "Application servers"
-      - "Database servers"
-      - "Web services"
-      - "Development environments"
-      - "General purpose workloads"
-    default: true  # Default network if not specified
-
-  # Proxmox management plane (VLAN 110 - RESTRICTED)
-  proxmox-mgmt:
-    bridge: vmbr0
-    vlan: 110
-    subnet: "172.16.110.0/24"
-    gateway: 172.16.110.1
-    dns_servers:
-      - 172.16.100.2
-      - 172.16.110.100
-    ntp_servers:
-      - 10.1.1.1
-    description: "Proxmox management plane - infrastructure critical systems only"
-    ip_allocation:
-      static_range: "172.16.110.10-172.16.110.49"   # 40 IPs for critical infrastructure
-      dhcp_range: "172.16.110.50-172.16.110.99"      # DHCP pool
-      monitoring_range: "172.16.110.151-172.16.110.199"  # Monitoring/backup systems
-      reserved:
-        - "172.16.110.100"  # TrueNAS management
-        - "172.16.110.101"  # Proxmox host
-        - "172.16.110.120-172.16.110.150"  # MetalLB vlan110-pool
-    use_cases:
-      - "Proxmox host management (172.16.110.101)"
-      - "Critical infrastructure monitoring"
-      - "Backup/recovery systems"
-      - "Out-of-band management"
-    restricted: true  # Requires justification
-    warning: "⚠️  RESTRICTED: This network is for infrastructure-critical systems only!"
-
-# IP Allocation Helper (reference only - not enforced by automation yet)
-ip_allocations:
-  apps:
-    next_available: "172.16.100.10"  # Update this manually as IPs are assigned
-    in_use:
-      - ip: "172.16.100.2"
-        host: "wow-pihole1"
-        description: "Pi-hole DNS (LXC 101)"
-      - ip: "172.16.100.110"
-        host: "iventoy"
-        description: "iVentoy boot server (LXC 102)"
-      - ip: "172.16.100.102"
-        host: "wow-ocp-node2"
-        description: "OpenShift node 2"
-      - ip: "172.16.100.103"
-        host: "wow-ocp-node3"
-        description: "OpenShift node 3"
-      - ip: "172.16.100.105"
-        host: "api.ossus"
-        description: "OpenShift API VIP"
-      - ip: "172.16.100.106"
-        host: "overseerr"
-        description: "OpenShift ingress VIP"
-
-  proxmox_mgmt:
-    next_available: "172.16.110.10"
-    in_use:
-      - ip: "172.16.110.100"
-        host: "wow-ts01"
-        description: "TrueNAS management"
-      - ip: "172.16.110.101"
-        host: "wow-prox1"
-        description: "Proxmox host"
-    to_migrate:
-      - ip: "172.16.110.76"
-        host: "wow-clawdbot"
-        new_network: "apps"
-        target_ip: "TBD"
-      - ip: "172.16.110.105"
-        host: "vaultwarden"
-        new_network: "apps"
-        target_ip: "TBD"
-      - ip: "172.16.110.211"
-        host: "dns2"
-        new_network: "apps"
-        target_ip: "TBD"
-      - ip: "172.16.110.213"
-        host: "ipmgmt"
-        new_network: "apps"
-        target_ip: "TBD"
 
 # SSH Connection Defaults
 ssh_connection_defaults:
