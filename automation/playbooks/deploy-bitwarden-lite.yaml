@@ -35,6 +35,15 @@
         post_provisioning_enabled: false
         skip_existing_check: true
 
+    - name: "Bootstrap SSH Access"
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+      vars:
+        ansible_host: "{{ target_ip }}"
+        proxmox_vmid: "{{ vmid }}"
+        proxmox_node: "{{ proxmox_node }}"
+        proxmox_vmtype: "lxc"
+
     - name: "Prepare SSH known_hosts"
       ansible.builtin.shell: |
         ssh-keygen -R {{ target_ip }} 2>/dev/null || true

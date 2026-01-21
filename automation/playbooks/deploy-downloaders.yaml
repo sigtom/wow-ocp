@@ -36,7 +36,14 @@
 - name: "Configure Downloaders"
   hosts: downloader_targets
   gather_facts: true
-
+  pre_tasks:
+    - name: "Bootstrap SSH Access"
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+      vars:
+        proxmox_vmid: "{{ hostvars[inventory_hostname].proxmox_vmid | default(target_vmid | default('221')) }}"
+        proxmox_node: "{{ hostvars[inventory_hostname].proxmox_node | default('wow-prox1') }}"
+        proxmox_vmtype: "lxc"
   vars:
     install_dir: /opt/downloaders
 

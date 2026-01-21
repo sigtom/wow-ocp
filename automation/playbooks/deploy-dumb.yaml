@@ -31,6 +31,16 @@
   gather_facts: true
   vars:
     dumb_install_dir: /opt/dumb
+  pre_tasks:
+    - name: "Bootstrap SSH Access"
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+      vars:
+        # These should be in hostvars if coming from inventory,
+        # but we provide defaults for manual runs
+        proxmox_vmid: "{{ hostvars[inventory_hostname].proxmox_vmid | default(vmid | default('')) }}"
+        proxmox_node: "{{ hostvars[inventory_hostname].proxmox_node | default(target_node | default('wow-prox1')) }}"
+        proxmox_vmtype: "lxc"
   tasks:
     # ========================================
     # Phase 1: Directory Structure
