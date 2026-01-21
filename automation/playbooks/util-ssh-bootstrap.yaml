@@ -16,18 +16,13 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  when: target_ip is defined and target_ip | string | length > 0
   tasks:
-    - name: "Manual Target Handling"
-      block:
-        - name: "Add manual target to inventory if IP provided"
-          ansible.builtin.add_host:
-            # Using a fallback 'placeholder' ensures the module passes validation
-            # even when target_ip is empty. The 'when' on the block prevents
-            # this task from actually executing unless a real IP is provided.
-            name: "{{ target_ip | default('placeholder') }}"
-            groups: manual_targets
-            ansible_user: root
-      when: target_ip is defined and target_ip | string | length > 0
+    - name: "Add manual target to inventory if IP provided"
+      ansible.builtin.add_host:
+        name: "{{ target_ip }}"
+        groups: manual_targets
+        ansible_user: root
 
 - name: "SSH Key Bootstrap Utility - Execution"
   hosts: "all:manual_targets:!localhost"
