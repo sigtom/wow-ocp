@@ -399,11 +399,13 @@
               variable: "target_ip"
               type: text
               default: ""
+              required: false
             - question_name: "Force Bootstrap Mode"
               variable: "bootstrap_mode"
               type: multiplechoice
               choices: ["true", "false"]
               default: "false"
+              required: true
         state: present
 
     # -------------------------------------------------------
