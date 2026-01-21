@@ -24,6 +24,12 @@ spec:
   ignoreDifferences:
     - group: external-secrets.io
       kind: ExternalSecret
+      jqPathExpressions:
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
       jsonPointers:
         - /status
         - /metadata/annotations/force-sync
+        - /metadata/finalizers
+        - /spec/target/deletionPolicy
