@@ -1,0 +1,71 @@
+---
+# ============================================================================
+# Master Lab Deployment Orchestrator
+# ============================================================================
+# Description: The "Grand Engine" for homelab management.
+#              Orchestrates the full lifecycle of a host and its applications.
+#
+# Steps:
+#   1. Infrastructure (Proxmox native modules)
+#   2. Access (SSH Bootstrap role)
+#   3. Runtime (Install Docker + Post-provisioning)
+#   4. Application (Generic docker_app role)
+#
+# Usage (AAP):
+#   - Inventory: "Nautobot Dynamic Inventory"
+#   - Limit: Target hostname (e.g., "dumb")
+# ============================================================================
+
+- name: "Master Deployment: Infrastructure & Runtime"
+  hosts: all
+  serial: 1  # Provision one host at a time for stability
+  gather_facts: false
+
+  tasks:
+    # ========================================
+    # Phase 1: Infrastructure (Proxmox)
+    # ========================================
+    - name: "Phase 1: Provision LXC/VM on Proxmox"
+      ansible.builtin.include_role:
+        name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
+      vars:
+        vmid: "{{ vmid }}"
+        ansible_host: "{{ ansible_host }}"
+        inventory_hostname: "{{ inventory_hostname }}"
+        tshirt_size: "{{ tshirt_size | default('medium') }}"
+        os_type: "{{ os_type | default('ubuntu24') }}"
+        proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
+      when: vmid is defined
+      delegate_to: localhost
+
+    # ========================================
+    # Phase 2: Access (SSH Bootstrap)
+    # ========================================
+    - name: "Phase 2: Ensure SSH Access"
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+      vars:
+        ansible_host: "{{ ansible_host }}"
+
+    # ========================================
+    # Phase 3: Runtime (Docker)
+    # ========================================
+    - name: "Phase 3: Verify OS Facts"
+      ansible.builtin.setup:
+
+    - name: "Phase 3: Install and Configure Docker"
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provisioning_profile: "docker_host"
+
+    # ========================================
+    # Phase 4: Applications (Generic Engine)
+    # ========================================
+    - name: "Phase 4: Deploy Applications"
+      ansible.builtin.include_role:
+        name: docker_app
+      loop: "{{ app_list | default([]) }}"
+      loop_control:
+        loop_var: current_app
+      when: app_list is defined and (app_list | length > 0)

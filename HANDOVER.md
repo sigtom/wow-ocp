@@ -10,6 +10,7 @@
 ## 🛠️ Current Status & Blockers
 *   **Infrastructure:** Everything is on `main`. Nautobot should be pointed to the `main` branch for Git syncing.
 *   **Dynamic Inventory:** Ansible is now configured to pull your lab data directly from Nautobot.
+*   **GitHub Sync**: A GitHub Action is in place but failing (Error 6) because the lab is not public. A Self-Hosted GitHub Runner needs to be deployed locally to bridge this gap.
 *   **Manual Task Remaining:** Perform surgical cleanup of OCP config folders on TrueNAS (keep `docker-media`, delete `riven-data`, `zurg`, `homepage`, `rdt-client` configs).
 
 ## 📋 Next Session Plan

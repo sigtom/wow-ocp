@@ -1,0 +1,80 @@
+---
+# Generic Docker Application Deployment Role
+# Uses metadata from app_registry to deploy any container stack
+
+- name: "Check if application metadata exists for {{ current_app }}"
+  ansible.builtin.assert:
+    that:
+      - app_registry[current_app] is defined
+    fail_msg: "Application '{{ current_app }}' not found in app_registry!"
+
+- name: "Set local facts for {{ current_app }}"
+  ansible.builtin.set_fact:
+    app_meta: "{{ app_registry[current_app] }}"
+
+- name: "Ensure installation directory exists for {{ current_app }}"
+  ansible.builtin.file:
+    path: "{{ app_meta.install_dir }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: '0755'
+
+- name: "Ensure data directories exist for {{ current_app }}"
+  ansible.builtin.file:
+    path: "{{ app_meta.install_dir }}/{{ item }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: '0755'
+  loop: "{{ app_meta.data_dirs | default([]) }}"
+
+- name: "Render environment file for {{ current_app }}"
+  ansible.builtin.template:
+    src: "{{ inventory_dir }}/../{{ app_meta.env_template }}"
+    dest: "{{ app_meta.install_dir }}/.env"
+    owner: "1000"
+    group: "1000"
+    mode: '0600'
+  when: app_meta.env_template is defined
+
+- name: "Deploy static configurations for {{ current_app }}"
+  ansible.builtin.template:
+    src: "{{ inventory_dir }}/../{{ item.src }}"
+    dest: "{{ app_meta.install_dir }}/{{ item.dest }}"
+    owner: "1000"
+    group: "1000"
+    mode: '0644'
+  loop: "{{ app_meta.static_configs | default([]) }}"
+
+- name: "Deploy docker-compose.yml for {{ current_app }}"
+  ansible.builtin.template:
+    src: "{{ inventory_dir }}/../{{ app_meta.compose_template }}"
+    dest: "{{ app_meta.install_dir }}/docker-compose.yml"
+    owner: "1000"
+    group: "1000"
+    mode: '0644'
+
+- name: "Ensure Python Docker dependencies are present"
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-requests
+    state: present
+  become: yes
+  when: ansible_os_family == "Debian"
+
+- name: "Start {{ current_app }} stack"
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_meta.install_dir }}"
+    state: present
+    pull: always
+  register: compose_res
+
+- name: "Wait for application ports to be ready"
+  ansible.builtin.wait_for:
+    port: "{{ item }}"
+    host: "localhost"
+    timeout: 30
+  loop: "{{ app_meta.ports | default([]) }}"
+  when: not ansible_check_mode

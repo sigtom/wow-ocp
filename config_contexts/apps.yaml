@@ -1,6 +1,6 @@
 ---
 # Application Registry
-# Maps functional tags to application metadata
+# Maps functional tags to application metadata and deployment specs
 _metadata:
   name: Application Registry
   weight: 200
@@ -10,20 +10,42 @@ app_registry:
   traefik:
     category: "Infrastructure"
     ports: [80, 443, 8080]
-    compose_path: "automation/templates/traefik/docker-compose.yml"
+    install_dir: "/opt/traefik"
+    data_dirs: ["config", "letsencrypt", "logs"]
+    compose_template: "templates/traefik/docker-compose.yml"
+    static_configs:
+      - { src: "templates/traefik/traefik.toml.j2", dest: "traefik.toml" }
+      - { src: "templates/traefik/config/remote-apps.yml.j2", dest: "config/remote-apps.yml" }
+
   dumb:
     category: "Media"
     ports: [3005, 3000, 8080, 8182, 5050]
-    compose_path: "automation/templates/dumb/docker-compose.yml"
+    install_dir: "/opt/dumb"
+    data_dirs: ["config", "log", "data/decypharr", "data/riven", "mnt/debrid"]
+    compose_template: "templates/dumb/docker-compose.yml"
+    env_template: "templates/dumb/dumb.env.j2"
+    static_configs:
+      - { src: "templates/dumb/decypharr_config.json.j2", dest: "data/decypharr/config.json" }
+      - { src: "templates/dumb/riven_settings.json.j2", dest: "data/riven/settings.json" }
+
   downloaders:
     category: "Media"
     ports: [8080, 8081]
-    compose_path: "automation/templates/downloaders/docker-compose.yml.j2"
+    install_dir: "/opt/downloaders"
+    data_dirs: ["config/qbittorrent", "config/sabnzbd"]
+    compose_template: "templates/downloaders/docker-compose.yml.j2"
+
   bitwarden-lite:
     category: "Security"
     ports: [8080]
-    compose_path: "automation/templates/bitwarden/docker-compose.yml"
+    install_dir: "/opt/bitwarden"
+    data_dirs: []
+    compose_template: "templates/bitwarden/docker-compose.yml"
+    env_template: "templates/bitwarden/settings.env.j2"
+
   nautobot:
     category: "Infrastructure"
     ports: [443, 8080]
-    compose_path: "automation/templates/nautobot/docker-compose.yml"
+    install_dir: "/opt/nautobot"
+    data_dirs: []
+    compose_template: "templates/nautobot/docker-compose.yml"

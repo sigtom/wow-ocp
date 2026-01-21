@@ -110,3 +110,4 @@ bitwarden-placement-analysis.md
 external-secrets-bitwarden.md
 docs/*
 docs/PROGRESS.archive.md
+pub-sealed-secrets.pem
