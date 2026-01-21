@@ -1,0 +1,20 @@
+plugin: networktocode.nautobot.inventory
+api_endpoint: https://ipmgmt.sigtom.dev
+validate_certs: false
+
+# Filter for active and planned hosts
+status:
+  - Active
+  - Planned
+
+# Group hosts by role and location
+group_by:
+  - device_roles
+  - locations
+
+# Compose variables from custom fields and properties
+compose:
+  ansible_host: primary_ip4.address | default('') | split('/') | first
+  vmid: custom_fields.proxmox_vmid | default(omit)
+  tshirt_size: custom_fields.tshirt_size | default('medium')
+  app_list: custom_fields.app_list | default([])
