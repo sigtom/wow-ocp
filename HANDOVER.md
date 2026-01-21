@@ -1,29 +1,28 @@
-# Handover Notes - January 21, 2026 (Decommissioning Update)
+# Handover Notes - January 21, 2026 (Automation Refactor Update)
 
 ## 🚀 Session Achievements
-1.  **OCP Media Stack Decommissioned (Branch):** Successfully prepped the removal of all legacy media components from OpenShift.
-2.  **GitOps Cleanup:** Deleted 53 files, including redundant ArgoCD Applications and their source manifests in `apps/`.
-3.  **Monitoring Detached:** Successfully updated Alertmanager to stop sending notifications to the legacy Apprise bridge.
-4.  **Backup Alignment:** Removed the `media-stack-weekly` backup schedule from Kustomize.
+1.  **Automation Refactored:** Successfully transitioned `provision_lxc_generic` and `provision_vm_generic` roles to native Proxmox modules (`community.general.proxmox_lxc` and `community.general.proxmox_kvm`).
+2.  **Idempotency Improved:** Removed manual `shell` and `ssh` blocks, leveraging the module's native state management.
+3.  **Mountpoint Support:** Added dynamic list-to-dict conversion for LXC mount points.
+4.  **Targeting modern Ansible:** Refactored for **Ansible Core 2.20.1** and modern `community.general` collections used in `HomeLab EE`.
 
 ## 🛠️ Current Status & Blockers
-*   **Feature Branch:** All cleanup changes are staged in `feature/decommission-ocp-media-stack`.
-*   **Monitoring:** Alertmanager is now in a "silent" state (Default receiver) to prevent errors during decommissioning.
-*   **Storage:** `media-library-pv` is still present in OCP and set to `Retain`. Data is preserved on TrueNAS.
+*   **Feature Branch:** Refactoring is in `refactor/proxmox-native-modules`.
+*   **Verification:** The new roles need to be tested with a test deployment (e.g., `test-aap-flow.yaml`).
+*   **OCP Decommissioning:** This work is on `main` and is complete from a GitOps perspective.
 
 ## 📋 Next Session Plan
-Use the following prompt to finalize the decommissioning:
+Use the following prompt to test and finalize the refactor:
 
-> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We are in the middle of decommissioning the OCP media stack.
+> "Reference the **HANDOVER.md** and **PROGRESS.md** files. The automation refactor to native Proxmox modules is ready for testing.
 >
-> **Goal:** Finalize the removal of the OCP media stack and redirect DNS to DUMB.
+> **Goal:** Verify the new native Proxmox modules and merge to main.
 >
 > **Tasks:**
-> 1. Review and merge the `feature/decommission-ocp-media-stack` branch to `main`.
-> 2. Verify ArgoCD prunes the deleted applications and the `media-stack` namespace.
-> 3. Manually delete the `media-library-pv` in OCP (`oc delete pv media-library-pv`).
-> 4. Perform surgical cleanup of OCP config folders on TrueNAS (keep `docker-media`, delete `riven-data`, `zurg`, `homepage`, `rdt-client` configs).
-> 5. Update Pi-hole and Cloudflare DNS records for media services to point to Proxmox Traefik (172.16.100.10)."
+> 1. Run a test LXC provisioning job via AAP using the `refactor/proxmox-native-modules` branch.
+> 2. Verify that idempotency works by re-running the job on an existing container.
+> 3. Verify that mount points are correctly configured for Media LXCs.
+> 4. Once verified, merge the refactor branch into `main`."
 
 ---
 *End of Handover*

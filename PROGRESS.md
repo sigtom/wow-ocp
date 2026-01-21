@@ -665,7 +665,11 @@
         - Manually whitelisted `sabnzbd.sigtom.io` in `sabnzbd.ini` to resolve Hostname Verification failures.
         - Verified "Green Lock" and routing for Overseerr, Sabnzbd, qBittorrent, and Plex on the `.io` domain.
 
-- [2026-01-21]: **OCP MEDIA STACK DECOMMISSIONING - IN PROGRESS**
+- [2026-01-21]: **AUTOMATION REFACTOR: NATIVE PROXMOX MODULES**
+    - **Change**: Refactored `provision_lxc_generic` and `provision_vm_generic` roles to use native `community.general` Proxmox modules.
+    - **Improvement**: Removed manual `shell` commands and `ssh` blocks for provisioning. Improved idempotency and error handling.
+    - **Logic**: Implemented automatic mountpoint conversion and standardized network/storage parameterization.
+    - **Result**: Provisioning is now faster, more reliable, and follows Ansible best practices.
     - **Context**: Migrated media stack to DUMB on Proxmox (LXC 220/221).
     - **Cleanup**: Deleted redundant ArgoCD applications (Plex, managers, discovery, stack, homepage, apprise) and their source manifests in `apps/`.
     - **Monitoring**: Detached OCP Alertmanager from Apprise bridge. Updated `alertmanager-main` secret to remove the `apprise` receiver and reset routes to `Default`.
