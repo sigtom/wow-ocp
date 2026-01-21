@@ -1,29 +1,29 @@
-# Handover Notes - January 21, 2026 (Nautobot Structure Update)
+# Handover Notes - January 21, 2026 (Final Session Update)
 
 ## 🚀 Session Achievements
-1.  **Nautobot Stack Repaired:** Added Celery Worker and Scheduler to the `docker-compose.yml` on LXC 215. Background jobs and Git syncing are now functional.
-2.  **GitOps Structure Standardized:** Flattened the repository by moving `jobs/`, `config_contexts/`, and `export_templates/` to the root. This is required for Nautobot's Git integration.
-3.  **Job Module Fix:** Added `jobs/__init__.py` to enable Nautobot to discover the Python jobs in the repository.
-4.  **Security:** Verified Nautobot API authentication and successfully enriched 9+ Virtual Machines with hardware and application metadata.
+1.  **Nautobot Fully Synchronized:** Nautobot is now the "Operational Source of Truth." Every host (OCP, Proxmox, TrueNAS, Networking) is documented with its primary IP and services.
+2.  **Physical Topology Codified:** Successfully "cabled up" the MikroTik switch ports in Nautobot. You now have a complete map of your SFP+ connections.
+3.  **GitOps Structure Standardized:** Flattened the repository structure (`jobs/`, `config_contexts/`) to support Nautobot's native Git integration.
+4.  **Nautobot Stack Repaired:** Added the missing Celery Worker and Scheduler to the Docker stack. Git syncing and background jobs are now fully operational.
+5.  **OCP Decommissioned:** Successfully removed all media-stack resources from the OpenShift cluster and GitOps source code.
 
 ## 🛠️ Current Status & Blockers
-*   **Feature Branch:** Current changes are in `refactor/nautobot-git-structure`.
-*   **Nautobot UI:** The Git Repository `HomeLab-GitOps` should be updated to point to the `refactor/nautobot-git-structure` branch for testing, or wait for merge to `main`.
-*   **Storage:** OCP `media-library-pv` deletion and TrueNAS surgical cleanup are pending manual execution.
+*   **Infrastructure:** Everything is on `main`. Nautobot should be pointed to the `main` branch for Git syncing.
+*   **Dynamic Inventory:** Ansible is now configured to pull your lab data directly from Nautobot.
+*   **Manual Task Remaining:** Perform surgical cleanup of OCP config folders on TrueNAS (keep `docker-media`, delete `riven-data`, `zurg`, `homepage`, `rdt-client` configs).
 
 ## 📋 Next Session Plan
-Use the following prompt to finalize the Nautobot integration:
+Use the following prompt to begin the "Master Playbook" automation:
 
-> "Reference the **HANDOVER.md** and **PROGRESS.md** files. We have repaired the Nautobot stack and flattened the GitOps structure.
+> "Reference the **HANDOVER.md** and **PROGRESS.md** files. Nautobot is now the source of truth for our dynamic inventory.
 >
-> **Goal:** Verify Nautobot Git Sync and begin the `docker_app` role refactor.
+> **Goal:** Build the generic `docker_app` role and the `Master Deploy` playbook.
 >
 > **Tasks:**
-> 1. Merge `refactor/nautobot-git-structure` to `main`.
-> 2. Perform a Git Sync in the Nautobot UI.
-> 3. Verify that the "Discover Physical Cables" job appears in **Extensibility -> Jobs**.
-> 4. Verify that Config Contexts are being correctly attached to devices (e.g., `dumb` LXC).
-> 5. Start the creation of the generic **`docker_app`** role to replace individual app deployment playbooks."
+> 1. Verify that the Nautobot Git Sync is pulling the latest `main` branch.
+> 2. Create the **`docker_app`** role to standardize application deployments (mkdir, .env template, docker-compose).
+> 3. Create the **`master-deploy.yaml`** playbook that chains Provisioning -> SSH Bootstrap -> Docker -> App Deployment.
+> 4. Test the master playbook by re-deploying one of the existing apps (like `traefik` or `dumb`) using the new data-driven role."
 
 ---
 *End of Handover*
