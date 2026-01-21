@@ -1,11 +1,10 @@
-# Simple robust EE build for OpenShift
-FROM registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest
+# Modern Community-based EE build for OpenShift
+FROM ghcr.io/ansible/community-ansible-dev-tools:latest
 
 USER root
 
-# 1. Install System Packages (RPMs)
-COPY bindep.txt /tmp/bindep.txt
-RUN microdnf -y install git sshpass openssh-clients bind-utils iputils && microdnf clean all
+# 1. Install System Packages (RPMs) - Fedora uses dnf
+RUN dnf -y install git sshpass openssh-clients bind-utils iputils && dnf clean all
 
 # 2. Install Python Packages
 COPY requirements.txt /tmp/requirements.txt
