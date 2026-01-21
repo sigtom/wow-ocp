@@ -17,12 +17,14 @@
   connection: local
   gather_facts: false
   tasks:
-    - name: "Add manual target to inventory if IP provided"
-      ansible.builtin.add_host:
-        name: "{{ target_ip }}"
-        groups: manual_targets
-        ansible_user: root
-      when: target_ip | default('') != ''
+    - name: "Manual Target Handling"
+      block:
+        - name: "Add manual target to inventory if IP provided"
+          ansible.builtin.add_host:
+            name: "{{ target_ip }}"
+            groups: manual_targets
+            ansible_user: root
+      when: target_ip is defined and target_ip | string | length > 0
 
 - name: "SSH Key Bootstrap Utility - Execution"
   hosts: "all:manual_targets:!localhost"
