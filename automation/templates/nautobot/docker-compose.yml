@@ -39,7 +39,11 @@ services:
     container_name: nautobot-worker
     restart: unless-stopped
     user: "0:0"
-    command: nautobot-server celery worker
+    # Install SNMP tools before starting the worker
+    command: >
+      sh -c "apt-get update &&
+             apt-get install -y snmp iputils-ping &&
+             nautobot-server celery worker"
     environment:
       NAUTOBOT_DB_ENGINE: django.db.backends.postgresql
       NAUTOBOT_DB_HOST: postgres
