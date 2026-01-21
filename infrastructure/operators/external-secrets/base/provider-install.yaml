@@ -86,8 +86,7 @@ spec:
         app.kubernetes.io/instance: bitwarden-provider
     spec:
       serviceAccountName: bitwarden-provider-bitwarden-eso-provider
-      securityContext:
-        enabled: false
+      securityContext: {}
       containers:
         - name: bitwarden-eso-provider
           securityContext:
