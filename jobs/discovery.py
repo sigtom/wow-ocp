@@ -108,5 +108,3 @@ class DiscoverPhysicalCables(Job):
 
             except Exception as e:
                 self.logger.error(f"Failed to create cable for {name}: {e}")
-
-register_jobs = [DiscoverPhysicalCables]
