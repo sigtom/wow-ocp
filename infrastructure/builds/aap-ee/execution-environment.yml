@@ -26,6 +26,7 @@ dependencies:
     - passlib
     - jmespath
     - netaddr
+    - pynautobot
 
   system:
     - git
