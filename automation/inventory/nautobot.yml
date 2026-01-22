@@ -16,5 +16,5 @@ group_by:
 compose:
   ansible_host: primary_ip4.address | default('') | split('/') | first
   vmid: custom_fields.proxmox_vmid | default(omit)
-  tshirt_size: custom_fields.tshirt_size | default('medium')
-  app_list: custom_fields.app_list | default([])
+  tshirt_size: custom_fields.t_shirt_size | default('medium')
+  app_list: custom_fields.application_list | default([])
