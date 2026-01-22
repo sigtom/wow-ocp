@@ -13,5 +13,8 @@ collections:
   - name: ansible.posix
     version: ">=1.5.0"
 
+  - name: networktocode.nautobot
+    version: ">=4.0.0"
+
   - name: awx.awx
   - name: infra.aap_configuration
