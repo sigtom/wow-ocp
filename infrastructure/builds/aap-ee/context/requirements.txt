@@ -6,3 +6,4 @@ openshift
 passlib
 jmespath
 netaddr
+pynautobot
