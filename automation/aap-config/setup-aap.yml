@@ -24,6 +24,7 @@
     cloudflare_token: "{{ lookup('env', 'CLOUDFLARE_TOKEN') }}"
     nautobot_token: "{{ lookup('env', 'NAUTOBOT_API_TOKEN') }}"
     ssh_private_key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
+    github_pat: "{{ lookup('env', 'GITHUB_PAT') }}"
 
     # DUMB Debrid secrets
     realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
@@ -124,6 +125,22 @@
         injectors:
           env:
             CF_DNS_API_TOKEN: "{% raw %}{{ api_token }}{% endraw %}"
+        state: present
+
+    - name: Create GitHub Credential Type
+      awx.awx.credential_type:
+        name: "GitHub PAT"
+        kind: cloud
+        inputs:
+          fields:
+            - id: pat
+              label: Personal Access Token
+              type: string
+              secret: true
+          required: [pat]
+        injectors:
+          env:
+            GITHUB_PAT: "{% raw %}{{ pat }}{% endraw %}"
         state: present
 
     - name: Create DUMB Secrets Credential Type
@@ -242,6 +259,16 @@
           api_token: "{{ cloudflare_token }}"
         state: present
 
+    - name: Create GitHub Credential
+      awx.awx.credential:
+        name: "GitHub Token"
+        organization: "{{ aap_organization }}"
+        credential_type: "GitHub PAT"
+        inputs:
+          pat: "{{ github_pat }}"
+        state: present
+      when: github_pat != ''
+
     - name: Create AAP SSH Key
       awx.awx.credential:
         name: "AAP Executor SSH"
@@ -353,6 +380,7 @@
           - "Cloudflare DNS"
           - "DUMB Debrid Secrets"
           - "Media Arr API Keys"
+          - "GitHub Token"
         state: present
 
     - name: Create Sync DNS Job Template
