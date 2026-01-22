@@ -21,6 +21,9 @@
   serial: 1  # Provision one host at a time for stability
   gather_facts: false
 
+  vars_files:
+    - "../config_contexts/apps.yaml"
+
   tasks:
     # ========================================
     # Phase 1: Infrastructure (Proxmox)
