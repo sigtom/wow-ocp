@@ -49,3 +49,11 @@ app_registry:
     install_dir: "/opt/nautobot"
     data_dirs: []
     compose_template: "templates/nautobot/docker-compose.yml"
+
+  github-runner:
+    category: "Infrastructure"
+    ports: []
+    install_dir: "/opt/github-runner"
+    data_dirs: []
+    compose_template: "templates/github-runner/docker-compose.yml.j2"
+    env_template: "templates/github-runner/runner.env.j2"

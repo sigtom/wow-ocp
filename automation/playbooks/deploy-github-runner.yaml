@@ -1,0 +1,43 @@
+---
+- name: Deploy Self-Hosted GitHub Runner
+  hosts: github-runner
+  gather_facts: false
+  vars:
+    # Host Definition (Temporary until Nautobot Sync)
+    vmid: 305
+    proxmox_node: wow-prox1
+    ansible_host: 172.16.110.25
+    tshirt_size: small
+    os_type: ubuntu22  # Use Ubuntu 22 for compatibility
+
+    # App Definition
+    app_list: ['github-runner']
+
+  vars_files:
+    - "../config_contexts/apps.yaml"  # Load app_registry
+
+  tasks:
+    - name: Provision LXC
+      ansible.builtin.include_role:
+        name: provision_lxc_generic
+      delegate_to: localhost
+
+    - name: Bootstrap SSH
+      ansible.builtin.include_role:
+        name: bootstrap_ssh
+
+    - name: Gather Facts
+      ansible.builtin.setup:
+
+    - name: Install Docker
+      ansible.builtin.include_role:
+        name: post_provision
+      vars:
+        post_provisioning_profile: docker_host
+
+    - name: Deploy GitHub Runner
+      ansible.builtin.include_role:
+        name: docker_app
+      loop: "{{ app_list }}"
+      loop_control:
+        loop_var: current_app

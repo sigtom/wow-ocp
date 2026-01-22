@@ -1,0 +1,10 @@
+version: '3'
+services:
+  runner:
+    image: myoung34/github-runner:latest
+    container_name: github-runner
+    restart: always
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/tmp/runner
