@@ -5,3 +5,6 @@ collections:
   - name: ansible.posix
   - name: infra.controller_configuration
   - name: containers.podman
+  - name: networktocode.nautobot
+  - name: community.proxmox
+  - name: awx.awx

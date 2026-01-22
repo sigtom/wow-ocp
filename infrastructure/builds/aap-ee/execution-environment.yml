@@ -13,6 +13,9 @@ dependencies:
       - ansible.posix
       - infra.controller_configuration
       - containers.podman
+      - networktocode.nautobot
+      - community.proxmox
+      - awx.awx
 
   python:
     - proxmoxer
