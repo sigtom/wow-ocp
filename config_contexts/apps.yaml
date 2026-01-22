@@ -57,3 +57,17 @@ app_registry:
     data_dirs: []
     compose_template: "templates/github-runner/docker-compose.yml.j2"
     env_template: "templates/github-runner/runner.env.j2"
+
+  homepage:
+    category: "Dashboard"
+    ports: [3000]
+    install_dir: "/opt/homepage"
+    data_dirs: ["config"]
+    compose_template: "templates/homepage/docker-compose.yml"
+
+  whoami:
+    category: "Test"
+    ports: [80]
+    install_dir: "/opt/whoami"
+    data_dirs: []
+    compose_template: "templates/whoami/docker-compose.yml"
