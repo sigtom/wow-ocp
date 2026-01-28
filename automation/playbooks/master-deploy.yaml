@@ -31,9 +31,11 @@
     # ========================================
     - name: "Phase 1: Provision LXC/VM on Proxmox"
       delegate_to: localhost
-      ansible.builtin.include_role:
-        name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
-      when: vmid is defined
+      block:
+        - ansible.builtin.include_role:
+            name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
+          when: vmid is defined
+
 
 
 
