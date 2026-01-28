@@ -100,8 +100,9 @@
     sshkeys: "{{ global_ssh_keys | join('\n') }}"
     agent: "{{ 1 if enable_qemu_agent else 0 }}"
     validate_certs: no
-    state: "{{ 'started' if start_vm else 'present' }}"
+    state: present
     timeout: "{{ clone_wait_time }}"
+
 
 
   delegate_to: localhost
@@ -110,7 +111,7 @@
 
 - name: Wait for VM to boot and get IP
   block:
-    - name: Wait for VM to be in started state
+    - name: Start VM if not running
       community.proxmox.proxmox_kvm:
         api_host: "{{ proxmox_api_host }}"
         api_user: "{{ pve_api_user }}"
@@ -120,6 +121,7 @@
         vmid: "{{ vmid }}"
         validate_certs: no
         state: started
+
 
       delegate_to: localhost
       register: vm_start_wait
