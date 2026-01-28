@@ -22,6 +22,7 @@
   gather_facts: false
 
   vars_files:
+    - "../inventory/group_vars/all.yml"
     - "../config_contexts/apps.yaml"
 
   tasks:
@@ -30,10 +31,10 @@
     # ========================================
     - name: "Phase 1: Provision LXC/VM on Proxmox"
       delegate_to: localhost
-      block:
-        - ansible.builtin.include_role:
-            name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
-          when: vmid is defined
+      ansible.builtin.include_role:
+        name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
+      when: vmid is defined
+
 
 
     # ========================================
