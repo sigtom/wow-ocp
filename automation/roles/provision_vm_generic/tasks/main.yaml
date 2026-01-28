@@ -102,9 +102,27 @@
   ansible.builtin.shell: |
     sleep 5
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-    "qm set {{ vmid }} --name {{ inventory_hostname }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 {{ vm_net0 }} --delete tag --ipconfig0 'ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}' --sshkeys '{{ global_ssh_keys | join('\n') }}' --agent 1"
+    "qm set {{ vmid }} --name {{ inventory_hostname }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 {{ vm_net0 }} --delete tag"
   delegate_to: localhost
   when: not ansible_check_mode
+
+- name: Apply Cloud-Init configuration (Module)
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ pve_api_user }}"
+    api_token_id: "{{ pve_api_token_id }}"
+    api_token_secret: "{{ pve_api_token_secret }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ vmid }}"
+    ipconfig:
+      ipconfig0: "ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}"
+    sshkeys: "{{ global_ssh_keys | join('\n') }}"
+    agent: "{{ 1 if enable_qemu_agent else 0 }}"
+    validate_certs: no
+    state: present
+  delegate_to: localhost
+  when: not ansible_check_mode
+
 
 
 - name: Resize root disk to match Nautobot spec
