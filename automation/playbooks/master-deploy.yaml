@@ -33,14 +33,8 @@
       block:
         - ansible.builtin.include_role:
             name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
-          vars:
-            vmid: "{{ vmid }}"
-            ansible_host: "{{ ansible_host }}"
-            inventory_hostname: "{{ inventory_hostname }}"
-            tshirt_size: "{{ tshirt_size | default('medium') }}"
-            os_type: "{{ os_type | default('ubuntu24') }}"
-            proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
           when: vmid is defined
+
 
     # ========================================
     # Phase 2: Access (SSH Bootstrap)
@@ -48,8 +42,7 @@
     - name: "Phase 2: Ensure SSH Access"
       ansible.builtin.include_role:
         name: bootstrap_ssh
-      vars:
-        ansible_host: "{{ ansible_host }}"
+
 
     # ========================================
     # Phase 3: Runtime (Docker)
