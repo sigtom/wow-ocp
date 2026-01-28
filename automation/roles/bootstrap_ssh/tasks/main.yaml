@@ -7,19 +7,17 @@
     ssh_connectivity_working: false
 
 - name: Test current SSH connectivity
-  ansible.builtin.wait_for:
-    host: "{{ ansible_host }}"
-    port: 22
-    state: started
-    timeout: 3
+  ansible.builtin.command: ssh -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no root@{{ ansible_host }} id
   register: conn_check
   ignore_errors: yes
   delegate_to: localhost
+  changed_when: false
   check_mode: no
 
 - name: Set connectivity flag
   ansible.builtin.set_fact:
-    ssh_connectivity_working: "{{ conn_check is succeeded }}"
+    ssh_connectivity_working: "{{ conn_check.rc == 0 }}"
+
 
 - name: "MODE 1: Standard SSH Sync (Reachable)"
   block:
@@ -48,7 +46,7 @@
         fail_msg: "Cannot bootstrap via API: proxmox_vmid or proxmox_node not found in facts!"
 
     - name: Inject keys into LXC via Proxmox API
-      community.general.proxmox:
+      community.proxmox.proxmox:
         api_host: "{{ hostvars[proxmox_node].ansible_host }}"
         api_user: "{{ pve_api_user }}"
         api_token_id: "{{ pve_api_token_id }}"
@@ -60,10 +58,11 @@
         validate_certs: no
         state: present
       delegate_to: localhost
-      when: proxmox_vmtype | default('lxc') == 'lxc'
+      when: hostvars[inventory_hostname].proxmox_vmtype | default('lxc') == 'lxc'
+
 
     - name: Inject keys into VM via Proxmox API
-      community.general.proxmox_kvm:
+      community.proxmox.proxmox_kvm:
         api_host: "{{ hostvars[proxmox_node].ansible_host }}"
         api_user: "{{ pve_api_user }}"
         api_token_id: "{{ pve_api_token_id }}"
@@ -75,7 +74,8 @@
         validate_certs: no
         state: present
       delegate_to: localhost
-      when: proxmox_vmtype | default('lxc') == 'qemu'
+      when: hostvars[inventory_hostname].proxmox_vmtype | default('lxc') == 'qemu'
+
 
     - name: Wait for SSH access to be restored
       ansible.builtin.wait_for:
