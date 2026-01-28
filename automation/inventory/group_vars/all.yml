@@ -178,3 +178,80 @@ snapshot_policies:
 
 # Default snapshot policy (can be overridden per-host)
 default_snapshot_policy: default
+
+# Network Profiles - Standardized network configurations
+network_profiles:
+  # Primary application network (Native VLAN on vmbr0)
+  apps:
+    bridge: vmbr0
+    vlan: null  # Native/untagged
+    subnet: "172.16.100.0/24"
+    gateway: 172.16.100.1
+    dns_servers:
+      - 172.16.100.2   # wow-pihole1 (primary)
+      - 172.16.110.100 # TrueNAS Pi-hole (secondary)
+    ntp_servers:
+      - 10.1.1.1       # pfSense NTP
+    description: "Primary application network for VMs and containers"
+    default: true  # Default network if not specified
+
+  # Proxmox management plane (VLAN 110 - RESTRICTED)
+  proxmox-mgmt:
+    bridge: vmbr0
+    vlan: 110
+    subnet: "172.16.110.0/24"
+    gateway: 172.16.110.1
+    dns_servers:
+      - 172.16.100.2
+      - 172.16.110.100
+    ntp_servers:
+      - 10.1.1.1
+    description: "Proxmox management plane - infrastructure critical systems only"
+    restricted: true  # Requires justification
+
+# VM T-shirt Sizes (Matches Nautobot config context metadata)
+
+vm_tshirt_sizes:
+  small:
+    cores: 1
+    memory: 512
+    disk: 8
+    description: "Lightweight services, proxies"
+  medium:
+    cores: 2
+    memory: 2048
+    disk: 20
+    description: "Docker hosts, web applications"
+  large:
+    cores: 4
+    memory: 4096
+    disk: 50
+    description: "Multi-container stacks"
+  xlarge:
+    cores: 8
+    memory: 8192
+    disk: 100
+    description: "Heavy workloads"
+
+# LXC T-shirt Sizes (Matches Nautobot config context metadata)
+lxc_tshirt_sizes:
+  small:
+    cores: 1
+    memory: 512
+    disk: 8
+    description: "Lightweight services, proxies"
+  medium:
+    cores: 2
+    memory: 2048
+    disk: 20
+    description: "Docker hosts, web applications"
+  large:
+    cores: 4
+    memory: 4096
+    disk: 50
+    description: "Multi-container stacks"
+  xlarge:
+    cores: 8
+    memory: 8192
+    disk: 100
+    description: "Heavy workloads"
