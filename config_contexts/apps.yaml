@@ -22,6 +22,7 @@ app_registry:
     ports: [3005, 3000, 8080, 8182, 5050]
     install_dir: "/opt/dumb"
     data_dirs: ["config", "log", "data/decypharr", "data/riven", "mnt/debrid"]
+    cache_dir: "/mnt/vfs_cache"
     compose_template: "templates/dumb/docker-compose.yml"
     env_template: "templates/dumb/dumb.env.j2"
     static_configs:
