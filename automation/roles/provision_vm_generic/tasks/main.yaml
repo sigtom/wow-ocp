@@ -85,7 +85,8 @@
     api_token_id: "{{ pve_api_token_id }}"
     api_token_secret: "{{ pve_api_token_secret }}"
     node: "{{ proxmox_node }}"
-    vmid: "{{ vmid }}"
+    vmid: "{{ template_vmid }}"
+    newid: "{{ vmid }}"
     name: "{{ inventory_hostname }}"
     clone: "{{ template_vmid }}"
     full: "{{ clone_full }}"
@@ -101,6 +102,7 @@
     validate_certs: no
     state: "{{ 'started' if start_vm else 'present' }}"
     timeout: "{{ clone_wait_time }}"
+
 
   delegate_to: localhost
   register: vm_provision_result
