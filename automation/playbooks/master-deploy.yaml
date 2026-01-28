@@ -29,17 +29,18 @@
     # Phase 1: Infrastructure (Proxmox)
     # ========================================
     - name: "Phase 1: Provision LXC/VM on Proxmox"
-      ansible.builtin.include_role:
-        name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
-      vars:
-        vmid: "{{ vmid }}"
-        ansible_host: "{{ ansible_host }}"
-        inventory_hostname: "{{ inventory_hostname }}"
-        tshirt_size: "{{ tshirt_size | default('medium') }}"
-        os_type: "{{ os_type | default('ubuntu24') }}"
-        proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
-      when: vmid is defined
       delegate_to: localhost
+      block:
+        - ansible.builtin.include_role:
+            name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
+          vars:
+            vmid: "{{ vmid }}"
+            ansible_host: "{{ ansible_host }}"
+            inventory_hostname: "{{ inventory_hostname }}"
+            tshirt_size: "{{ tshirt_size | default('medium') }}"
+            os_type: "{{ os_type | default('ubuntu24') }}"
+            proxmox_node: "{{ proxmox_node | default('wow-prox1') }}"
+          when: vmid is defined
 
     # ========================================
     # Phase 2: Access (SSH Bootstrap)
