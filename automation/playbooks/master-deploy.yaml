@@ -33,8 +33,16 @@
       delegate_to: localhost
       block:
         - ansible.builtin.include_role:
-            name: "{{ 'provision_lxc_generic' if proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
-          when: vmid is defined
+            name: "{{ 'provision_lxc_generic' if hostvars[inventory_hostname].proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
+          vars:
+            vmid: "{{ hostvars[inventory_hostname].vmid }}"
+            ansible_host: "{{ hostvars[inventory_hostname].ansible_host }}"
+            proxmox_node: "{{ hostvars[inventory_hostname].proxmox_node }}"
+            os_type: "{{ hostvars[inventory_hostname].os_type }}"
+            tshirt_size: "{{ hostvars[inventory_hostname].tshirt_size }}"
+            proxmox_vmtype: "{{ hostvars[inventory_hostname].proxmox_vmtype }}"
+          when: hostvars[inventory_hostname].vmid is defined
+
 
 
 

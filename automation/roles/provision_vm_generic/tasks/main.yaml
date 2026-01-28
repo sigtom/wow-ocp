@@ -94,8 +94,9 @@
     memory: "{{ vm_memory }}"
     net:
       net0: "{{ vm_net0 }}"
-    scsis:
+    scsi:
       scsi0: "{{ vm_storage_backend }}:{{ vm_disk_size }}"
+
     ipconfig:
       ipconfig0: "ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}"
     sshkeys: "{{ global_ssh_keys | join('\n') }}"
