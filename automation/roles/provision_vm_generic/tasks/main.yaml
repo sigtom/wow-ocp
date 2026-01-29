@@ -140,7 +140,6 @@
 - name: Wait for VM to boot and get IP
   block:
     - name: Start VM if not running
-
       community.proxmox.proxmox_kvm:
         api_host: "{{ proxmox_api_host }}"
         api_user: "{{ pve_api_user }}"
@@ -150,8 +149,6 @@
         vmid: "{{ vmid }}"
         validate_certs: no
         state: started
-
-
       delegate_to: localhost
       register: vm_start_wait
       until: "vm_start_wait.status | default('') == 'running'"
@@ -170,19 +167,10 @@
       until: discovered_ip.stdout != ""
       when: network_mode == 'dhcp'
       check_mode: no
-
-    - name: Wait for SSH to be ready (static IP mode)
-      ansible.builtin.wait_for:
-        host: "{{ ansible_host }}"
-        port: 22
-        delay: 5
-        timeout: "{{ ssh_wait_timeout }}"
-      delegate_to: localhost
-      when: network_mode == 'static'
-      check_mode: no
   when:
     - not ansible_check_mode
     - start_vm
+
 
 - name: Run health checks
   ansible.builtin.include_role:
