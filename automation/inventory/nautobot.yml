@@ -1,6 +1,7 @@
 plugin: networktocode.nautobot.inventory
-api_endpoint: https://ipmgmt.sigtom.dev
+api_endpoint: http://172.16.100.15:8080
 validate_certs: false
+
 
 # Filter for active and planned hosts
 status:
