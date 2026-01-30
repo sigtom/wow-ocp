@@ -1,16 +1,13 @@
 ---
 # Generic VM Provisioning Role - Main Tasks
-# Refactored to use native community.general.proxmox_kvm module
+# Refactored to be forceful and bypass flakey Cloud-Init/API behaviors
 
 - name: Validate vm_templates is loaded
   ansible.builtin.assert:
     that:
       - vm_templates is defined
       - vm_tshirt_sizes is defined
-    fail_msg: |
-      Critical error: vm_templates and vm_tshirt_sizes not defined!
-      These should be loaded from group_vars/all.yml
-    success_msg: "Template registry loaded"
+    fail_msg: "Critical error: vm_templates and vm_tshirt_sizes not defined!"
 
 - name: Validate required variables
   ansible.builtin.assert:
@@ -21,18 +18,14 @@
       - tshirt_size in vm_tshirt_sizes
       - vmid is defined
       - proxmox_node is defined
-      - inventory_hostname is defined
     fail_msg: "Missing required variables for VM provisioning!"
-    success_msg: "All required variables validated"
 
-- name: Set facts from templates, sizes, and network profile
+- name: Set facts from templates and sizes
   ansible.builtin.set_fact:
     template_vmid: "{{ vm_templates[os_type].vmid }}"
-    vm_default_user: "{{ vm_templates[os_type].default_user }}"
     vm_cores: "{{ vm_tshirt_sizes[tshirt_size].cores }}"
     vm_memory: "{{ vm_tshirt_sizes[tshirt_size].memory }}"
     vm_disk_size: "{{ vm_tshirt_sizes[tshirt_size].disk }}"
-    size_description: "{{ vm_tshirt_sizes[tshirt_size].description }}"
     proxmox_api_host: "{{ hostvars[proxmox_node].ansible_host }}"
     vm_storage_backend: "{{ vm_storage | default(proxmox_storage_backends[proxmox_node].vm_storage) }}"
     network_config: "{{ network_profiles[network_profile | default('apps')] }}"
@@ -40,23 +33,6 @@
 - name: Construct net0 string
   ansible.builtin.set_fact:
     vm_net0: "virtio,bridge={{ network_config.bridge | default('vmbr0') }}{% if network_config.vlan is not none %},tag={{ network_config.vlan }}{% endif %}"
-
-- name: Display provisioning plan
-  ansible.builtin.debug:
-    msg:
-      - "=========================================="
-      - "VM Provisioning Plan (Native)"
-      - "=========================================="
-      - "Hostname: {{ inventory_hostname }}"
-      - "VMID: {{ vmid }}"
-      - "Proxmox Node: {{ proxmox_node }}"
-      - "OS: {{ os_type }} ({{ vm_templates[os_type].description }})"
-      - "Size: {{ tshirt_size }} ({{ size_description }})"
-      - "Network: {{ network_mode }}"
-      - "Net0: {{ vm_net0 }}"
-      - "Storage: {{ vm_storage_backend }}"
-      - "Clone Type: {{ 'Full' if clone_full else 'Linked' }}"
-      - "=========================================="
 
 - name: Check if VM exists
   ansible.builtin.uri:
@@ -68,7 +44,6 @@
     status_code: [200, 404, 500]
   register: vm_exists_check
   delegate_to: localhost
-  check_mode: no
 
 - name: Provision VM using native module (Clone)
   community.proxmox.proxmox_kvm:
@@ -90,21 +65,23 @@
   register: vm_provision_result
   when: vm_exists_check.status != 200
 
-- name: Apply Nautobot configuration to VM (CLI Force)
+- name: Force Apply Configuration and Hardware Specs
   ansible.builtin.shell: |
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-    "qm set {{ vmid }} --name {{ inventory_hostname }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 {{ vm_net0 }}"
+    "qm set {{ vmid }} --name {{ inventory_hostname }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 {{ vm_net0 }} --ipconfig0 'ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}' --agent 1"
   delegate_to: localhost
-  when:
-    - not ansible_check_mode
-    - (vm_exists_check.status == 200 or (vm_provision_result.changed | default(false)))
+  when: not ansible_check_mode
+  changed_when: true
 
+- name: Force Disk Resize
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
+    "qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G"
+  delegate_to: localhost
+  when: not ansible_check_mode
+  ignore_errors: yes
 
-
-
-
-
-- name: Apply Cloud-Init configuration (Module)
+- name: Start VM
   community.proxmox.proxmox_kvm:
     api_host: "{{ proxmox_api_host }}"
     api_user: "{{ pve_api_user }}"
@@ -112,84 +89,53 @@
     api_token_secret: "{{ pve_api_token_secret }}"
     node: "{{ proxmox_node }}"
     vmid: "{{ vmid }}"
-    net:
-      net0: "{{ vm_net0 }}"
-    ipconfig:
-      ipconfig0: "ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}"
-    sshkeys: "{{ global_ssh_keys | join('\n') }}"
-    agent: "{{ 1 if enable_qemu_agent else 0 }}"
     validate_certs: no
-    state: present
-
+    state: started
   delegate_to: localhost
   when: not ansible_check_mode
 
-
-
-- name: Resize root disk to match Nautobot spec
+- name: Final SSH Bootstrap (Force Keys via Agent)
   ansible.builtin.shell: |
-    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-    "qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G"
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
+    # Wait for agent to come online
+    for i in {1..12}; do
+      if qm agent {{ vmid }} ping; then break; fi
+      sleep 10
+    done
+
+    # Inject keys forcefully
+    qm guest exec {{ vmid }} -- mkdir -p /root/.ssh
+    qm guest exec {{ vmid }} -- bash -c "echo '{{ global_ssh_keys | join('\n') }}' > /root/.ssh/authorized_keys"
+    qm guest exec {{ vmid }} -- chmod 700 /root/.ssh
+    qm guest exec {{ vmid }} -- chmod 600 /root/.ssh/authorized_keys
+    qm guest exec {{ vmid }} -- sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+    qm guest exec {{ vmid }} -- systemctl restart ssh
+    EOF
   delegate_to: localhost
-  when:
-    - not ansible_check_mode
-    - vm_disk_size is defined
-  ignore_errors: yes
+  when: not ansible_check_mode
+  changed_when: true
 
-
-- name: Wait for VM to boot and get IP
-  block:
-    - name: Start VM if not running
-      community.proxmox.proxmox_kvm:
-        api_host: "{{ proxmox_api_host }}"
-        api_user: "{{ pve_api_user }}"
-        api_token_id: "{{ pve_api_token_id }}"
-        api_token_secret: "{{ pve_api_token_secret }}"
-        node: "{{ proxmox_node }}"
-        vmid: "{{ vmid }}"
-        validate_certs: no
-        state: started
-      delegate_to: localhost
-      register: vm_start_wait
-      until: "vm_start_wait.status | default('') == 'running'"
-      retries: 10
-      delay: 5
-      check_mode: no
-
-    - name: Get VM IP address (DHCP mode)
-      ansible.builtin.shell: |
-        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-        "qm agent {{ vmid }} network-get-interfaces | jq -r '.result[] | select(.name==\"eth0\" or .name==\"ens18\") | .[\"ip-addresses\"][] | select(.\"ip-address-type\"==\"ipv4\") | .[\"ip-address\"]' | grep -v '^127'"
-      register: discovered_ip
-      delegate_to: localhost
-      retries: 15
-      delay: 10
-      until: discovered_ip.stdout != ""
-      when: network_mode == 'dhcp'
-      check_mode: no
-  when:
-    - not ansible_check_mode
-    - start_vm
-
+- name: Wait for SSH access to be restored
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 22
+    state: started
+    timeout: 120
+  delegate_to: localhost
+  when: not ansible_check_mode
 
 - name: Run health checks
   ansible.builtin.include_role:
     name: health_check
-  vars:
-    health_check_profile: "{{ hostvars[inventory_hostname].health_check_profile | default('basic') }}"
   when:
     - not ansible_check_mode
     - start_vm
     - health_check_enabled
-    - vm_provision_result.changed | default(false) or skip_existing_check
 
 - name: Run post-provisioning
   ansible.builtin.include_role:
     name: post_provision
-  vars:
-    post_provisioning_profile: "{{ hostvars[inventory_hostname].post_provisioning_profile | default('none') }}"
   when:
     - not ansible_check_mode
     - start_vm
     - post_provisioning_enabled
-    - vm_provision_result.changed | default(false) or skip_existing_check

@@ -25,6 +25,8 @@
     - "../inventory/group_vars/all.yml"
     - "../config_contexts/apps.yaml"
 
+
+
   tasks:
     # ========================================
     # Phase 1: Infrastructure (Proxmox)
@@ -54,12 +56,12 @@
       ansible.builtin.include_role:
         name: bootstrap_ssh
 
-
     # ========================================
     # Phase 3: Runtime (Docker)
     # ========================================
     - name: "Phase 3: Verify OS Facts"
       ansible.builtin.setup:
+
 
     - name: "Phase 3: Install and Configure Docker"
       ansible.builtin.include_role:

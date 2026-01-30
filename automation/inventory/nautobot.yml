@@ -21,7 +21,9 @@ compose:
   proxmox_node: cluster.name | default('') | replace('-cluster', '')
   proxmox_vmtype: "'qemu' if object_type == 'virtualization.virtualmachine' else 'lxc'"
   os_type: "platform.name | lower | replace(' ', '') | replace('.', '') | replace('04', '') | truncate(8, True, '')"
+  ansible_user: "'root'"
   tshirt_size: custom_fields.t_shirt_size | default('medium')
+
 
 
   app_list: custom_fields.application_list | default([])
