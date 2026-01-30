@@ -34,7 +34,6 @@
     # Phase 1: Infrastructure (Proxmox)
     # ========================================
     - name: "Phase 1: Provision LXC/VM on Proxmox"
-      delegate_to: localhost
       block:
         - ansible.builtin.include_role:
             name: "{{ 'provision_lxc_generic' if hostvars[inventory_hostname].proxmox_vmtype | default('lxc') == 'lxc' else 'provision_vm_generic' }}"
