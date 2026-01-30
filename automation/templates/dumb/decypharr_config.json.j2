@@ -4,17 +4,17 @@
   "log_level": "info",
   "debrids": [
     {
-      "name": "torbox",
-      "api_key": "{{ torbox_api_key }}",
+      "name": "realdebrid",
+      "api_key": "{{ realdebrid_api_key }}",
       "download_api_keys": [
-        "{{ torbox_api_key }}"
+        "{{ realdebrid_api_key }}"
       ],
-      "folder": "/mnt/debrid/decypharr/torbox/torrents/",
+      "folder": "/mnt/debrid/realdebrid_direct/",
       "rate_limit": "250/minute",
       "minimum_free_slot": 1,
-      "use_webdav": true,
+      "use_webdav": false,
       "torrents_refresh_interval": "15s",
-      "download_links_refresh_interval": "15m",
+      "download_links_refresh_interval": "24h",
       "workers": 50,
       "auto_expire_links_after": "24h",
       "folder_naming": "original_no_ext",
@@ -23,7 +23,9 @@
   ],
   "qbittorrent": {
     "download_folder": "/mnt/debrid/decypharr_downloads",
-    "refresh_interval": 30
+    "refresh_interval": 30,
+    "skip_pre_cache": true,
+    "always_rm_tracker_urls": true
   },
   "arrs": [
     {
@@ -47,19 +49,19 @@
   },
   "webdav": {},
   "rclone": {
-    "enabled": true,
+    "enabled": false,
     "mount_path": "/mnt/debrid/decypharr",
     "rc_port": "5572",
     "cache_dir": "/cache/decypharr",
     "vfs_cache_mode": "full",
-    "vfs_cache_max_size": "50G",
-    "vfs_cache_max_age": "24h",
+    "vfs_cache_max_size": "100G",
+    "vfs_cache_max_age": "1h",
     "vfs_cache_poll_interval": "1m",
-    "vfs_read_chunk_size": "128M",
+    "vfs_read_chunk_size": "256M",
     "vfs_read_chunk_size_limit": "off",
-    "vfs_read_ahead": "1G",
+    "vfs_read_ahead": "2G",
     "async_read": true,
-    "transfers": 4,
+    "transfers": 8,
     "uid": 1000,
     "gid": 1000,
     "attr_timeout": "1s",

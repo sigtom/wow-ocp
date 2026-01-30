@@ -1,0 +1,25 @@
+[Unit]
+Description=Rclone Direct Real-Debrid Mount (via Zurg)
+After=zurg.service
+Wants=zurg.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rclone mount realdebrid_direct: /opt/dumb/mnt/debrid/realdebrid_direct \
+    --config /opt/dumb/config/realdebrid_direct.conf \
+    --allow-other \
+    --vfs-cache-mode full \
+    --vfs-cache-max-size 150G \
+    --cache-dir /mnt/vfs_cache/rclone_rd \
+    --vfs-read-ahead 2G \
+    --dir-cache-time 10s \
+    --buffer-size 256M \
+    --rc \
+    --rc-addr 127.0.0.1:5574 \
+    --rc-no-auth
+ExecStop=/usr/bin/fusermount -uz /opt/dumb/mnt/debrid/realdebrid_direct
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -42,6 +42,16 @@
             fields:
               - { "name": "value", "value": "\\b(remux)\\b" }
 
+      - name: "WEB-DL"
+        includeCustomFormatWhenRenaming: true
+        specifications:
+          - name: "WEB-DL"
+            implementation: "ReleaseTitleSpecification"
+            negate: false
+            required: false
+            fields:
+              - { "name": "value", "value": "\\b(web[-_. ]?dl|webrip|webhdtv)\\b" }
+
   tasks:
     # ========================================
     # Phase 1: Configure Radarr
@@ -88,7 +98,7 @@
                 radarr_cloud_items: "{{ radarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
               loop: "{{ (radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first)['items'] }}"
               vars:
-                allowed: "{{ (item.quality is defined and item.quality.id in [31, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
+                allowed: "{{ (item.quality is defined and item.quality.id in [19, 18, 31, 17]) or (item.id is defined and item.id == 1003) }}"
 
             - name: "Radarr: PUT Cloud-Unlimited"
               ansible.builtin.uri:
@@ -98,17 +108,19 @@
                 body_format: json
                 body: "{{ profile | combine({
                     'formatItems': [
+                      {'format': webdl_id, 'name': 'WEB-DL', 'score': 2000},
                       {'format': remux_id, 'name': 'Remux', 'score': 1000},
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
                     ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
-                    'cutoff': 31,
-                    'items': radarr_cloud_items
+                    'cutoff': 19,
+                    'items': radarr_cloud_items | sort(attribute='quality.id') | sort(attribute='allowed', reverse=true)
                   }) }}"
                 status_code: [200, 202]
               vars:
                 profile: "{{ radarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+                webdl_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'WEB-DL') | first).id }}"
                 remux_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
                 x265_id: "{{ (radarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'Cloud-Unlimited' in (radarr_qp_existing.json | map(attribute='name') | list)"
@@ -191,7 +203,7 @@
                 sonarr_cloud_items: "{{ sonarr_cloud_items | default([]) + [item | combine({'allowed': allowed})] }}"
               loop: "{{ (sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first)['items'] }}"
               vars:
-                allowed: "{{ (item.quality is defined and item.quality.id in [21, 19, 18, 17]) or (item.id is defined and item.id == 1003) }}"
+                allowed: "{{ (item.quality is defined and item.quality.id in [21, 18, 31, 19, 17]) or (item.id is defined and item.id == 1003) }}"
 
             - name: "Sonarr: PUT Cloud-Unlimited"
               ansible.builtin.uri:
@@ -201,17 +213,19 @@
                 body_format: json
                 body: "{{ profile | combine({
                     'formatItems': [
+                      {'format': webdl_id, 'name': 'WEB-DL', 'score': 2000},
                       {'format': remux_id, 'name': 'Remux', 'score': 1000},
                       {'format': x265_id, 'name': 'x265/HEVC', 'score': 0}
                     ],
                     'minUpgradeFormatScore': 1,
                     'upgradeAllowed': true,
                     'cutoff': 21,
-                    'items': sonarr_cloud_items
+                    'items': sonarr_cloud_items | sort(attribute='quality.id') | sort(attribute='allowed', reverse=true)
                   }) }}"
                 status_code: [200, 202]
               vars:
                 profile: "{{ sonarr_qp_existing.json | selectattr('name', 'equalto', 'Cloud-Unlimited') | first }}"
+                webdl_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'WEB-DL') | first).id }}"
                 remux_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'Remux') | first).id }}"
                 x265_id: "{{ (sonarr_cf_final.json | selectattr('name', 'equalto', 'x265/HEVC') | first).id }}"
           when: "'Cloud-Unlimited' in (sonarr_qp_existing.json | map(attribute='name') | list)"

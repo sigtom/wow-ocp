@@ -99,7 +99,7 @@ services:
       - ./config/sabnzbd:/config
       - /mnt/nas/downloads:/downloads
     ports:
-      - "8080:8080"
+      - "8085:8080"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -107,6 +107,7 @@ services:
       - "traefik.http.routers.sabnzbd.entrypoints=websecure"
       - "traefik.http.routers.sabnzbd.tls.certresolver=cloudflare"
       - "traefik.http.services.sabnzbd.loadbalancer.server.port=8080"
+
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest

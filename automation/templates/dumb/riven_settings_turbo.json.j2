@@ -8,7 +8,7 @@
     "map_metadata": true,
     "tracemalloc": false,
     "symlink": {
-        "rclone_path": "/mnt/debrid/realdebrid_direct",
+        "rclone_path": "/mnt/debrid/torbox_direct",
         "library_path": "/mnt/debrid/riven_symlinks",
         "separate_anime_dirs": false,
         "repair_symlinks": true,
@@ -18,11 +18,9 @@
         "updater_interval": 120,
         "plex": {
             "enabled": true,
-            "token": "{{ plex_api_token }}",
+            "token": "{{ plex_token }}",
             "url": "http://localhost:32400"
         },
-
-
         "jellyfin": {
             "enabled": false,
             "api_key": "",
@@ -46,7 +44,7 @@
         "episode_filesize_mb_max": -1,
         "proxy_url": "",
         "real_debrid": {
-            "enabled": true,
+            "enabled": false,
             "api_key": "{{ realdebrid_api_key }}"
         },
         "all_debrid": {
@@ -54,10 +52,9 @@
             "api_key": ""
         },
         "torbox": {
-            "enabled": false,
-            "api_key": ""
+            "enabled": true,
+            "api_key": "{{ torbox_api_key }}"
         }
-
     },
     "content": {
         "overseerr": {
@@ -110,16 +107,16 @@
         }
     },
     "scraping": {
-        "after_2": 2.0,
-        "after_5": 6.0,
+        "after_2": 0.5,
+        "after_5": 1.0,
         "after_10": 24.0,
         "parse_debug": false,
         "enable_aliases": true,
-        "bucket_limit": 5,
+        "bucket_limit": 20,
         "max_failed_attempts": 0,
         "dubbed_anime_only": false,
         "torrentio": {
-            "enabled": false,
+            "enabled": true,
             "filter": "sort=qualitysize%7Cqualityfilter=480p,scr,cam",
             "url": "http://torrentio.strem.fun",
             "timeout": 30,
@@ -173,7 +170,7 @@
             "ratelimit": true
         },
         "comet": {
-            "enabled": false,
+            "enabled": true,
             "url": "http://localhost:8000",
             "timeout": 30,
             "ratelimit": true

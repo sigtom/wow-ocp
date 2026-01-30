@@ -1,0 +1,48 @@
+import os
+import time
+import requests
+
+# Config
+WATCH_DIR = "/opt/dumb/data/usenet_blackhole"
+TORBOX_API_KEY = "{{ torbox_api_key }}"
+TORBOX_URL = "https://api.torbox.app/v1/api/usenet/createusenetdownload"
+
+def upload_to_torbox(file_path):
+    print(f"[{time.strftime('%H:%M:%S')}] Detected new NZB: {os.path.basename(file_path)}")
+    try:
+        with open(file_path, 'rb') as f:
+            files = {'file': f}
+            headers = {"Authorization": f"Bearer {TORBOX_API_KEY}"}
+            response = requests.post(TORBOX_URL, files=files, headers=headers)
+
+        if response.status_code == 200:
+            res_data = response.json()
+            if res_data.get('success'):
+                print(f"  SUCCESS: Uploaded to Torbox. ID: {res_data.get('data', {}).get('torrent_id')}")
+                os.remove(file_path) # Delete NZB after success
+                return True
+            else:
+                print(f"  FAILED: Torbox error: {res_data.get('detail')}")
+        else:
+            print(f"  ERROR: HTTP {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"  CRITICAL ERROR: {str(e)}")
+    return False
+
+print(f"Usenet-to-Torbox Bridge started. Watching {WATCH_DIR}...")
+
+while True:
+    try:
+        if not os.path.exists(WATCH_DIR):
+            os.makedirs(WATCH_DIR)
+
+        for filename in os.listdir(WATCH_DIR):
+            if filename.endswith(".nzb"):
+                full_path = os.path.join(WATCH_DIR, filename)
+                upload_to_torbox(full_path)
+        time.sleep(5) # Poll every 5 seconds
+    except KeyboardInterrupt:
+        break
+    except Exception as e:
+        print(f"Loop error: {e}")
+        time.sleep(10)
