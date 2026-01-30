@@ -1,10 +1,83 @@
-# Project Progress (v1.9)
+# Project Progress (v2.0)
 
-- [2026-01-21]: **MAINTENANCE: CODIFIED MASTER WORKFLOW**
-    - **Change**: Updated `SYSTEM.md` (v2.2) to formally codify the **"Master Engine" Pattern** for Proxmox and application lifecycle management.
-    - **Documentation**: Defined the strict GitOps loop (Git -> Nautobot -> AAP -> Proxmox) and the execution order of the Master Deploy playbook.
-    - **Standardization**: Set the "Prime Directive" for new applications: metadata-first, generic-role execution, no more individual playbooks.
-    - **Result**: Future sessions and AI assistants have a clear, immutable reference for how to expand and maintain the homelab.
+- [2026-01-30]: **IRONCLAD VM PROVISIONING & STACK CONSOLIDATION**
+    - **Infrastructure Pivot**: Migrated the DUMB stack from a flakey LXC environment to a stable, isolated Proxmox VM. This provides hard kernel isolation and native FUSE support, ending the "zombie mount" slog.
+    - **Master Engine Hardening**: Re-engineered the `provision_vm_generic` role to be forcefully idempotent. Implemented a "Break Glass" provisioning pattern that uses direct Proxmox CLI commands to override sticky template inheritance issues (like inherited VLAN tags).
+    - **Automatic Disk Scaling**: Integrated automatic root partition expansion (`growpart` + `resize2fs`) into the provisioning role, ensuring the VM has the full 100GB capacity before the first large package install.
+    - **Stack Consolidation**: Merged the entire media ecosystem (Plex, Riven, Arrs, Sabnzbd, qBittorrent, Tautulli, Bazarr) into a single, unified Docker Compose deployment on the `dumb` VM.
+    - **Real-Debrid Transition**: Fully purged the stack of Torbox references. Swapped all configurations to **Real-Debrid** and verified API connectivity via the `dumb` container logs.
+    - **AAP Resilience**:
+        - Resolved the "Nautobot Dynamic Sync" failure by fixing missing API tokens in the AAP credentials.
+        - Switched the inventory endpoint to an IP address (`172.16.100.15`) to ensure sync reliability even when cluster DNS is down.
+    - **Dev Loop Optimization**: Established a "Local-First" development workflow, allowing for rapid iteration and verification before promoting code to the 10-minute AAP sync cycle.
+    - **Outcome**: Fresh `xlarge` VM is UP, Docker is verified, and the consolidated stack is currently initializing its first-run environment.
+
+- [2026-01-24]: **DUMB STACK RESTORATION & CLEAN SLATE**
+
+    - **Mount Architecture Repair**: Identified and resolved a critical issue where the LXC host had **32 duplicate FUSE mounts** of `torbox_direct`. This caused severe I/O errors and prevented Riven from verifying file existence.
+    - **Host-Only Mount Policy**: Enforced a "Host-Only" mount strategy. Disabled all internal `rclone` and `zurg` instances within the `dumb` container to prevent race conditions. The container now strictly consumes the host's clean mount.
+    - **Cache Stabilization**: Reconfigured the host's Rclone service to use the dedicated SSD (`/mnt/vfs_cache`) and enabled Remote Control (`--rc`) for instant cache refreshing.
+    - **Library Purge & Rebuild**:
+        - Identified 250+ "Zombie" requests in Riven from a previous Overseerr database state.
+        - Executed a surgical purge of Riven's database and the Torbox cloud storage, deleting all 45 orphaned torrents.
+        - Established **Overseerr** as the single Source of Truth.
+        - Successfully re-ingested requests for **The Lord of the Rings** and restored full functionality.
+    - **Ranking Optimization**: Updated Riven's ranking profile to strictly prioritize **Remux** and **English** releases, ensuring high-quality 4K files are selected over lower-quality multi-language rips.
+    - **Permission Fix**: Corrected ownership of the `riven_symlinks` directory to `1000:1000`, resolving "Permission Denied" errors that blocked symlink creation.
+    - **Final Clean Slate**:
+        - Truncated Riven's PostgreSQL database to remove all residual items.
+        - Disabled **Plex Watchlist** sync to prevent library pollution.
+        - Verified file system contains **only** *The Fellowship of the Ring* and *The Two Towers*.
+    - **Outcome**: The system is now healthy, self-healing, and actively processing the library queue with zero "zombie" items.
+
+- [2026-01-23]: **HYBRID MEDIA INFRASTRUCTURE HARDENING & MASS MIGRATION**
+    - **VFS Cache Isolation**: Successfully provisioned a dedicated **250GB SSD virtual disk** on Proxmox and attached it to the DUMB LXC. Isolated the Rclone VFS cache to this disk, permanently resolving the "Root Disk Full" crash risk.
+    - **4K Streaming Optimization**: Tuned Rclone VFS with **100GB capacity, 2GB read-ahead, and 256MB buffers**. These settings allow the system to survive VPN jitter and stream high-bitrate 4K Remuxes seamlessly.
+    - **Infrastructure Unification**: Established a **Host-Level Direct Mount** (`torbox_direct`) on the LXC host. This unified "Super-Mount" sees both Torrents and Usenet files in a single flat list, bypassing Docker's FUSE propagation bugs.
+    - **Systematic Path Alignment**: Re-architected the stack to use the new unified mount. All apps (Plex, Riven, Sonarr, Radarr) now look at the host mount for a single source of truth.
+    - **Mass Migration**: Successfully migrated **373 mainstream movies** from the NAS to the Cloud using an automated "Delete & Re-add" workflow. This ensured 100% path accuracy and fresh 4K metadata for every title.
+    - **Automated Usenet Bridge**: Deployed a persistent **Usenet-to-Cloud Bridge** for rare content. Automated the upload of the entire **M.A.S.K.** series from NZBGeek directly to the cloud.
+    - **Stability Pass**: Applied a **Global MeGusta Block** in Prowlarr to prevent memory-exhaustion crashes. Purged corrupted *Gundam* cache chunks.
+    - **Automation Integrity**: Fully codified all surgical fixes into `@automation/` templates and created a new post-deployment API configuration playbook.
+
+    ### **Unified Cloud Architecture (v1.0)**
+    ```mermaid
+    graph TD
+        subgraph "LXC Host (Wow-Prox1)"
+            HM["Host Mount: /mnt/debrid/torbox_direct"]
+            SSD["250GB SSD Cache"]
+            USB["Usenet Bridge Daemon"]
+            HM --- SSD
+        end
+
+        subgraph "Docker Container (DUMB)"
+            Riven["Riven (Librarian)"]
+            Plex["Plex (Player)"]
+            Arrs["Radarr/Sonarr (Managers)"]
+            Decy["Decypharr (Postman)"]
+        end
+
+        HM -->|Bind Mount| Riven
+        HM -->|Bind Mount| Arrs
+        Riven -->|Creates Symlinks| Plex
+        Arrs -->|API Commands| Decy
+        Decy -->|API Commands| Cloud((Torbox Cloud))
+        USB -->|Pushes NZBs| Cloud
+        Cloud -.->|WebDAV| HM
+    ```
+
+- [2026-01-22]: **HYBRID MEDIA STACK OPTIMIZATION & DATA MIGRATION**
+    - **Hybrid Architecture**: Established a "Dual-Path" media engine. Users now use the `archive` tag for permanent NAS storage and the `cloud` tag for instant Debrid (TorBox) streaming.
+    - **Path Alignment**: Surgically moved 116+ symlinked titles from stale `decypharr_symlinks` paths to the unified `riven_symlinks` library. Updated Radarr/Sonarr databases via API to match the new filesystem structure.
+    - **NAS Reclamation**: Migrated the entire Sonarr library (23 shows) to the Cloud and purged **~442GB** of local video files from the TrueNAS `TV_Shows` share. Reclaimed an additional **~1.2TB** from the `Movies` share by replacing 2015-2025 titles with Cloud versions.
+    - **Streaming Performance**:
+        - **Direct Play Fix**: Identified that Chrome was forcing 4K transcodes (1200% CPU usage) due to codec limitations. Transitioned user to **Plex MacOS App**, resulting in 0% CPU overhead and seamless Direct Play.
+        - **Ultra-Performance VFS**: Configured aggressive Rclone VFS settings (2GB read-ahead, 256MB chunks, 8 transfers) to survive VPN speed fluctuations between Tampa (DC) and Hudson (Home).
+        - **Local Network Logic**: Updated Plex `lanNetworks` and Custom Access URLs to ensure Tampa-to-Hudson traffic is treated as local, removing the 20Mbps "Remote" bitrate cap.
+    - **Quality Intelligence**: Reprioritized the `Cloud-Unlimited` profile to prefer **Web-DL 2160p** (+2000 score) over Remuxes. This ensures high-quality HDR/DV playback while reducing bandwidth requirements by 75% compared to 100GB Remuxes.
+    - **Automation Refinement**: Automated Plex library rescans from three independent triggers (Riven, Radarr/Sonarr, and Plex periodic). Updated `@automation/` Jinja templates to permanently codify these performance settings.
+    - **Library Recovery**: Initiated bulk requests in Overseerr for **350+ orphaned or low-quality movies** to ensure the entire TorBox history is symlinked and metadata-rich in Plex.
+    - **System Stability**: Resolved a critical "Full Disk" incident on the DUMB LXC by right-sizing the VFS cache limit from 50GB to 20GB and implemented auto-cleanup of old cache chunks.
 
 - [2026-01-21]: **MAJOR ARCHITECTURAL REFACTOR: METADATA-DRIVEN INFRASTRUCTURE**
     - **Inventory Source of Truth**: Successfully migrated from static files/surveys to **Nautobot Dynamic Inventory**.

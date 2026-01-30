@@ -2,25 +2,14 @@
 # Generic VM Provisioning Role - Main Tasks
 # Refactored to be forceful and bypass flakey Cloud-Init/API behaviors
 
-- name: Validate vm_templates is loaded
+- name: Validate standards are loaded
   ansible.builtin.assert:
     that:
       - vm_templates is defined
       - vm_tshirt_sizes is defined
-    fail_msg: "Critical error: vm_templates and vm_tshirt_sizes not defined!"
+    fail_msg: "Standard definitions (all.yml) not found!"
 
-- name: Validate required variables
-  ansible.builtin.assert:
-    that:
-      - os_type is defined
-      - os_type in vm_templates
-      - tshirt_size is defined
-      - tshirt_size in vm_tshirt_sizes
-      - vmid is defined
-      - proxmox_node is defined
-    fail_msg: "Missing required variables for VM provisioning!"
-
-- name: Set facts from templates and sizes
+- name: Set facts from Nautobot metadata
   ansible.builtin.set_fact:
     template_vmid: "{{ vm_templates[os_type].vmid }}"
     vm_cores: "{{ vm_tshirt_sizes[tshirt_size].cores }}"
@@ -45,7 +34,7 @@
   register: vm_exists_check
   delegate_to: localhost
 
-- name: Provision VM using native module (Clone)
+- name: Provision VM (Clone)
   community.proxmox.proxmox_kvm:
     api_host: "{{ proxmox_api_host }}"
     api_user: "{{ pve_api_user }}"
@@ -56,30 +45,29 @@
     newid: "{{ vmid }}"
     name: "{{ inventory_hostname }}"
     clone: "{{ template_vmid }}"
-    full: "{{ clone_full }}"
-    storage: "{{ vm_storage_backend if clone_full else omit }}"
+    full: "{{ clone_full | default(false) }}"
+    storage: "{{ vm_storage_backend if clone_full | default(false) else omit }}"
     validate_certs: no
     state: present
-    timeout: "{{ clone_wait_time }}"
+    timeout: 600
   delegate_to: localhost
-  register: vm_provision_result
   when: vm_exists_check.status != 200
 
-- name: Force Apply Configuration and Hardware Specs
+- name: FORCE Network and Hardware Specs (CLI)
   ansible.builtin.shell: |
-    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-    "qm set {{ vmid }} --name {{ inventory_hostname }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 {{ vm_net0 }} --ipconfig0 'ip={{ 'dhcp' if network_mode == 'dhcp' else ansible_host + '/24' }}{% if network_mode == 'static' %},gw={{ network_config.gateway | default('172.16.100.1') }}{% endif %}' --agent 1"
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
+    # Strip inherited VLAN tags and set resources
+    qm set {{ vmid }} --cores {{ vm_cores }} --memory {{ vm_memory }} --net0 virtio,bridge=vmbr0
+    # Explicitly clear the tag (Proxmox can be sticky)
+    qm set {{ vmid }} --delete tag || true
+    # Set Cloud-Init network
+    qm set {{ vmid }} --ipconfig0 'ip={{ ansible_host }}/24,gw={{ network_config.gateway }}' --agent 1
+    # Resize disk
+    qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G
+    EOF
   delegate_to: localhost
   when: not ansible_check_mode
   changed_when: true
-
-- name: Force Disk Resize
-  ansible.builtin.shell: |
-    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-    "qm resize {{ vmid }} scsi0 {{ vm_disk_size }}G"
-  delegate_to: localhost
-  when: not ansible_check_mode
-  ignore_errors: yes
 
 - name: Start VM
   community.proxmox.proxmox_kvm:
@@ -98,15 +86,17 @@
   ansible.builtin.shell: |
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
     # Wait for agent to come online
-    for i in {1..12}; do
+    for i in {1..15}; do
       if qm agent {{ vmid }} ping; then break; fi
       sleep 10
     done
 
-    # Inject keys forcefully
+    # Inject keys forcefully without corrupted newlines
     qm guest exec {{ vmid }} -- mkdir -p /root/.ssh
-    qm guest exec {{ vmid }} -- bash -c "echo '{{ global_ssh_keys | join('\n') }}' > /root/.ssh/authorized_keys"
     qm guest exec {{ vmid }} -- chmod 700 /root/.ssh
+    {% for key in global_ssh_keys %}
+    echo "{{ key }}" | qm guest exec {{ vmid }} -- bash -c "cat >> /root/.ssh/authorized_keys"
+    {% endfor %}
     qm guest exec {{ vmid }} -- chmod 600 /root/.ssh/authorized_keys
     qm guest exec {{ vmid }} -- sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
     qm guest exec {{ vmid }} -- systemctl restart ssh
@@ -115,27 +105,21 @@
   when: not ansible_check_mode
   changed_when: true
 
-- name: Wait for SSH access to be restored
+- name: Wait for SSH access
   ansible.builtin.wait_for:
     host: "{{ ansible_host }}"
     port: 22
     state: started
-    timeout: 120
+    timeout: 180
   delegate_to: localhost
   when: not ansible_check_mode
 
 - name: Run health checks
   ansible.builtin.include_role:
     name: health_check
-  when:
-    - not ansible_check_mode
-    - start_vm
-    - health_check_enabled
+  when: not ansible_check_mode and health_check_enabled
 
 - name: Run post-provisioning
   ansible.builtin.include_role:
     name: post_provision
-  when:
-    - not ansible_check_mode
-    - start_vm
-    - post_provisioning_enabled
+  when: not ansible_check_mode and post_provisioning_enabled

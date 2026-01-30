@@ -22,8 +22,10 @@
   gather_facts: false
 
   vars_files:
-    - "../inventory/group_vars/all.yml"
-    - "../config_contexts/apps.yaml"
+    - "{{ playbook_dir }}/../inventory/group_vars/all.yml"
+    - "{{ playbook_dir }}/../../config_contexts/apps.yaml"
+
+
 
 
 
