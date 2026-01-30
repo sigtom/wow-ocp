@@ -18,7 +18,7 @@
         "updater_interval": 120,
         "plex": {
             "enabled": true,
-            "token": "{{ plex_api_token }}",
+            "token": "{{ plex_token | default('') }}",
             "url": "http://localhost:32400"
         },
 
