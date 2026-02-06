@@ -83,6 +83,11 @@ spec:
                 secretKeyRef:
                   name: aap-infra-creds-secret
                   key: cloudflare_token
+            - name: NAUTOBOT_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: nautobot_api_token
             - name: REALDEBRID_API_KEY
               valueFrom:
                 secretKeyRef:
