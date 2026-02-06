@@ -8,23 +8,63 @@
 # AAP Usage:
 #   - Job Template: "Util - SSH Bootstrap"
 #   - Credentials: "Proxmox Production", "AAP Executor SSH"
-#   - Survey: target_ip, bootstrap_force
+#   - Survey: target_ip (optional), bootstrap_force (optional)
+#   - NOTE: If target_ip matches an existing inventory host, we use that host
+#           (to preserve variables like proxmox_vmid).
 # ============================================================================
 
-- name: "SSH Key Bootstrap Utility - Initialization"
+- name: "SSH Key Bootstrap Utility - Target Selection"
   hosts: localhost
   connection: local
   gather_facts: false
   tasks:
-    - name: "Add manual target to inventory if IP provided"
+    - name: "Initialize target selection"
+      ansible.builtin.set_fact:
+        target_hosts_list: []
+        input_ip: "{{ target_ip | default('') }}"
+
+    - name: "Find existing host matching IP"
+      ansible.builtin.set_fact:
+        found_existing_host: "{{ item }}"
+      loop: "{{ groups['all'] }}"
+      when: 
+        - input_ip | length > 0
+        - hostvars[item]['ansible_host'] | default('') == input_ip
+
+    - name: "Scenario 1: Target IP matches existing inventory host"
       ansible.builtin.add_host:
-        name: "{{ target_ip }}"
-        groups: manual_targets
+        name: "{{ found_existing_host }}"
+        groups: bootstrap_targets
+      when: found_existing_host is defined
+
+    - name: "Scenario 2: Target IP is new (Manual)"
+      ansible.builtin.add_host:
+        name: "{{ input_ip }}"
+        groups: bootstrap_targets
         ansible_user: root
-      when: target_ip | default('') | length > 0
+        # Pass through variables if provided in survey/extra_vars
+        proxmox_vmid: "{{ proxmox_vmid | default(omit) }}"
+        proxmox_node: "{{ proxmox_node | default(omit) }}"
+      when: 
+        - input_ip | length > 0
+        - found_existing_host is not defined
+
+    - name: "Scenario 3: No IP provided (Use AAP Limit / All)"
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        groups: bootstrap_targets
+      loop: "{{ groups['all'] }}"
+      when: input_ip | length == 0
+
+    - name: "Debug Target Selection"
+      ansible.builtin.debug:
+        msg: 
+          - "Input IP: {{ input_ip }}"
+          - "Found Existing Host: {{ found_existing_host | default('None') }}"
+          - "Target Mode: {{ 'Existing' if found_existing_host is defined else ('Manual' if input_ip | length > 0 else 'All/Limit') }}"
 
 - name: "SSH Key Bootstrap Utility - Execution"
-  hosts: "all:manual_targets:!localhost"
+  hosts: bootstrap_targets
   gather_facts: false
   tasks:
     - name: "Run SSH Bootstrap Role"
@@ -41,6 +81,7 @@
           - "SSH Bootstrap Summary"
           - "=========================================="
           - "Host: {{ inventory_hostname }}"
+          - "IP: {{ ansible_host | default(inventory_hostname) }}"
           - "VMID: {{ proxmox_vmid | default('N/A') }}"
           - "Access Level: {{ id_res.stdout | default('Failed') }}"
           - "=========================================="
