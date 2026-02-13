@@ -1,4 +1,4 @@
-from nautobot.apps.jobs import Job, register_jobs
+from nautobot.apps.jobs import Job, register_jobs, BooleanVar, StringVar
 from nautobot.virtualization.models import VirtualMachine, Cluster, ClusterType
 from nautobot.extras.models import Status, Tag
 import requests
@@ -10,10 +10,20 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 name = "Infrastructure Sync Jobs"
 
 class SyncProxmoxInventory(Job):
+    # Job variables (exposed in UI/API)
+    proxmox_url = StringVar(required=False, description="Proxmox API URL (e.g. https://172.16.110.101:8006)")
+    proxmox_user = StringVar(required=False, description="Proxmox token user (user@realm!tokenid)")
+    proxmox_token = StringVar(required=False, description="Proxmox token secret")
+    commit = BooleanVar(default=False, description="Apply changes (false = dry-run)")
+    mark_stale = BooleanVar(default=True, description="Tag VMs not found in Proxmox")
+    include_lxc = BooleanVar(default=True, description="Include LXC containers")
+    node_filter = StringVar(required=False, description="Filter by Proxmox node name")
+    vmid_filter = StringVar(required=False, description="Filter by VMID")
+
     class Meta:
         name = "Sync Proxmox Inventory"
         description = "Sync VMs and LXCs from Proxmox to Nautobot (Safe Mode)"
-        has_sensitive_variables = False  # Set to True if you want to mask inputs in UI logs, but args are still visible in JobResult unless careful.
+        has_sensitive_variables = True
 
     def run(self, proxmox_url="", proxmox_user="", proxmox_token="", commit=False, mark_stale=True, include_lxc=True, node_filter="", vmid_filter=""):
         # Prioritize UI inputs, fallback to ENV
