@@ -58,7 +58,76 @@ class SyncProxmoxInventory(Job):
                 continue
                 
             self.logger.info(f"Scanning Node: {node_name}")
+
+            # ---------------------------------------------------------
+            # Sync Host Interfaces (Device level)
+            # ---------------------------------------------------------
+            try:
+                # Find the Device object for this node
+                device = Device.objects.get(name=node_name)
+                
+                # Fetch Node Network
+                net_resp = requests.get(f"{prox_url}/api2/json/nodes/{node_name}/network", headers=headers, verify=verify_tls, timeout=10)
+                if net_resp.status_code == 200:
+                    net_items = net_resp.json().get("data", [])
+                    for net in net_items:
+                        iface_name = net.get("iface")
+                        # Only interested in Linux Bridges (vmbr*) or VLAN subinterfaces
+                        # Filter as needed to avoid noise
+                        if not (iface_name.startswith("vmbr") or "." in iface_name):
+                            continue
+
+                        iface_type = "virtual" # Default fallback
+                        if iface_name.startswith("vmbr"):
+                            iface_type = "bridge"
+                        
+                        try:
+                            # Upsert Interface
+                            iface, created = Interface.objects.get_or_create(
+                                device=device,
+                                name=iface_name,
+                                defaults={
+                                    "type": iface_type,
+                                    "enabled": True,
+                                    "mtu": 1500, # Default, could parse if available
+                                    "status": status_active
+                                }
+                            )
+                            
+                            if commit:
+                                # Update IP if present in 'cidr' or 'address'/'netmask'
+                                cidr = net.get("cidr") # IPv4 CIDR
+                                if cidr:
+                                    # Create IP Address and assign
+                                    try:
+                                        ip_obj, ip_created = IPAddress.objects.get_or_create(
+                                            address=cidr,
+                                            defaults={"status": status_active}
+                                        )
+                                        # Assign to interface
+                                        if ip_obj.assigned_object != iface:
+                                            ip_obj.assigned_object = iface
+                                            ip_obj.save()
+                                            self.logger.info(f"Assigned IP {cidr} to {iface_name}")
+                                    except Exception as ex:
+                                        self.logger.warning(f"Failed to process IP {cidr}: {ex}")
+
+                                action = "Created" if created else "Updated"
+                                self.logger.info(f"{action} Host Interface: {iface_name} on {node_name}")
+                            else:
+                                self.logger.info(f"[Dry-Run] Would sync Interface: {iface_name} on {node_name}")
+                                
+                        except Exception as e:
+                            self.logger.warning(f"Error syncing interface {iface_name}: {e}")
             
+            except Device.DoesNotExist:
+                self.logger.warning(f"Device object '{node_name}' not found in Nautobot. Skipping interface sync.")
+            except Exception as e:
+                self.logger.error(f"Failed host network sync for {node_name}: {e}")
+
+            # ---------------------------------------------------------
+            # VM Sync Logic (Existing)
+            # ---------------------------------------------------------
             vms = []
             # QEMU
             try:
