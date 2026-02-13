@@ -23,6 +23,9 @@ services:
       NAUTOBOT_SUPERUSER_EMAIL: admin@sigtom.dev
       NAUTOBOT_SUPERUSER_PASSWORD: ${NAUTOBOT_SUPERUSER_PASSWORD}
       NAUTOBOT_SUPERUSER_API_TOKEN: ${NAUTOBOT_SUPERUSER_API_TOKEN}
+      PROXMOX_URL: ${PROXMOX_URL}
+      PROXMOX_USER: ${PROXMOX_USER}
+      PROXMOX_TOKEN: ${PROXMOX_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,6 +59,9 @@ services:
       NAUTOBOT_REDIS_PASSWORD: ""
       NAUTOBOT_SECRET_KEY: ${NAUTOBOT_SECRET_KEY}
       NAUTOBOT_ALLOWED_HOSTS: "*"
+      PROXMOX_URL: ${PROXMOX_URL}
+      PROXMOX_USER: ${PROXMOX_USER}
+      PROXMOX_TOKEN: ${PROXMOX_TOKEN}
     depends_on:
       - nautobot
     volumes:
@@ -81,6 +87,9 @@ services:
       NAUTOBOT_REDIS_PASSWORD: ""
       NAUTOBOT_SECRET_KEY: ${NAUTOBOT_SECRET_KEY}
       NAUTOBOT_ALLOWED_HOSTS: "*"
+      PROXMOX_URL: ${PROXMOX_URL}
+      PROXMOX_USER: ${PROXMOX_USER}
+      PROXMOX_TOKEN: ${PROXMOX_TOKEN}
     depends_on:
       - nautobot
     volumes:
