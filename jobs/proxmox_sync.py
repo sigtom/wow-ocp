@@ -13,15 +13,16 @@ class SyncProxmoxInventory(Job):
     class Meta:
         name = "Sync Proxmox Inventory"
         description = "Sync VMs and LXCs from Proxmox to Nautobot (Safe Mode)"
-        has_sensitive_variables = False
+        has_sensitive_variables = False  # Set to True if you want to mask inputs in UI logs, but args are still visible in JobResult unless careful.
 
-    def run(self, commit=False, mark_stale=True, include_lxc=True, node_filter="", vmid_filter=""):
-        prox_url = os.environ.get("PROXMOX_URL") or os.environ.get("NAUTOBOT_PROXMOX_URL")
-        prox_user = os.environ.get("PROXMOX_USER") or os.environ.get("NAUTOBOT_PROXMOX_USER")
-        prox_token = os.environ.get("PROXMOX_TOKEN") or os.environ.get("NAUTOBOT_PROXMOX_TOKEN")
+    def run(self, proxmox_url="", proxmox_user="", proxmox_token="", commit=False, mark_stale=True, include_lxc=True, node_filter="", vmid_filter=""):
+        # Prioritize UI inputs, fallback to ENV
+        prox_url = proxmox_url or os.environ.get("PROXMOX_URL") or os.environ.get("NAUTOBOT_PROXMOX_URL")
+        prox_user = proxmox_user or os.environ.get("PROXMOX_USER") or os.environ.get("NAUTOBOT_PROXMOX_USER")
+        prox_token = proxmox_token or os.environ.get("PROXMOX_TOKEN") or os.environ.get("NAUTOBOT_PROXMOX_TOKEN")
         
         if not prox_url or not prox_user or not prox_token:
-            self.logger.error("Missing Proxmox credentials (PROXMOX_URL/USER/TOKEN) in environment.")
+            self.logger.error("Missing Proxmox credentials. Provide via UI inputs or ENV (PROXMOX_URL/USER/TOKEN).")
             return
 
         headers = {"Authorization": f"PVEAPIToken={prox_user}={prox_token}"}
