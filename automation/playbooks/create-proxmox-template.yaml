@@ -77,6 +77,11 @@
           --ide0 {{ iso_volume }},media=cdrom \
           --agent 1 \
           --ostype l26
+        # UEFI + Q35 + Host CPU
+        qm set {{ vmid }} --machine q35
+        qm set {{ vmid }} --bios ovmf
+        qm set {{ vmid }} --efidisk0 {{ storage_backend }}:1,efitype=4m,pre-enrolled-keys=0
+        qm set {{ vmid }} --cpu host
         qm set {{ vmid }} --boot order=scsi0\;ide0\;net0
         EOF
       when: vm_exists.status != 200
