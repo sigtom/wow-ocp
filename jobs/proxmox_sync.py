@@ -1,8 +1,9 @@
 from nautobot.apps.jobs import Job, register_jobs, BooleanVar, StringVar
-from nautobot.virtualization.models import VirtualMachine, Cluster, ClusterType
+from nautobot.virtualization.models import VirtualMachine, Cluster, ClusterType, VMInterface
 from nautobot.dcim.models import Device, Interface
 from nautobot.ipam.models import IPAddress
-from nautobot.extras.models import Status, Tag
+from nautobot.extras.models import Status, Tag, Relationship, RelationshipAssociation
+from django.contrib.contenttypes.models import ContentType
 import requests
 import urllib3
 import os
@@ -64,6 +65,66 @@ class SyncProxmoxInventory(Job):
         ctype, _ = ClusterType.objects.get_or_create(name="Proxmox")
         cluster, _ = Cluster.objects.get_or_create(name="HomeLab Proxmox", defaults={"cluster_type": ctype})
 
+        # Relationship setup
+        iface_ct = ContentType.objects.get_for_model(Interface)
+        vm_iface_ct = ContentType.objects.get_for_model(VMInterface)
+        ip_ct = ContentType.objects.get_for_model(IPAddress)
+
+        iface_rel, _ = Relationship.objects.get_or_create(
+            key="interface_ip",
+            defaults={
+                "label": "Interface IP",
+                "type": "one-to-many",
+                "required_on": "",
+                "source_type": iface_ct,
+                "destination_type": ip_ct,
+                "source_label": "Interface",
+                "destination_label": "IP Address",
+            },
+        )
+
+        vm_iface_rel, _ = Relationship.objects.get_or_create(
+            key="vm_interface_ip",
+            defaults={
+                "label": "VM Interface IP",
+                "type": "one-to-many",
+                "required_on": "",
+                "source_type": vm_iface_ct,
+                "destination_type": ip_ct,
+                "source_label": "VM Interface",
+                "destination_label": "IP Address",
+            },
+        )
+
+        def netmask_to_prefix(netmask):
+            try:
+                return ipaddress.ip_network(f"0.0.0.0/{netmask}").prefixlen
+            except Exception:
+                return None
+
+        def parse_ip_addresses(ip_list):
+            for ip in ip_list or []:
+                if ip.get("ip-address-type") != "ipv4":
+                    continue
+                ip_addr = ip.get("ip-address")
+                if not ip_addr:
+                    continue
+                try:
+                    ip_obj = ipaddress.ip_address(ip_addr)
+                    if ip_obj.is_loopback or ip_obj.is_link_local:
+                        continue
+                except Exception:
+                    continue
+
+                prefix = ip.get("prefix")
+                if prefix is None:
+                    netmask = ip.get("netmask")
+                    if netmask:
+                        prefix = netmask_to_prefix(netmask)
+                if prefix is None:
+                    prefix = 32
+                yield ip_addr, int(prefix)
+
         active_vm_names = set()
 
         for node_info in nodes:
@@ -86,8 +147,9 @@ class SyncProxmoxInventory(Job):
                     net_items = net_resp.json().get("data", [])
                     for net in net_items:
                         iface_name = net.get("iface")
+                        if not iface_name:
+                            continue
                         # Only interested in Linux Bridges (vmbr*) or VLAN subinterfaces
-                        # Filter as needed to avoid noise
                         if not (iface_name.startswith("vmbr") or "." in iface_name):
                             continue
 
@@ -109,19 +171,23 @@ class SyncProxmoxInventory(Job):
                             )
                             
                             if commit:
-                                # Update IP if present in 'cidr' or 'address'/'netmask'
+                                # Update IP if present in 'cidr'
                                 cidr = net.get("cidr") # IPv4 CIDR
                                 if cidr:
-                                    # Create IP Address (no interface assignment in this Nautobot model)
                                     try:
                                         ipi = ipaddress.ip_interface(cidr)
-                                        ip_obj, ip_created = IPAddress.objects.get_or_create(
+                                        ip_obj, _ = IPAddress.objects.get_or_create(
                                             host=str(ipi.ip),
                                             mask_length=int(ipi.network.prefixlen),
                                             defaults={"status": status_active}
                                         )
-                                        if ip_created:
-                                            self.logger.info(f"Created IP {cidr} (host={ipi.ip})")
+                                        RelationshipAssociation.objects.get_or_create(
+                                            relationship=iface_rel,
+                                            source_type=iface_ct,
+                                            source_id=iface.id,
+                                            destination_type=ip_ct,
+                                            destination_id=ip_obj.id,
+                                        )
                                     except Exception as ex:
                                         self.logger.warning(f"Failed to process IP {cidr}: {ex}")
 
@@ -139,7 +205,7 @@ class SyncProxmoxInventory(Job):
                 self.logger.error(f"Failed host network sync for {node_name}: {e}")
 
             # ---------------------------------------------------------
-            # VM Sync Logic (Existing)
+            # VM Sync Logic
             # ---------------------------------------------------------
             vms = []
             # QEMU
@@ -159,7 +225,6 @@ class SyncProxmoxInventory(Job):
                 vmid = str(vm.get("vmid"))
                 name = vm.get("name")
                 status_str = vm.get("status")
-                # vm_type logic: check 'type' key if present, else infer
                 vm_type = "lxc" if "type" in vm and vm["type"] == "lxc" else "qemu"
                 
                 if vmid_filter and str(vmid_filter) != vmid:
@@ -206,6 +271,42 @@ class SyncProxmoxInventory(Job):
                         
                         action = "Created" if created else "Updated"
                         self.logger.info(f"{action} VM: {name} (VMID: {vmid}, Node: {node_name})")
+
+                        # -------------------------------------------------
+                        # VM/LXC Interface & IP Sync (guest agent)
+                        # -------------------------------------------------
+                        try:
+                            iface_data = []
+                            if vm_type == "qemu":
+                                resp = requests.get(f"{prox_url}/api2/json/nodes/{node_name}/qemu/{vmid}/agent/network-get-interfaces", headers=headers, verify=verify_tls, timeout=10)
+                                if resp.status_code == 200:
+                                    payload = resp.json().get("data", {})
+                                    iface_data = payload.get("result", payload) if isinstance(payload, dict) else payload
+                            else:
+                                resp = requests.get(f"{prox_url}/api2/json/nodes/{node_name}/lxc/{vmid}/interfaces", headers=headers, verify=verify_tls, timeout=10)
+                                if resp.status_code == 200:
+                                    payload = resp.json().get("data", {})
+                                    iface_data = payload.get("result", payload) if isinstance(payload, dict) else payload
+
+                            if isinstance(iface_data, list):
+                                for iface in iface_data:
+                                    iface_name = iface.get("name") or iface.get("iface") or "eth0"
+                                    vm_iface, _ = VMInterface.objects.get_or_create(virtual_machine=vm_obj, name=iface_name)
+                                    for ip_addr, prefix in parse_ip_addresses(iface.get("ip-addresses", [])):
+                                        ip_obj, _ = IPAddress.objects.get_or_create(
+                                            host=ip_addr,
+                                            mask_length=prefix,
+                                            defaults={"status": status_active}
+                                        )
+                                        RelationshipAssociation.objects.get_or_create(
+                                            relationship=vm_iface_rel,
+                                            source_type=vm_iface_ct,
+                                            source_id=vm_iface.id,
+                                            destination_type=ip_ct,
+                                            destination_id=ip_obj.id,
+                                        )
+                        except Exception as ex:
+                            self.logger.warning(f"Failed guest IP sync for {name}: {ex}")
                     else:
                         self.logger.info(f"[Dry-Run] Would sync VM: {name} (VMID: {vmid}, Node: {node_name})")
                         
