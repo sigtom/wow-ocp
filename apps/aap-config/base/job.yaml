@@ -88,6 +88,16 @@ spec:
                 secretKeyRef:
                   name: aap-infra-creds-secret
                   key: nautobot_api_token
+            - name: RHSM_ACTIVATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: RHSM_ACTIVATION_KEY
+            - name: RHSM_ORG_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aap-infra-creds-secret
+                  key: RHSM_ORG_ID
             - name: IDM_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:

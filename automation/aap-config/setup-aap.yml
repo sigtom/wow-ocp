@@ -39,6 +39,10 @@
     idm_admin_password: "{{ lookup('env', 'IDM_ADMIN_PASSWORD') }}"
     idm_dm_password: "{{ lookup('env', 'IDM_DM_PASSWORD') }}"
 
+    # RHSM activation
+    rhsm_activation_key: "{{ lookup('env', 'RHSM_ACTIVATION_KEY') }}"
+    rhsm_org_id: "{{ lookup('env', 'RHSM_ORG_ID') }}"
+
     # Arr API keys
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
     radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
@@ -214,6 +218,27 @@
             idm_dm_password: "{% raw %}{{ idm_dm_password }}{% endraw %}"
         state: present
 
+    - name: Create RHSM Activation Credential Type
+      awx.awx.credential_type:
+        name: "RHSM Activation"
+        kind: cloud
+        inputs:
+          fields:
+            - id: activation_key
+              label: RHSM Activation Key
+              type: string
+              secret: true
+            - id: org_id
+              label: RHSM Organization ID
+              type: string
+              secret: true
+          required: [activation_key, org_id]
+        injectors:
+          env:
+            RHSM_ACTIVATION_KEY: "{% raw %}{{ activation_key }}{% endraw %}"
+            RHSM_ORG_ID: "{% raw %}{{ org_id }}{% endraw %}"
+        state: present
+
     - name: Create Media Arr Secrets Credential Type
       awx.awx.credential_type:
         name: "Media Arr API Keys"
@@ -353,6 +378,17 @@
         state: present
       when: idm_admin_password != '' and idm_dm_password != ''
 
+    - name: Create RHSM Activation Credential
+      awx.awx.credential:
+        name: "RHSM Activation"
+        organization: "{{ aap_organization }}"
+        credential_type: "RHSM Activation"
+        inputs:
+          activation_key: "{{ rhsm_activation_key }}"
+          org_id: "{{ rhsm_org_id }}"
+        state: present
+      when: rhsm_activation_key != '' and rhsm_org_id != ''
+
     # -------------------------------------------------------
     # 4. Project
     # -------------------------------------------------------
@@ -417,6 +453,7 @@
           - "DUMB Debrid Secrets"
           - "Media Arr API Keys"
           - "GitHub Token"
+          - "RHSM Activation"
         state: present
 
     - name: Create Sync DNS Job Template
@@ -487,6 +524,7 @@
           - "Proxmox Production"
           - "AAP Executor SSH"
           - "IdM Secrets"
+          - "RHSM Activation"
         state: present
 
     # -------------------------------------------------------
