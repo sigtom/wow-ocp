@@ -69,6 +69,20 @@
   when: not ansible_check_mode
   changed_when: true
 
+- name: Set Cloud-Init SSH keys (Proxmox host)
+  ansible.builtin.shell: |
+    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
+    mkdir -p /root/.ssh
+    cat > /root/.ssh/ansible_ci_keys <<'KEYS'
+    {{ global_ssh_keys | join('\n') }}
+    KEYS
+    chmod 600 /root/.ssh/ansible_ci_keys
+    qm set {{ vmid }} --sshkeys /root/.ssh/ansible_ci_keys --ciuser root
+    EOF
+  delegate_to: localhost
+  when: not ansible_check_mode
+  changed_when: true
+
 - name: Start VM
   community.proxmox.proxmox_kvm:
     api_host: "{{ proxmox_api_host }}"
@@ -81,22 +95,6 @@
     state: started
   delegate_to: localhost
   when: not ansible_check_mode
-
-- name: Set Cloud-Init SSH keys (Proxmox host)
-  ansible.builtin.shell: |
-    ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
-    mkdir -p /root/.ssh
-    cat > /root/.ssh/ansible_ci_keys <<'KEYS'
-    {% for key in global_ssh_keys %}
-    {{ key }}
-    {% endfor %}
-    KEYS
-    chmod 600 /root/.ssh/ansible_ci_keys
-    qm set {{ vmid }} --sshkeys /root/.ssh/ansible_ci_keys --ciuser root
-    EOF
-  delegate_to: localhost
-  when: not ansible_check_mode
-  changed_when: true
 
 - name: Final SSH Bootstrap (Force Keys via Agent)
   ansible.builtin.shell: |
@@ -111,7 +109,7 @@
     qm guest exec {{ vmid }} -- mkdir -p /root/.ssh
     qm guest exec {{ vmid }} -- chmod 700 /root/.ssh
     {% for key in global_ssh_keys %}
-    echo "{{ key }}" | qm guest exec {{ vmid }} -- bash -c "cat >> /root/.ssh/authorized_keys"
+    qm guest exec {{ vmid }} -- bash -c "printf '%s\n' '{{ key }}' >> /root/.ssh/authorized_keys"
     {% endfor %}
     qm guest exec {{ vmid }} -- chmod 600 /root/.ssh/authorized_keys
     qm guest exec {{ vmid }} -- sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
