@@ -176,7 +176,7 @@ class SyncProxmoxInventory(Job):
                                 if cidr:
                                     try:
                                         ipi = ipaddress.ip_interface(cidr)
-                                        if not Prefix.objects.filter(prefix__net_contains_or_equals=str(ipi.ip)).exists():
+                                        if not Prefix.objects.filter(network__net_contains_or_equals=str(ipi.ip)).exists():
                                             self.logger.info(f"Skipping IP {cidr}: no parent Prefix")
                                         else:
                                             ip_obj, _ = IPAddress.objects.get_or_create(
@@ -300,7 +300,7 @@ class SyncProxmoxInventory(Job):
                                         defaults={"status": status_active, "enabled": True},
                                     )
                                     for ip_addr, prefix in parse_ip_addresses(iface.get("ip-addresses", [])):
-                                        if not Prefix.objects.filter(prefix__net_contains_or_equals=ip_addr).exists():
+                                        if not Prefix.objects.filter(network__net_contains_or_equals=ip_addr).exists():
                                             self.logger.info(f"Skipping IP {ip_addr}/{prefix}: no parent Prefix")
                                         else:
                                             ip_obj, _ = IPAddress.objects.get_or_create(
