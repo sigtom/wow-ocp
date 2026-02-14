@@ -436,6 +436,21 @@
               required: true
         state: present
 
+    - name: Create Deploy Red Hat IdM Job Template
+      awx.awx.job_template:
+        name: "Deploy Red Hat IdM"
+        description: "Provision and configure the IdM VM"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "HomeLab Ops"
+        playbook: "automation/playbooks/identity/deploy-idm.yaml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "Proxmox Production"
+          - "AAP Executor SSH"
+        state: present
+
     # -------------------------------------------------------
     # 7. Cleanup Redundant Templates
     # -------------------------------------------------------
