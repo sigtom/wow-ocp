@@ -1,0 +1,120 @@
+---
+# ==========================================================================
+# Create Proxmox VM Template from ISO (Cloud-Init Ready)
+# ==========================================================================
+# Description:
+#   Creates a VM from an ISO, configures for cloud-init, and optionally
+#   converts to a template after manual OS install.
+#
+# Usage (initial create):
+#   ansible-playbook automation/playbooks/create-proxmox-template.yaml \
+#     -e "vmid=9001" \
+#     -e "template_name=wow-rhel10-temp-cloud-init" \
+#     -e "iso_volume=TSVMDS01:template/iso/rhel-10.1-x86_64-dvd.iso" \
+#     -e "storage_backend=TSVMDS01" \
+#     -e "vm_cores=4" \
+#     -e "vm_memory=4096" \
+#     -e "vm_disk_gb=50"
+#
+# Usage (finalize after install):
+#   ansible-playbook automation/playbooks/create-proxmox-template.yaml \
+#     -e "vmid=9001" -e "finalize_template=true"
+# ==========================================================================
+
+- name: "Create Proxmox Template (from ISO)"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - "{{ playbook_dir }}/../inventory/group_vars/all.yml"
+
+  vars:
+    proxmox_node: "wow-prox1"
+    proxmox_api_host: "172.16.110.101"
+    vmid: 9001
+    template_name: "wow-rhel10-temp-cloud-init"
+    iso_volume: "TSVMDS01:iso/rhel-10.1-x86_64-dvd.iso"
+    storage_backend: "TSVMDS01"
+    vm_cores: 4
+    vm_memory: 4096
+    vm_disk_gb: 50
+    vm_bridge: "vmbr0"
+    finalize_template: false
+
+  tasks:
+    - name: "Validate required vars"
+      ansible.builtin.assert:
+        that:
+          - vmid is defined
+          - template_name is defined
+          - iso_volume is defined
+          - storage_backend is defined
+          - vm_cores is defined
+          - vm_memory is defined
+          - vm_disk_gb is defined
+
+    - name: "Check if VM exists"
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/current"
+        method: GET
+        headers:
+          Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
+        validate_certs: no
+        status_code: [200, 404, 500]
+      register: vm_exists
+
+    - name: "Create VM from ISO"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
+        qm create {{ vmid }} \
+          --name {{ template_name }} \
+          --memory {{ vm_memory }} \
+          --cores {{ vm_cores }} \
+          --net0 virtio,bridge={{ vm_bridge }} \
+          --scsihw virtio-scsi-pci \
+          --scsi0 {{ storage_backend }}:{{ vm_disk_gb }} \
+          --ide0 {{ iso_volume }},media=cdrom \
+          --agent 1 \
+          --ostype l26
+        qm set {{ vmid }} --boot order=scsi0\;ide0\;net0
+        EOF
+      when: vm_exists.status != 200
+      changed_when: true
+
+    - name: "Start VM for OS installation"
+      community.proxmox.proxmox_kvm:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ pve_api_user }}"
+        api_token_id: "{{ pve_api_token_id }}"
+        api_token_secret: "{{ pve_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ vmid }}"
+        validate_certs: no
+        state: started
+      when: vm_exists.status != 200
+      delegate_to: localhost
+
+    - name: "Finalize template (attach cloud-init + convert)"
+      ansible.builtin.shell: |
+        ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} <<'EOF'
+        # Stop VM before templating
+        qm stop {{ vmid }}
+        # Attach cloud-init drive
+        qm set {{ vmid }} --ide2 {{ storage_backend }}:cloudinit
+        # Ensure boot order (disk first)
+        qm set {{ vmid }} --boot order=scsi0
+        # Convert to template
+        qm template {{ vmid }}
+        EOF
+      when: finalize_template | bool
+      changed_when: true
+
+    - name: "Post-create instructions"
+      ansible.builtin.debug:
+        msg: |
+          VM {{ vmid }} created. Install RHEL 10 from ISO, then:
+            1) Install qemu-guest-agent
+            2) Install/enable cloud-init
+            3) Power off VM
+            4) Re-run this playbook with -e "finalize_template=true"

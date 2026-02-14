@@ -36,10 +36,10 @@ vm_templates:
     default_user: "cloud-user"
     description: "Red Hat Enterprise Linux 9"
   rhel10:
-    vmid: 9027
-    name: "rhel-10-beta-cloudinit"
+    vmid: 9001
+    name: "wow-rhel10-temp-cloud-init"
     default_user: "cloud-user"
-    description: "Red Hat Enterprise Linux 10 Beta"
+    description: "Red Hat Enterprise Linux 10"
   ubuntu22:
     vmid: 9022
     name: "ubuntu-22.04-cloudinit"
