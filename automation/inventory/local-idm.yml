@@ -1,0 +1,12 @@
+all:
+  hosts:
+    wow-prox1:
+      ansible_host: 172.16.110.101
+    idm01.sigtom.dev:
+      ansible_host: 172.16.120.10
+      ansible_user: root
+      vmid: 500
+      proxmox_node: wow-prox1
+      os_type: rhel10
+      tshirt_size: medium
+      network_profile: vlan120

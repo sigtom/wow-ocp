@@ -209,6 +209,16 @@ network_profiles:
     description: "Proxmox management plane - infrastructure critical systems only"
     restricted: true  # Requires justification
 
+  vlan120:
+    bridge: vmbr0
+    vlan: 120
+    subnet: "172.16.120.0/24"
+    gateway: 172.16.120.1
+    dns_servers:
+      - 172.16.100.2
+    ntp_servers: []
+    description: "VLAN 120 - IdM / identity services"
+
 # VM T-shirt Sizes (Matches Nautobot config context metadata)
 
 vm_tshirt_sizes:
