@@ -59,7 +59,7 @@ class SyncProxmoxInventory(Job):
 
         # Ensure Cluster exists
         ctype, _ = ClusterType.objects.get_or_create(name="Proxmox")
-        cluster, _ = Cluster.objects.get_or_create(name="HomeLab Proxmox", defaults={"type": ctype})
+        cluster, _ = Cluster.objects.get_or_create(name="HomeLab Proxmox", defaults={"cluster_type": ctype})
 
         active_vm_names = set()
 
