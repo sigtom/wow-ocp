@@ -1,7 +1,7 @@
 from nautobot.apps.jobs import Job, register_jobs, BooleanVar, StringVar
 from nautobot.virtualization.models import VirtualMachine, Cluster, ClusterType, VMInterface
 from nautobot.dcim.models import Device, Interface
-from nautobot.ipam.models import IPAddress
+from nautobot.ipam.models import IPAddress, Prefix
 from nautobot.extras.models import Status, Tag, Relationship, RelationshipAssociation
 from django.contrib.contenttypes.models import ContentType
 import requests
@@ -176,18 +176,21 @@ class SyncProxmoxInventory(Job):
                                 if cidr:
                                     try:
                                         ipi = ipaddress.ip_interface(cidr)
-                                        ip_obj, _ = IPAddress.objects.get_or_create(
-                                            host=str(ipi.ip),
-                                            mask_length=int(ipi.network.prefixlen),
-                                            defaults={"status": status_active}
-                                        )
-                                        RelationshipAssociation.objects.get_or_create(
-                                            relationship=iface_rel,
-                                            source_type=iface_ct,
-                                            source_id=iface.id,
-                                            destination_type=ip_ct,
-                                            destination_id=ip_obj.id,
-                                        )
+                                        if not Prefix.objects.filter(prefix__net_contains_or_equals=str(ipi.ip)).exists():
+                                            self.logger.info(f"Skipping IP {cidr}: no parent Prefix")
+                                        else:
+                                            ip_obj, _ = IPAddress.objects.get_or_create(
+                                                host=str(ipi.ip),
+                                                mask_length=int(ipi.network.prefixlen),
+                                                defaults={"status": status_active}
+                                            )
+                                            RelationshipAssociation.objects.get_or_create(
+                                                relationship=iface_rel,
+                                                source_type=iface_ct,
+                                                source_id=iface.id,
+                                                destination_type=ip_ct,
+                                                destination_id=ip_obj.id,
+                                            )
                                     except Exception as ex:
                                         self.logger.warning(f"Failed to process IP {cidr}: {ex}")
 
@@ -297,18 +300,21 @@ class SyncProxmoxInventory(Job):
                                         defaults={"status": status_active, "enabled": True},
                                     )
                                     for ip_addr, prefix in parse_ip_addresses(iface.get("ip-addresses", [])):
-                                        ip_obj, _ = IPAddress.objects.get_or_create(
-                                            host=ip_addr,
-                                            mask_length=prefix,
-                                            defaults={"status": status_active}
-                                        )
-                                        RelationshipAssociation.objects.get_or_create(
-                                            relationship=vm_iface_rel,
-                                            source_type=vm_iface_ct,
-                                            source_id=vm_iface.id,
-                                            destination_type=ip_ct,
-                                            destination_id=ip_obj.id,
-                                        )
+                                        if not Prefix.objects.filter(prefix__net_contains_or_equals=ip_addr).exists():
+                                            self.logger.info(f"Skipping IP {ip_addr}/{prefix}: no parent Prefix")
+                                        else:
+                                            ip_obj, _ = IPAddress.objects.get_or_create(
+                                                host=ip_addr,
+                                                mask_length=prefix,
+                                                defaults={"status": status_active}
+                                            )
+                                            RelationshipAssociation.objects.get_or_create(
+                                                relationship=vm_iface_rel,
+                                                source_type=vm_iface_ct,
+                                                source_id=vm_iface.id,
+                                                destination_type=ip_ct,
+                                                destination_id=ip_obj.id,
+                                            )
                         except Exception as ex:
                             self.logger.warning(f"Failed guest IP sync for {name}: {ex}")
                     else:
