@@ -1,0 +1,12 @@
+---
+# Register RHEL systems with RHSM (activation key)
+register_rhel_enabled: true
+
+# RHSM activation settings (expect env vars in AAP/runner)
+rhsm_activation_key: "{{ lookup('env', 'RHSM_ACTIVATION_KEY') | default('', true) }}"
+rhsm_org_id: "{{ lookup('env', 'RHSM_ORG_ID') | default('', true) }}"
+
+# Controls
+register_rhel_force: false
+register_rhel_refresh: true
+register_rhel_makecache: true

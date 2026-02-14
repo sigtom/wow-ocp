@@ -1,0 +1,70 @@
+---
+- name: Determine if target is RHEL
+  ansible.builtin.set_fact:
+    register_rhel_target: >-
+      {{
+        (ansible_facts is defined and
+         ansible_facts.get('distribution', '') in ['RedHat', 'Red Hat Enterprise Linux'])
+        or
+        (os_type is defined and (os_type | lower).startswith('rhel'))
+      }}
+
+- name: Skip registration for non-RHEL targets
+  ansible.builtin.debug:
+    msg: "Skipping RHSM registration: target is not RHEL"
+  when: not register_rhel_target
+
+- name: Skip registration when activation key/org are missing
+  ansible.builtin.debug:
+    msg: "Skipping RHSM registration: RHSM_ACTIVATION_KEY or RHSM_ORG_ID not set"
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) == 0 or (rhsm_org_id | length) == 0
+
+- name: Check RHSM registration status
+  ansible.builtin.command: subscription-manager identity
+  register: rhsm_identity
+  failed_when: false
+  changed_when: false
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) > 0
+    - (rhsm_org_id | length) > 0
+
+- name: Register system via activation key
+  ansible.builtin.command: >-
+    subscription-manager register --activationkey={{ rhsm_activation_key }} --org={{ rhsm_org_id }}{% if register_rhel_force %} --force{% endif %}
+  register: rhsm_register
+  changed_when: true
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) > 0
+    - (rhsm_org_id | length) > 0
+    - rhsm_identity.rc != 0
+
+- name: Refresh subscription-manager
+  ansible.builtin.command: subscription-manager refresh
+  changed_when: true
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) > 0
+    - (rhsm_org_id | length) > 0
+    - register_rhel_refresh
+
+- name: Clean DNF cache
+  ansible.builtin.command: dnf clean all
+  changed_when: true
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) > 0
+    - (rhsm_org_id | length) > 0
+    - register_rhel_makecache
+
+- name: Build DNF cache
+  ansible.builtin.command: dnf makecache
+  changed_when: true
+  when:
+    - register_rhel_target
+    - (rhsm_activation_key | length) > 0
+    - (rhsm_org_id | length) > 0
+    - register_rhel_makecache
