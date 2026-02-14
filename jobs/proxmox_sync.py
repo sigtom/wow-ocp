@@ -291,7 +291,11 @@ class SyncProxmoxInventory(Job):
                             if isinstance(iface_data, list):
                                 for iface in iface_data:
                                     iface_name = iface.get("name") or iface.get("iface") or "eth0"
-                                    vm_iface, _ = VMInterface.objects.get_or_create(virtual_machine=vm_obj, name=iface_name)
+                                    vm_iface, _ = VMInterface.objects.get_or_create(
+                                        virtual_machine=vm_obj,
+                                        name=iface_name,
+                                        defaults={"status": status_active, "enabled": True},
+                                    )
                                     for ip_addr, prefix in parse_ip_addresses(iface.get("ip-addresses", [])):
                                         ip_obj, _ = IPAddress.objects.get_or_create(
                                             host=ip_addr,
