@@ -6,6 +6,7 @@ from nautobot.extras.models import Status, Tag
 import requests
 import urllib3
 import os
+import ipaddress
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -111,17 +112,16 @@ class SyncProxmoxInventory(Job):
                                 # Update IP if present in 'cidr' or 'address'/'netmask'
                                 cidr = net.get("cidr") # IPv4 CIDR
                                 if cidr:
-                                    # Create IP Address and assign
+                                    # Create IP Address (no interface assignment in this Nautobot model)
                                     try:
+                                        ipi = ipaddress.ip_interface(cidr)
                                         ip_obj, ip_created = IPAddress.objects.get_or_create(
-                                            address=cidr,
+                                            host=str(ipi.ip),
+                                            mask_length=int(ipi.network.prefixlen),
                                             defaults={"status": status_active}
                                         )
-                                        # Assign to interface
-                                        if ip_obj.assigned_object != iface:
-                                            ip_obj.assigned_object = iface
-                                            ip_obj.save()
-                                            self.logger.info(f"Assigned IP {cidr} to {iface_name}")
+                                        if ip_created:
+                                            self.logger.info(f"Created IP {cidr} (host={ipi.ip})")
                                     except Exception as ex:
                                         self.logger.warning(f"Failed to process IP {cidr}: {ex}")
 
