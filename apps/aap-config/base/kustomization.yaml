@@ -4,4 +4,5 @@ resources:
   - secret.yaml
   - external-secret.yaml
   - pihole-secrets.yaml
+  - idm-secrets.yaml
   - job.yaml

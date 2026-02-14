@@ -88,6 +88,16 @@ spec:
                 secretKeyRef:
                   name: aap-infra-creds-secret
                   key: nautobot_api_token
+            - name: IDM_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aap-idm-secrets
+                  key: idm_admin_password
+            - name: IDM_DM_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aap-idm-secrets
+                  key: idm_dm_password
             - name: REALDEBRID_API_KEY
               valueFrom:
                 secretKeyRef:

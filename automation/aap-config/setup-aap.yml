@@ -35,6 +35,10 @@
     dumb_postgres_password: "{{ lookup('env', 'DUMB_POSTGRES_PASSWORD') }}"
     dumb_pgadmin_password: "{{ lookup('env', 'DUMB_PGADMIN_PASSWORD') }}"
 
+    # IdM secrets
+    idm_admin_password: "{{ lookup('env', 'IDM_ADMIN_PASSWORD') }}"
+    idm_dm_password: "{{ lookup('env', 'IDM_DM_PASSWORD') }}"
+
     # Arr API keys
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
     radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
@@ -189,6 +193,27 @@
             dumb_pgadmin_password: "{% raw %}{{ dumb_pgadmin_password }}{% endraw %}"
         state: present
 
+    - name: Create IdM Secrets Credential Type
+      awx.awx.credential_type:
+        name: "IdM Secrets"
+        kind: cloud
+        inputs:
+          fields:
+            - id: idm_admin_password
+              label: IdM Admin Password
+              type: string
+              secret: true
+            - id: idm_dm_password
+              label: IdM Directory Manager Password
+              type: string
+              secret: true
+          required: [idm_admin_password, idm_dm_password]
+        injectors:
+          extra_vars:
+            idm_admin_password: "{% raw %}{{ idm_admin_password }}{% endraw %}"
+            idm_dm_password: "{% raw %}{{ idm_dm_password }}{% endraw %}"
+        state: present
+
     - name: Create Media Arr Secrets Credential Type
       awx.awx.credential_type:
         name: "Media Arr API Keys"
@@ -316,6 +341,17 @@
           prowlarr_api_key: "{{ prowlarr_api_key }}"
         state: present
       when: sonarr_api_key != ''
+
+    - name: Create IdM Secrets Credential
+      awx.awx.credential:
+        name: "IdM Secrets"
+        organization: "{{ aap_organization }}"
+        credential_type: "IdM Secrets"
+        inputs:
+          idm_admin_password: "{{ idm_admin_password }}"
+          idm_dm_password: "{{ idm_dm_password }}"
+        state: present
+      when: idm_admin_password != '' and idm_dm_password != ''
 
     # -------------------------------------------------------
     # 4. Project
@@ -449,6 +485,7 @@
         credentials:
           - "Proxmox Production"
           - "AAP Executor SSH"
+          - "IdM Secrets"
         state: present
 
     # -------------------------------------------------------
