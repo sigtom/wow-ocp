@@ -1,5 +1,7 @@
 from nautobot.apps.jobs import Job, register_jobs, BooleanVar, StringVar
 from nautobot.virtualization.models import VirtualMachine, Cluster, ClusterType
+from nautobot.dcim.models import Device, Interface
+from nautobot.ipam.models import IPAddress
 from nautobot.extras.models import Status, Tag
 import requests
 import urllib3
