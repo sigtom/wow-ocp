@@ -1,0 +1,17 @@
+---
+- name: "Install required IdM packages"
+  ansible.builtin.package:
+    name:
+      - ipa-server
+      - ipa-server-dns
+    state: present
+
+- name: "Placeholder: Validate IdM prerequisites"
+  ansible.builtin.debug:
+    msg: >-
+      Validate hostname/DNS/NTP before ipa-server-install.
+
+- name: "Placeholder: Run ipa-server-install in unattended mode"
+  ansible.builtin.debug:
+    msg: >-
+      TODO: Implement idempotent ipa-server-install command and marker checks.

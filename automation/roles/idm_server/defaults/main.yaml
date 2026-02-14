@@ -1,0 +1,7 @@
+---
+idm_domain: "idm.sigtom.dev"
+idm_realm: "IDM.SIGTOM.DEV"
+idm_hostname: "idm"
+idm_setup_dns: true
+idm_forwarders: []
+idm_admin_principal: "admin"
