@@ -1,5 +1,36 @@
 # Project Progress (v2.0)
 
+- [2026-02-14]: **AAP SEEDER RUN + IDM REDEPLOY READY + DUMB WIRING REVIEW**
+    - **AAP Seeder Job**: Fixed ESO merge by adding placeholder `aap-idm-secrets` secret in GitOps; ESO now syncs `idm_admin_password` + `idm_dm_password`. Seeder job running cleanly after sync.
+    - **AAP Config**: Enabled `ask_limit_on_launch` for "Deploy Red Hat IdM" template (commit `685176e`). HomeLab Ops project synced in AAP.
+    - **IdM Deploy Status**: VMID 500 deleted; ready to re-run "Deploy Red Hat IdM" after seeder completion.
+    - **DUMB Wiring Review**: Prowlarr -> Arrs, Arrs -> Decypharr configured; root folders set to `/mnt/debrid/combined_symlinks/*`. Plex token/address set in `dumb_config.json`. Torbox API key added to Decypharr; mounts active.
+    - **Decypharr Repair**: Repair job ran for Sonarr and found 0 media (Arr DB empty). RealDebrid WebDAV shows many items; Torbox WebDAV shows 0 torrents (needs Torbox library verification).
+    - **Next (Media)**: Configure Sonarr/Radarr quality profiles to prefer **WEB-DL 2160p**; import lists/requests so Arr DB has titles for symlink repair.
+
+- [2026-02-14]: **AAP SEEDER STABILIZATION + IDM SECRETS + IDM VLAN FIX + DUMB MOUNT ISSUE**
+    - **AAP Seeder GitHub SSH**: Switched seeder + AAP project SCM to **ssh.github.com:443** (port 22 blocked from cluster). Job spec updated and synced.
+    - **IdM Secrets Pipeline**: Added ESO ExternalSecrets for `RH_IDM_LOGIN` → `aap-idm-secrets`, updated seeder env + AAP config to create **IdM Secrets** credential and attach it to **Deploy Red Hat IdM** template.
+    - **IdM Deploy Failure**: AAP job failed waiting for SSH; VM booted on **wrong network (vmbr0 / 172.16.100.x)** because Nautobot VM record lacks `network_profile` and `primary_ip4`. Inventory defaults to `apps` when `network_profile` missing.
+    - **Action Needed (Nautobot)**: Set VM custom_field `network_profile=vlan120` and assign `primary_ip4=172.16.120.10/24` (create VM interface + IP assignment if needed) so playbook builds `net0=vmbr0,tag=120` and `ipconfig0` correctly.
+    - **DUMB Plex Wait**: `/mnt/debrid/decypharr/realdebrid` missing. Decypharr `rclone` mount disabled and RealDebrid key invalid (401). Runtime fix applied: `/decypharr/config.json` set `rclone.enabled=true` and reset RealDebrid key to `KS3RED4...`. **Requires `docker restart dumb`** to mount.
+
+- [2026-02-13]: **IDENTITY PLATFORM BOOTSTRAP + PROXMOX/NAUTOBOT SYNC HARDENING**
+    - **Identity Architecture Scaffolding**: Added `platform/identity/` hierarchy and Tier-0 playbooks/roles for IdM deployment.
+    - **Nautobot Sync Job (Proxmox)**: Implemented `Sync Proxmox Inventory` job with host interface sync, VM sync, and relationship-based IP associations.
+    - **Proxmox Host Networking**: Confirmed VLAN120 interface (`vmbr0.120`) exists and is now tracked in Nautobot with IP object `172.16.120.101/24`.
+    - **Nautobot Runtime Fixes**: Added Proxmox env vars to Nautobot docker-compose, restarted containers, and stabilized job execution.
+    - **Template Pipeline**: Built **RHEL 10** cloud-init template (`VMID 9001`, `wow-rhel10-temp-cloud-init`), enabled **UEFI/q35**, installed guest agent + cloud-init from ISO, and finalized template without ISO.
+    - **Provisioning Enhancements**: Added VLAN120 network profile and cloud-init SSH key injection; adjusted VM provision role to use VLAN tags.
+    - **Local Dev Loop**: Ran provisioning locally (cattle pattern), fixed cloud-init reset on template disk, and validated static IP assignment.
+    - **DUMB Stack Fix**: Updated Decypharr mount path from `/mnt/debrid/decypharr/realdebrid` to `/mnt/debrid/rclone_RD/__all__/`.
+
+    **Next Actions:**
+    - Re-run AAP seeder + project sync.
+    - Run AAP job `deploy-idm.yaml` (limit `idm01.sigtom.dev`) to provision VMID 500 on VLAN120 and install IdM.
+    - Ensure IdM VM is created with IP `172.16.120.10/24`, medium size, `rhel10`, network profile `vlan120`.
+    - If cloud-init fails again, confirm template disk was cleaned and cloud-init seed updates applied.
+
 - [2026-01-30]: **IRONCLAD VM PROVISIONING & STACK CONSOLIDATION**
     - **Infrastructure Pivot**: Migrated the DUMB stack from a flakey LXC environment to a stable, isolated Proxmox VM. This provides hard kernel isolation and native FUSE support, ending the "zombie mount" slog.
     - **Master Engine Hardening**: Re-engineered the `provision_vm_generic` role to be forcefully idempotent. Implemented a "Break Glass" provisioning pattern that uses direct Proxmox CLI commands to override sticky template inheritance issues (like inherited VLAN tags).
