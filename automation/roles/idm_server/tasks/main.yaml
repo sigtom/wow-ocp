@@ -1,4 +1,9 @@
 ---
+- name: "Ensure RHEL RPM GPG key is installed"
+  ansible.builtin.rpm_key:
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+    state: present
+
 - name: "Install required IdM packages"
   ansible.builtin.package:
     name:
