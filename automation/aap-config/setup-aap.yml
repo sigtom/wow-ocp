@@ -325,7 +325,7 @@
         name: "HomeLab Ops"
         organization: "{{ aap_organization }}"
         scm_type: git
-        scm_url: "git@github.com:sigtom/wow-ocp.git"
+        scm_url: "ssh://git@ssh.github.com:443/sigtom/wow-ocp.git"
         scm_branch: "main"
         scm_clean: true
         scm_delete_on_update: true

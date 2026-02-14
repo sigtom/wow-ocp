@@ -35,16 +35,16 @@ spec:
               mkdir -p ~/.ssh
               echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
               chmod 600 ~/.ssh/id_rsa
-              ssh-keyscan github.com >> ~/.ssh/known_hosts || true
+              ssh-keyscan -p 443 ssh.github.com >> ~/.ssh/known_hosts || true
 
-              export GIT_SSH_COMMAND='ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
+              export GIT_SSH_COMMAND='ssh -p 443 -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts'
 
               echo "2. Cloning Repository..."
               rm -rf /tmp/repo
               # Verify connectivity first
-              ssh -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts -T git@github.com || true
+              ssh -p 443 -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts -T git@ssh.github.com || true
 
-              git clone git@github.com:sigtom/wow-ocp.git /tmp/repo
+              git clone ssh://git@ssh.github.com:443/sigtom/wow-ocp.git /tmp/repo
 
               echo "3. Installing Required Collections..."
               cd /tmp/repo
