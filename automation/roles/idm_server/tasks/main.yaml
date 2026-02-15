@@ -54,6 +54,27 @@
     fail_msg: "Missing required IdM replica vars (idm_admin_password, idm_primary_fqdn, idm_domain, idm_realm)."
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
 
+- name: "Set IdM primary hostname and IP for replica"
+  ansible.builtin.set_fact:
+    idm_primary_hostname: "{{ idm_primary_fqdn.split('.')[0] }}"
+    idm_primary_ip_effective: "{{ idm_primary_ip | default(hostvars[idm_primary_fqdn].ansible_host | default('')) }}"
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
+- name: "Validate IdM primary IP is available for replica"
+  ansible.builtin.assert:
+    that:
+      - idm_primary_ip_effective | length > 0
+    fail_msg: "Missing idm_primary_ip (or inventory hostvars) for replica to resolve {{ idm_primary_fqdn }}."
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
+- name: "Ensure replica can resolve IdM primary via /etc/hosts"
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ idm_primary_ip_effective }} {{ idm_primary_fqdn }} {{ idm_primary_hostname }}"
+    state: present
+    create: true
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
 - name: "Fetch Red Hat release key 4 (ML-DSA)"
   ansible.builtin.get_url:
     url: "https://security.access.redhat.com/data/6afedf8f.txt"
