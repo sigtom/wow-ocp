@@ -8,21 +8,21 @@
     nautobot_url: "{{ lookup('env', 'NAUTOBOT_URL') }}"
     nautobot_token: "{{ lookup('env', 'NAUTOBOT_TOKEN') }}"
 
-    # VM intent (override via -e or host_vars)
-    vm_name: "idm-test01.sigtom.dev"
+    # VM intent (override via -e or env vars)
+    vm_name: "{{ lookup('env', 'IDM_NAME') | default('idm01.sigtom.dev') }}"
     vm_cluster: "HomeLab Proxmox"
     vm_platform: "Red Hat Enterprise Linux 10"
     vm_status: "Active"
 
-    # Sizing intent (medium)
-    vm_vcpus: 2
-    vm_memory: 2048
-    vm_disk: 20
-    vm_tshirt_size: "medium"
+    # Sizing intent (medium defaults, disk override)
+    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(2) }}"
+    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(2048) }}"
+    vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75) }}"
+    vm_tshirt_size: "{{ lookup('env', 'IDM_TSHIRT_SIZE') | default('medium') }}"
 
     # Networking intent
-    vm_ip4: "172.16.120.250/24"
-    vm_network_profile: "vlan120"
+    vm_ip4: "{{ lookup('env', 'IDM_IP') | default('172.16.120.10/24') }}"
+    vm_network_profile: "{{ lookup('env', 'IDM_NETWORK_PROFILE') | default('vlan120') }}"
     vm_iface_name: "eth0"
 
   tasks:
