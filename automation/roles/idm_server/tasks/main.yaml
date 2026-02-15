@@ -34,6 +34,12 @@
     fail_msg: "Missing required IdM replica vars (idm_admin_password, idm_primary_fqdn, idm_domain, idm_realm)."
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
 
+- name: "Fetch Red Hat release key 4 (ML-DSA)"
+  ansible.builtin.get_url:
+    url: "https://security.access.redhat.com/data/6afedf8f.txt"
+    dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release4
+    mode: "0644"
+
 - name: "Ensure RHEL RPM GPG keys are installed"
   ansible.builtin.rpm_key:
     key: "{{ item }}"
@@ -41,6 +47,7 @@
   loop:
     - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
     - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+    - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release4
 
 - name: "Build IdM package list"
   ansible.builtin.set_fact:
