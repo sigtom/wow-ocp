@@ -47,7 +47,17 @@
   loop:
     - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
     - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
-    - /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release4
+
+- name: "Check if release key 4 is imported"
+  ansible.builtin.command:
+    cmd: "rpm -qa gpg-pubkey*"
+  register: rpm_keys_list
+  changed_when: false
+
+- name: "Import Red Hat release key 4 (ML-DSA)"
+  ansible.builtin.command:
+    cmd: "rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release4"
+  when: "'05707a62' not in rpm_keys_list.stdout"
 
 - name: "Build IdM package list"
   ansible.builtin.set_fact:
