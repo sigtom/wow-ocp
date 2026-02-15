@@ -56,7 +56,7 @@
 - name: Get current VM disk size (scsi0)
   ansible.builtin.shell: |
     ssh -o BatchMode=yes -o StrictHostKeyChecking=no root@{{ proxmox_api_host }} \
-      "qm config {{ vmid }} | awk -F'[=,]' '/^scsi0:/{for(i=1;i<=NF;i++){if($i ~ /^size/){print $i}}}'"
+      "qm config {{ vmid }} | awk -F'[=,]' '/^scsi0:/{for(i=1;i<=NF;i++){if(\$i ~ /^size/){print \$i}}}'"
   delegate_to: localhost
   register: vm_disk_size_raw
   changed_when: false

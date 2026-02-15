@@ -1,8 +1,9 @@
 ---
 - name: "Nautobot Intent: Create/Update IdM VM record"
-  hosts: localhost
+  hosts: all
   connection: local
   gather_facts: false
+  run_once: true
 
   vars:
     nautobot_url: "{{ lookup('env', 'NAUTOBOT_URL') }}"
