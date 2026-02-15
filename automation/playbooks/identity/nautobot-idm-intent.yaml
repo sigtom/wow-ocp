@@ -16,9 +16,9 @@
     vm_status: "Active"
 
     # Sizing intent (large defaults, disk override)
-    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(4) }}"
-    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(4096) }}"
-    vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75) }}"
+    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(4) | int }}"
+    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(4096) | int }}"
+    vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75) | int }}"
     vm_tshirt_size: "{{ lookup('env', 'IDM_TSHIRT_SIZE') | default('large') }}"
 
     # Networking intent
