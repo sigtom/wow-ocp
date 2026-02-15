@@ -161,6 +161,9 @@
             (idm_setup_dns | bool and (idm_forwarders | default([]) | length == 0))
             | ternary(['--auto-forwarders'], [])
           )
+        + (
+            (idm_skip_conncheck | bool) | ternary(['--skip-conncheck'], [])
+          )
       }}
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
 

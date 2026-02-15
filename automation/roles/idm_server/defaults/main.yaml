@@ -28,5 +28,8 @@ idm_le_root_ca_path: "/etc/pki/ca-trust/extracted/pem/directory-hash/ISRG_Root_X
 # Primary server for replica installs
 # idm_primary_fqdn: "idm01.idm.sigtom.dev"
 
+# Replica connection checks
+idm_skip_conncheck: false
+
 # Admin principal/user
 idm_admin_principal: "admin"
