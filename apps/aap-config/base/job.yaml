@@ -48,7 +48,7 @@ spec:
 
               echo "3. Installing Required Collections..."
               cd /tmp/repo
-              ansible-galaxy collection install -r collections/requirements.yml
+              ansible-galaxy collection install -r collections/requirements.yml --force --ignore-errors
 
               echo "4. Running Configuration Playbook..."
               ansible-playbook automation/aap-config/setup-aap.yml -v
