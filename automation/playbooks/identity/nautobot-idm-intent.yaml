@@ -14,11 +14,11 @@
     vm_platform: "Red Hat Enterprise Linux 10"
     vm_status: "Active"
 
-    # Sizing intent (medium defaults, disk override)
-    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(2) }}"
-    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(2048) }}"
+    # Sizing intent (large defaults, disk override)
+    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(4) }}"
+    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(4096) }}"
     vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75) }}"
-    vm_tshirt_size: "{{ lookup('env', 'IDM_TSHIRT_SIZE') | default('medium') }}"
+    vm_tshirt_size: "{{ lookup('env', 'IDM_TSHIRT_SIZE') | default('large') }}"
 
     # Networking intent
     vm_ip4: "{{ lookup('env', 'IDM_IP') | default('172.16.120.10/24') }}"
