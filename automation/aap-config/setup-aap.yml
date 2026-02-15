@@ -433,6 +433,18 @@
         execution_environment: "HomeLab EE"
         state: present
 
+    - name: Create Local IdM Inventory Source
+      awx.awx.inventory_source:
+        name: "Local IdM Inventory"
+        inventory: "HomeLab Inventory"
+        source: "scm"
+        source_project: "HomeLab Ops"
+        source_path: "automation/inventory/local-idm.yml"
+        overwrite: false
+        update_on_launch: true
+        execution_environment: "HomeLab EE"
+        state: present
+
     # -------------------------------------------------------
     # 6. Job Templates
     # -------------------------------------------------------
