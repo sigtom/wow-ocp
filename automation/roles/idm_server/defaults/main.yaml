@@ -13,7 +13,10 @@ idm_hostname: "{{ inventory_hostname_short }}"
 
 # DNS setup
 idm_setup_dns: true
-idm_forwarders: []
+idm_forwarders:
+  - 172.16.100.2
+  - 10.0.0.116
+  - 172.16.110.100
 
 # Primary server for replica installs
 # idm_primary_fqdn: "idm01.idm.sigtom.dev"
