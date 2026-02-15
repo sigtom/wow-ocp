@@ -5,6 +5,7 @@ all:
     idm01.sigtom.dev:
       ansible_host: 172.16.120.10
       ansible_user: root
+      ansible_python_interpreter: /usr/bin/python3
       vmid: 500
       proxmox_node: wow-prox1
       os_type: rhel10
