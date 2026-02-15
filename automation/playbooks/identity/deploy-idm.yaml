@@ -19,6 +19,7 @@
         proxmox_node: "{{ hostvars[inventory_hostname].proxmox_node }}"
         os_type: "{{ hostvars[inventory_hostname].os_type | default('rhel') }}"
         tshirt_size: "{{ hostvars[inventory_hostname].tshirt_size | default('medium') }}"
+        vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75, true) | int }}"
         proxmox_vmtype: "vm"
       when: hostvars[inventory_hostname].vmid is defined
 

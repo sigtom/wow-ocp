@@ -14,7 +14,7 @@
     template_vmid: "{{ vm_templates[os_type].vmid }}"
     vm_cores: "{{ vm_tshirt_sizes[tshirt_size].cores }}"
     vm_memory: "{{ vm_tshirt_sizes[tshirt_size].memory }}"
-    vm_disk_size: "{{ vm_tshirt_sizes[tshirt_size].disk }}"
+    vm_disk_size: "{{ (vm_disk | default(vm_tshirt_sizes[tshirt_size].disk, true)) | int }}"
     proxmox_api_host: "{{ hostvars[proxmox_node].ansible_host }}"
     vm_storage_backend: "{{ vm_storage | default(proxmox_storage_backends[proxmox_node].vm_storage) }}"
     network_config: "{{ network_profiles[network_profile | default('apps')] }}"
