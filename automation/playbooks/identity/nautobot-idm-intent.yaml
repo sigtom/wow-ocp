@@ -6,8 +6,8 @@
   run_once: true
 
   vars:
-    nautobot_url: "{{ lookup('env', 'NAUTOBOT_URL') }}"
-    nautobot_token: "{{ lookup('env', 'NAUTOBOT_TOKEN') }}"
+    nautobot_url: "{{ lookup('env', 'NAUTOBOT_URL') | default('https://ipmgmt.sigtom.dev', true) }}"
+    nautobot_token: "{{ lookup('env', 'NAUTOBOT_TOKEN') | default(lookup('env', 'NAUTOBOT_API_TOKEN'), true) }}"
 
     # VM intent (override via -e or env vars)
     vm_name: "{{ lookup('env', 'IDM_NAME') | default('idm01.sigtom.dev') }}"

@@ -525,6 +525,7 @@
           - "AAP Executor SSH"
           - "IdM Secrets"
           - "RHSM Activation"
+          - "Nautobot API"
         state: present
 
     # -------------------------------------------------------
