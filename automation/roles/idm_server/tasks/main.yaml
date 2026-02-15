@@ -10,17 +10,22 @@
     idm_fqdn_effective: >-
       {{ idm_fqdn | default((inventory_hostname if ('.' in inventory_hostname) else (idm_hostname_effective ~ '.' ~ idm_domain))) }}
 
-- name: "Ensure /etc/hosts does not map IdM hostname to localhost"
-  ansible.builtin.replace:
+- name: "Determine IdM host IP for /etc/hosts"
+  ansible.builtin.set_fact:
+    idm_host_ip: "{{ ansible_host | default(ansible_default_ipv4.address) }}"
+  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+
+- name: "Remove localhost mapping for IdM hostname"
+  ansible.builtin.lineinfile:
     path: /etc/hosts
-    regexp: '^127\.0\.0\.1\s+.*\b{{ idm_fqdn_effective | regex_escape }}\b.*$'
-    replace: '127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4'
+    regexp: '^(127\.0\.0\.1|::1)\s+.*\b({{ idm_fqdn_effective | regex_escape }}|{{ idm_hostname_effective | regex_escape }})\b.*$'
+    state: absent
   when: idm_role == 'primary' and not idm_default_conf.stat.exists
 
 - name: "Ensure IdM hostname resolves to its IP"
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    line: "{{ ansible_host }} {{ idm_fqdn_effective }} {{ idm_hostname_effective }}"
+    line: "{{ idm_host_ip }} {{ idm_fqdn_effective }} {{ idm_hostname_effective }}"
     state: present
     create: true
   when: idm_role == 'primary' and not idm_default_conf.stat.exists
