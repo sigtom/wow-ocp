@@ -17,6 +17,14 @@ idm_forwarders:
   - 10.0.0.116
   - 172.16.110.100
 
+# Let's Encrypt (DNS-01) for IdM HTTPS
+idm_le_enabled: false
+idm_le_email: ""
+idm_le_staging: false
+idm_le_force_renew: false
+idm_le_cloudflare_token: "{{ lookup('env', 'CF_DNS_API_TOKEN') | default(lookup('env', 'CLOUDFLARE_TOKEN'), true) }}"
+idm_le_root_ca_path: "/etc/pki/ca-trust/extracted/pem/directory-hash/ISRG_Root_X1.pem"
+
 # Primary server for replica installs
 # idm_primary_fqdn: "idm01.idm.sigtom.dev"
 

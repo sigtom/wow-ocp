@@ -23,3 +23,5 @@ all:
       network_profile: vlan120
       idm_role: replica
       idm_primary_fqdn: idm01.sigtom.dev
+      idm_le_enabled: true
+      idm_le_email: tec.thor@gmail.com

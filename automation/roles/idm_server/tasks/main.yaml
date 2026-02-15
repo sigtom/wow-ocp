@@ -153,6 +153,153 @@
     argv: "{{ idm_replica_install_args }}"
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
 
+- name: "Validate Let's Encrypt prerequisites"
+  ansible.builtin.assert:
+    that:
+      - idm_le_email | length > 0
+      - idm_le_cloudflare_token | length > 0
+    fail_msg: "Set idm_le_email and CF_DNS_API_TOKEN (or CLOUDFLARE_TOKEN) to enable Let's Encrypt issuance."
+  when: idm_le_enabled | bool
+
+- name: "Install EPEL release (RHEL)"
+  ansible.builtin.dnf:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm"
+    state: present
+  when:
+    - idm_le_enabled | bool
+    - ansible_facts.os_family == 'RedHat'
+
+- name: "Install certbot and Cloudflare DNS plugin"
+  ansible.builtin.package:
+    name:
+      - certbot
+      - python3-certbot-dns-cloudflare
+    state: present
+  when: idm_le_enabled | bool
+
+- name: "Ensure certbot secrets directory exists"
+  ansible.builtin.file:
+    path: /root/.secrets/certbot
+    state: directory
+    mode: "0700"
+  when: idm_le_enabled | bool
+
+- name: "Write Cloudflare DNS token for certbot"
+  ansible.builtin.copy:
+    dest: /root/.secrets/certbot/cloudflare.ini
+    content: "dns_cloudflare_api_token={{ idm_le_cloudflare_token }}\n"
+    mode: "0600"
+  when: idm_le_enabled | bool
+
+- name: "Check if Let's Encrypt cert exists"
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ idm_fqdn_effective }}/fullchain.pem"
+  register: idm_le_cert
+  when: idm_le_enabled | bool
+
+- name: "Request Let's Encrypt certificate (DNS-01)"
+  ansible.builtin.command:
+    argv: >-
+      {{
+        [
+          'certbot', 'certonly',
+          (idm_le_staging | bool) | ternary('--test-cert', '--server=https://acme-v02.api.letsencrypt.org/directory'),
+          '--dns-cloudflare',
+          '--dns-cloudflare-credentials', '/root/.secrets/certbot/cloudflare.ini',
+          '-d', idm_fqdn_effective,
+          '--agree-tos',
+          '-m', idm_le_email,
+          '--non-interactive'
+        ]
+        + (idm_le_force_renew | bool | ternary(['--force-renewal'], []))
+      }}
+  when:
+    - idm_le_enabled | bool
+    - idm_le_force_renew | bool or not idm_le_cert.stat.exists
+
+- name: "Install Let's Encrypt root CA into IPA trust store"
+  ansible.builtin.command:
+    argv:
+      - ipa-cacert-manage
+      - install
+      - "{{ idm_le_root_ca_path }}"
+  register: idm_le_root_install
+  changed_when: "'successfully installed' in (idm_le_root_install.stdout | lower)"
+  failed_when: false
+  when: idm_le_enabled | bool
+
+- name: "Install Let's Encrypt intermediate chain into IPA trust store"
+  ansible.builtin.command:
+    argv:
+      - ipa-cacert-manage
+      - install
+      - "/etc/letsencrypt/live/{{ idm_fqdn_effective }}/chain.pem"
+  register: idm_le_chain_install
+  changed_when: "'successfully installed' in (idm_le_chain_install.stdout | lower)"
+  failed_when: false
+  when: idm_le_enabled | bool
+
+- name: "Update IPA trust stores"
+  ansible.builtin.command:
+    argv: [ipa-certupdate]
+  when: idm_le_enabled | bool
+
+- name: "Build fullchain with root for IPA"
+  ansible.builtin.shell: >-
+    cat /etc/letsencrypt/live/{{ idm_fqdn_effective }}/cert.pem
+    /etc/letsencrypt/live/{{ idm_fqdn_effective }}/chain.pem
+    {{ idm_le_root_ca_path }}
+    > /root/ipa/fullchain-with-root.pem
+  args:
+    executable: /bin/bash
+  when: idm_le_enabled | bool
+
+- name: "Ensure IPA cert secret directory exists"
+  ansible.builtin.file:
+    path: /root/.secrets/ipa
+    state: directory
+    mode: "0700"
+  when: idm_le_enabled | bool
+
+- name: "Store Directory Manager password for renew hook"
+  ansible.builtin.copy:
+    dest: /root/.secrets/ipa/dirman_password
+    content: "{{ idm_dm_password }}\n"
+    mode: "0600"
+  when: idm_le_enabled | bool
+
+- name: "Install Let's Encrypt certificate for IPA HTTP"
+  ansible.builtin.command:
+    argv:
+      - ipa-server-certinstall
+      - -w
+      - -d
+      - /root/ipa/fullchain-with-root.pem
+      - "/etc/letsencrypt/live/{{ idm_fqdn_effective }}/privkey.pem"
+      - --dirman-password
+      - "{{ idm_dm_password }}"
+  args:
+    stdin: "\n"
+  when: idm_le_enabled | bool
+
+- name: "Install certbot deploy hook for IPA"
+  ansible.builtin.copy:
+    dest: /etc/letsencrypt/renewal-hooks/deploy/ipa-web.sh
+    mode: "0700"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      DIRMAN_PASSWORD=$(cat /root/.secrets/ipa/dirman_password)
+      cat /etc/letsencrypt/live/{{ idm_fqdn_effective }}/cert.pem \
+          /etc/letsencrypt/live/{{ idm_fqdn_effective }}/chain.pem \
+          {{ idm_le_root_ca_path }} \
+          > /root/ipa/fullchain-with-root.pem
+      ipa-server-certinstall -w -d /root/ipa/fullchain-with-root.pem \
+        /etc/letsencrypt/live/{{ idm_fqdn_effective }}/privkey.pem \
+        --dirman-password "$DIRMAN_PASSWORD" <<< ""
+      systemctl restart httpd
+  when: idm_le_enabled | bool
+
 - name: "Ensure firewalld is installed"
   ansible.builtin.package:
     name: firewalld
