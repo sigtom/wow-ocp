@@ -88,6 +88,10 @@
               []
             )
           )
+        + (
+            (idm_setup_dns | bool and (idm_forwarders | default([]) | length == 0))
+            | ternary(['--auto-forwarders'], [])
+          )
       }}
   when: idm_role == 'primary' and not idm_default_conf.stat.exists
 
@@ -111,6 +115,10 @@
               (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\1') | list),
               []
             )
+          )
+        + (
+            (idm_setup_dns | bool and (idm_forwarders | default([]) | length == 0))
+            | ternary(['--auto-forwarders'], [])
           )
       }}
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
