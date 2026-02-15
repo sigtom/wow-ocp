@@ -99,7 +99,7 @@
         + (idm_setup_dns | bool | ternary(['--setup-dns'], ['--no-dns']))
         + (
             (idm_setup_dns | bool) | ternary(
-              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\1') | list),
+              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\g<1>') | list),
               []
             )
           )
@@ -127,7 +127,7 @@
         + (idm_setup_dns | bool | ternary(['--setup-dns'], ['--no-dns']))
         + (
             (idm_setup_dns | bool) | ternary(
-              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\1') | list),
+              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\g<1>') | list),
               []
             )
           )
