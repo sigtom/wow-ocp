@@ -10,20 +10,20 @@
     nautobot_token: "{{ lookup('env', 'NAUTOBOT_TOKEN') | default(lookup('env', 'NAUTOBOT_API_TOKEN'), true) }}"
 
     # VM intent (override via -e or env vars)
-    vm_name: "{{ lookup('env', 'IDM_NAME') | default('idm01.sigtom.dev', true) }}"
+    vm_name: "{{ idm_name | default(lookup('env', 'IDM_NAME') | default('idm01.sigtom.dev', true), true) }}"
     vm_cluster: "HomeLab Proxmox"
     vm_platform: "Red Hat Enterprise Linux 10"
     vm_status: "Active"
 
     # Sizing intent (large defaults, disk override)
-    vm_vcpus: "{{ lookup('env', 'IDM_VCPUS') | default(4, true) | int }}"
-    vm_memory: "{{ lookup('env', 'IDM_MEMORY') | default(4096, true) | int }}"
-    vm_disk: "{{ lookup('env', 'IDM_DISK') | default(75, true) | int }}"
-    vm_tshirt_size: "{{ lookup('env', 'IDM_TSHIRT_SIZE') | default('large', true) }}"
+    vm_vcpus: "{{ idm_vcpus | default(lookup('env', 'IDM_VCPUS') | default(4, true), true) | int }}"
+    vm_memory: "{{ idm_memory | default(lookup('env', 'IDM_MEMORY') | default(4096, true), true) | int }}"
+    vm_disk: "{{ idm_disk | default(lookup('env', 'IDM_DISK') | default(75, true), true) | int }}"
+    vm_tshirt_size: "{{ idm_tshirt_size | default(lookup('env', 'IDM_TSHIRT_SIZE') | default('large', true), true) }}"
 
     # Networking intent
-    vm_ip4: "{{ lookup('env', 'IDM_IP') | default('172.16.120.10/24', true) }}"
-    vm_network_profile: "{{ lookup('env', 'IDM_NETWORK_PROFILE') | default('vlan120', true) }}"
+    vm_ip4: "{{ idm_ip | default(lookup('env', 'IDM_IP') | default('172.16.120.10/24', true), true) }}"
+    vm_network_profile: "{{ idm_network_profile | default(lookup('env', 'IDM_NETWORK_PROFILE') | default('vlan120', true), true) }}"
     vm_iface_name: "eth0"
 
   tasks:

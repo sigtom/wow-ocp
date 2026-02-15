@@ -520,6 +520,7 @@
         playbook: "automation/playbooks/identity/deploy-idm.yaml"
         execution_environment: "HomeLab EE"
         ask_limit_on_launch: true
+        ask_variables_on_launch: true
         credentials:
           - "Proxmox Production"
           - "AAP Executor SSH"
