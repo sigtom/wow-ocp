@@ -5,6 +5,8 @@
   hosts: all
   serial: 1
   gather_facts: false
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
 
   vars_files:
     - "{{ playbook_dir }}/../../inventory/group_vars/all.yml"
