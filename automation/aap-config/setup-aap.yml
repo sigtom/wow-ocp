@@ -526,6 +526,7 @@
           - "IdM Secrets"
           - "RHSM Activation"
           - "Nautobot API"
+          - "Cloudflare DNS"
         state: present
 
     # -------------------------------------------------------
