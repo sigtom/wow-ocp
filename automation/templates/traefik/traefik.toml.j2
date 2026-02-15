@@ -9,9 +9,13 @@
 [entryPoints]
   [entryPoints.web]
     address = ":80"
+    [entryPoints.web.forwardedHeaders]
+      trustedIPs = ["172.16.100.0/24", "10.0.0.0/24"]
 
   [entryPoints.websecure]
     address = ":443"
+    [entryPoints.websecure.forwardedHeaders]
+      trustedIPs = ["172.16.100.0/24", "10.0.0.0/24"]
     [entryPoints.websecure.http.tls]
       certResolver = "cloudflare"
       [[entryPoints.websecure.http.tls.domains]]
