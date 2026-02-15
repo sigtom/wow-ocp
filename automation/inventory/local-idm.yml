@@ -11,3 +11,15 @@ all:
       os_type: rhel10
       tshirt_size: medium
       network_profile: vlan120
+
+    idm02.sigtom.dev:
+      ansible_host: 172.16.120.20
+      ansible_user: root
+      ansible_python_interpreter: /usr/bin/python3
+      vmid: 501
+      proxmox_node: wow-prox1
+      os_type: rhel10
+      tshirt_size: medium
+      network_profile: vlan120
+      idm_role: replica
+      idm_primary_fqdn: idm01.sigtom.dev
