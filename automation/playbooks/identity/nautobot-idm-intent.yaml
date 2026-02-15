@@ -20,6 +20,8 @@
     vm_memory: "{{ idm_memory | default(lookup('env', 'IDM_MEMORY') | default(4096, true), true) | int }}"
     vm_disk: "{{ idm_disk | default(lookup('env', 'IDM_DISK') | default(75, true), true) | int }}"
     vm_tshirt_size: "{{ idm_tshirt_size | default(lookup('env', 'IDM_TSHIRT_SIZE') | default('large', true), true) }}"
+    vm_proxmox_node: "{{ idm_proxmox_node | default(lookup('env', 'IDM_PROXMOX_NODE') | default('wow-prox1', true), true) }}"
+    vm_proxmox_vmid: "{{ idm_vmid | default(lookup('env', 'IDM_VMID') | default('', true), true) }}"
 
     # Networking intent
     vm_ip4: "{{ idm_ip | default(lookup('env', 'IDM_IP') | default('172.16.120.10/24', true), true) }}"
@@ -79,6 +81,8 @@
           custom_fields:
             network_profile: "{{ vm_network_profile }}"
             t_shirt_size: "{{ vm_tshirt_size }}"
+            proxmox_node: "{{ vm_proxmox_node }}"
+            proxmox_vmid: "{{ vm_proxmox_vmid | default(omit) }}"
         vm_update_body_base:
           status: "{{ nb_status_id }}"
           vcpus: "{{ vm_vcpus }}"
@@ -87,6 +91,8 @@
           custom_fields:
             network_profile: "{{ vm_network_profile }}"
             t_shirt_size: "{{ vm_tshirt_size }}"
+            proxmox_node: "{{ vm_proxmox_node }}"
+            proxmox_vmid: "{{ vm_proxmox_vmid | default(omit) }}"
 
     - name: "Apply platform to VM bodies when available"
       ansible.builtin.set_fact:
