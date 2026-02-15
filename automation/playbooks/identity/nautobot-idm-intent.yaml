@@ -243,7 +243,11 @@
       ansible.builtin.set_fact:
         ip_iface_match: >-
           {{
-            ip_iface_query.json.results
+            (ip_iface_query.json.results | default([]))
+            | selectattr('ip_address', 'defined')
+            | selectattr('vm_interface', 'defined')
+            | selectattr('ip_address', 'ne', None)
+            | selectattr('vm_interface', 'ne', None)
             | selectattr('ip_address.id', 'equalto', nb_ip_id)
             | selectattr('vm_interface.id', 'equalto', nb_iface_id)
             | list
