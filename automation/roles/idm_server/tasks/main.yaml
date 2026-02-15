@@ -147,3 +147,60 @@
   ansible.builtin.command:
     argv: "{{ idm_replica_install_args }}"
   when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
+- name: "Ensure firewalld is installed"
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+
+- name: "Ensure firewalld is running"
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: "Open IdM TCP ports"
+  ansible.posix.firewalld:
+    port: "{{ item }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - 80
+    - 443
+    - 389
+    - 636
+    - 88
+    - 464
+    - 53
+
+- name: "Open IdM UDP ports"
+  ansible.posix.firewalld:
+    port: "{{ item }}/udp"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - 88
+    - 464
+    - 53
+    - 123
+
+- name: "Ensure CA backup directory exists"
+  ansible.builtin.file:
+    path: /root/ipa-certs
+    state: directory
+    mode: "0700"
+
+- name: "Check if IdM CA bundle exists"
+  ansible.builtin.stat:
+    path: /root/cacert.p12
+  register: idm_cacert
+
+- name: "Backup IdM CA certificate bundle"
+  ansible.builtin.copy:
+    src: /root/cacert.p12
+    dest: /root/ipa-certs/cacert.p12
+    remote_src: true
+    mode: "0600"
+  when: idm_cacert.stat.exists
