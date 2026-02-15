@@ -257,6 +257,18 @@ class SyncProxmoxInventory(Job):
                         # Update fields
                         if vm_obj.status != nb_status:
                             vm_obj.status = nb_status
+
+                        # Update sizing fields on every sync
+                        new_vcpus = vm.get("cpus", vm_obj.vcpus)
+                        new_mem = int(vm.get("maxmem", 0) / 1024 / 1024) if vm.get("maxmem") else vm_obj.memory
+                        new_disk = int(vm.get("maxdisk", 0) / 1024 / 1024 / 1024) if vm.get("maxdisk") else vm_obj.disk
+
+                        if new_vcpus is not None and vm_obj.vcpus != new_vcpus:
+                            vm_obj.vcpus = new_vcpus
+                        if new_mem is not None and vm_obj.memory != new_mem:
+                            vm_obj.memory = new_mem
+                        if new_disk is not None and vm_obj.disk != new_disk:
+                            vm_obj.disk = new_disk
                         
                         # Update custom fields if they exist on the model
                         cf_updates = {}

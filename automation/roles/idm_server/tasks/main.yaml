@@ -1,22 +1,106 @@
 ---
+- name: "Check if IdM is already installed"
+  ansible.builtin.stat:
+    path: /etc/ipa/default.conf
+  register: idm_default_conf
+
+- name: "Set effective IdM host naming"
+  ansible.builtin.set_fact:
+    idm_hostname_effective: "{{ idm_hostname | default(inventory_hostname_short) }}"
+    idm_fqdn_effective: >-
+      {{ idm_fqdn | default((inventory_hostname if ('.' in inventory_hostname) else (idm_hostname_effective ~ '.' ~ idm_domain))) }}
+
+- name: "Validate required IdM variables (primary)"
+  ansible.builtin.assert:
+    that:
+      - idm_admin_password is defined
+      - idm_admin_password | length > 0
+      - idm_dm_password is defined
+      - idm_dm_password | length > 0
+      - idm_domain is defined
+      - idm_realm is defined
+    fail_msg: "Missing required IdM primary vars (idm_admin_password, idm_dm_password, idm_domain, idm_realm)."
+  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+
+- name: "Validate required IdM variables (replica)"
+  ansible.builtin.assert:
+    that:
+      - idm_admin_password is defined
+      - idm_admin_password | length > 0
+      - idm_primary_fqdn is defined
+      - idm_primary_fqdn | length > 0
+      - idm_domain is defined
+      - idm_realm is defined
+    fail_msg: "Missing required IdM replica vars (idm_admin_password, idm_primary_fqdn, idm_domain, idm_realm)."
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
 - name: "Ensure RHEL RPM GPG key is installed"
   ansible.builtin.rpm_key:
     key: /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
     state: present
 
+- name: "Build IdM package list"
+  ansible.builtin.set_fact:
+    idm_packages: "{{ ['ipa-server'] + (idm_setup_dns | bool | ternary(['ipa-server-dns'], [])) }}"
+
 - name: "Install required IdM packages"
   ansible.builtin.package:
-    name:
-      - ipa-server
-      - ipa-server-dns
+    name: "{{ idm_packages }}"
     state: present
 
-- name: "Placeholder: Validate IdM prerequisites"
-  ansible.builtin.debug:
-    msg: >-
-      Validate hostname/DNS/NTP before ipa-server-install.
+- name: "Assemble ipa-server-install arguments"
+  ansible.builtin.set_fact:
+    idm_install_args: >-
+      {{
+        [
+          'ipa-server-install',
+          '--unattended',
+          '--realm', idm_realm,
+          '--domain', idm_domain,
+          '--hostname', idm_fqdn_effective,
+          '--ds-password', idm_dm_password,
+          '--admin-password', idm_admin_password
+        ]
+        + (idm_setup_dns | bool | ternary(['--setup-dns'], ['--no-dns']))
+        + (
+            (idm_setup_dns | bool) | ternary(
+              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\1') | list),
+              []
+            )
+          )
+      }}
+  when: idm_role == 'primary' and not idm_default_conf.stat.exists
 
-- name: "Placeholder: Run ipa-server-install in unattended mode"
-  ansible.builtin.debug:
-    msg: >-
-      TODO: Implement idempotent ipa-server-install command and marker checks.
+- name: "Assemble ipa-replica-install arguments"
+  ansible.builtin.set_fact:
+    idm_replica_install_args: >-
+      {{
+        [
+          'ipa-replica-install',
+          '--unattended',
+          '--server', idm_primary_fqdn,
+          '--realm', idm_realm,
+          '--domain', idm_domain,
+          '--principal', idm_admin_principal,
+          '--admin-password', idm_admin_password,
+          '--hostname', idm_fqdn_effective
+        ]
+        + (idm_setup_dns | bool | ternary(['--setup-dns'], ['--no-dns']))
+        + (
+            (idm_setup_dns | bool) | ternary(
+              (idm_forwarders | default([]) | map('regex_replace', '^(.*)$', '--forwarder=\\1') | list),
+              []
+            )
+          )
+      }}
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists
+
+- name: "Install IdM primary server (ipa-server-install)"
+  ansible.builtin.command:
+    argv: "{{ idm_install_args }}"
+  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+
+- name: "Install IdM replica server (ipa-replica-install)"
+  ansible.builtin.command:
+    argv: "{{ idm_replica_install_args }}"
+  when: idm_role == 'replica' and not idm_default_conf.stat.exists

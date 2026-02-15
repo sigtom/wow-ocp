@@ -1,4 +1,6 @@
 ---
+- import_playbook: "nautobot-idm-intent.yaml"
+
 - name: "Tier 0 Identity: Deploy IdM Server on Proxmox VM"
   hosts: all
   serial: 1

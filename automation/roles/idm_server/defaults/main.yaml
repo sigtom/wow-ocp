@@ -1,7 +1,22 @@
 ---
+# IdM role behavior: primary or replica
+idm_role: "primary"
+
+# Domain/realm defaults (override per-host in inventory/host_vars)
 idm_domain: "idm.sigtom.dev"
 idm_realm: "IDM.SIGTOM.DEV"
-idm_hostname: "idm"
+
+# Host naming (defaults to inventory hostname short)
+idm_hostname: "{{ inventory_hostname_short }}"
+# Optional explicit FQDN override
+# idm_fqdn: "idm01.idm.sigtom.dev"
+
+# DNS setup
 idm_setup_dns: true
 idm_forwarders: []
+
+# Primary server for replica installs
+# idm_primary_fqdn: "idm01.idm.sigtom.dev"
+
+# Admin principal/user
 idm_admin_principal: "admin"

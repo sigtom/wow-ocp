@@ -1,0 +1,337 @@
+---
+- name: "Nautobot Intent: Create/Update IdM VM record"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    nautobot_url: "{{ lookup('env', 'NAUTOBOT_URL') }}"
+    nautobot_token: "{{ lookup('env', 'NAUTOBOT_TOKEN') }}"
+
+    # VM intent (override via -e or host_vars)
+    vm_name: "idm-test01.sigtom.dev"
+    vm_cluster: "HomeLab Proxmox"
+    vm_platform: "Red Hat Enterprise Linux 10"
+    vm_status: "Active"
+
+    # Sizing intent (medium)
+    vm_vcpus: 2
+    vm_memory: 2048
+    vm_disk: 20
+    vm_tshirt_size: "medium"
+
+    # Networking intent
+    vm_ip4: "172.16.120.250/24"
+    vm_network_profile: "vlan120"
+    vm_iface_name: "eth0"
+
+  tasks:
+    - name: "Validate Nautobot env vars"
+      ansible.builtin.assert:
+        that:
+          - nautobot_url | length > 0
+          - nautobot_token | length > 0
+        fail_msg: "Set NAUTOBOT_URL and NAUTOBOT_TOKEN in the environment."
+
+    - name: "Get status id"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/extras/statuses/?name={{ vm_status | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: status_query
+
+    - name: "Get cluster id"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/clusters/?name={{ vm_cluster | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: cluster_query
+
+    - name: "Get platform id"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/dcim/platforms/?name={{ vm_platform | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: platform_query
+
+    - name: "Set Nautobot IDs"
+      ansible.builtin.set_fact:
+        nb_status_id: "{{ status_query.json.results[0].id }}"
+        nb_cluster_id: "{{ cluster_query.json.results[0].id }}"
+        nb_platform_id: "{{ (platform_query.json.results[0].id if (platform_query.json.results | length > 0) else None) }}"
+
+    - name: "Build VM request bodies"
+      ansible.builtin.set_fact:
+        vm_body_base:
+          name: "{{ vm_name }}"
+          cluster: "{{ nb_cluster_id }}"
+          status: "{{ nb_status_id }}"
+          vcpus: "{{ vm_vcpus }}"
+          memory: "{{ vm_memory }}"
+          disk: "{{ vm_disk }}"
+          custom_fields:
+            network_profile: "{{ vm_network_profile }}"
+            t_shirt_size: "{{ vm_tshirt_size }}"
+        vm_update_body_base:
+          status: "{{ nb_status_id }}"
+          vcpus: "{{ vm_vcpus }}"
+          memory: "{{ vm_memory }}"
+          disk: "{{ vm_disk }}"
+          custom_fields:
+            network_profile: "{{ vm_network_profile }}"
+            t_shirt_size: "{{ vm_tshirt_size }}"
+
+    - name: "Apply platform to VM bodies when available"
+      ansible.builtin.set_fact:
+        vm_body: "{{ vm_body_base | combine({'platform': nb_platform_id}) if nb_platform_id is not none else vm_body_base }}"
+        vm_update_body: "{{ vm_update_body_base | combine({'platform': nb_platform_id}) if nb_platform_id is not none else vm_update_body_base }}"
+
+    - name: "Find existing VM"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/virtual-machines/?name={{ vm_name | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: vm_query
+
+    - name: "Create VM"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/virtual-machines/"
+        method: POST
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body: "{{ vm_body }}"
+        status_code: [200, 201]
+        validate_certs: false
+      register: vm_create
+      when: vm_query.json.count | int == 0
+
+    - name: "Update VM"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/virtual-machines/{{ vm_query.json.results[0].id }}/"
+        method: PATCH
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body: "{{ vm_update_body }}"
+        validate_certs: false
+      when: vm_query.json.count | int > 0
+
+    - name: "Set VM id"
+      ansible.builtin.set_fact:
+        nb_vm_id: "{{ (vm_create.json.id if (vm_query.json.count | int == 0) else vm_query.json.results[0].id) }}"
+
+    - name: "Find existing VM interface"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/interfaces/?virtual_machine_id={{ nb_vm_id }}&name={{ vm_iface_name | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: iface_query
+
+    - name: "Create VM interface"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/interfaces/"
+        method: POST
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          virtual_machine: "{{ nb_vm_id }}"
+          name: "{{ vm_iface_name }}"
+          enabled: true
+          status: "{{ nb_status_id }}"
+        status_code: [200, 201]
+        validate_certs: false
+      register: iface_create
+      when: iface_query.json.count | int == 0
+
+    - name: "Set interface id"
+      ansible.builtin.set_fact:
+        nb_iface_id: "{{ (iface_create.json.id if (iface_query.json.count | int == 0) else iface_query.json.results[0].id) }}"
+
+    - name: "Set IP address (no prefix)"
+      ansible.builtin.set_fact:
+        vm_ip4_addr: "{{ vm_ip4 | regex_replace('/.*$', '') }}"
+
+    - name: "Find parent prefix for IP"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/prefixes/?contains={{ vm_ip4_addr | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: prefix_query
+
+    - name: "Ensure parent prefix exists"
+      ansible.builtin.assert:
+        that:
+          - prefix_query.json.count | int > 0
+        fail_msg: "No parent prefix found in Nautobot for {{ vm_ip4_addr }}. Create the prefix first."
+
+    - name: "Set parent prefix id"
+      ansible.builtin.set_fact:
+        nb_prefix_id: "{{ prefix_query.json.results[0].id }}"
+
+    - name: "Find existing IP address"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/ip-addresses/?address={{ vm_ip4 | urlencode }}"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: ip_query
+
+    - name: "Create IP address"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/ip-addresses/"
+        method: POST
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          address: "{{ vm_ip4 }}"
+          status: "{{ nb_status_id }}"
+          parent: "{{ nb_prefix_id }}"
+        status_code: [200, 201]
+        validate_certs: false
+      register: ip_create
+      when: ip_query.json.count | int == 0
+
+    - name: "Update IP address metadata"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/ip-addresses/{{ ip_query.json.results[0].id }}/"
+        method: PATCH
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          status: "{{ nb_status_id }}"
+          parent: "{{ nb_prefix_id }}"
+        validate_certs: false
+      when: ip_query.json.count | int > 0
+
+    - name: "Set IP id"
+      ansible.builtin.set_fact:
+        nb_ip_id: "{{ (ip_create.json.id if (ip_query.json.count | int == 0) else ip_query.json.results[0].id) }}"
+
+    - name: "Fetch IP address-to-interface assignments"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/ip-address-to-interface/?limit=0"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: ip_iface_query
+
+    - name: "Find matching IP/interface assignment"
+      ansible.builtin.set_fact:
+        ip_iface_match: >-
+          {{
+            ip_iface_query.json.results
+            | selectattr('ip_address.id', 'equalto', nb_ip_id)
+            | selectattr('vm_interface.id', 'equalto', nb_iface_id)
+            | list
+          }}
+
+    - name: "Create IP address-to-interface assignment"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/ipam/ip-address-to-interface/"
+        method: POST
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          ip_address: "{{ nb_ip_id }}"
+          vm_interface: "{{ nb_iface_id }}"
+          is_primary: true
+        status_code: [200, 201]
+        validate_certs: false
+      when: ip_iface_match | length == 0
+
+    - name: "Get VM interface/IP relationship id"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/extras/relationships/?key=vm_interface_ip"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: rel_query
+
+    - name: "Set relationship id"
+      ansible.builtin.set_fact:
+        nb_rel_id: "{{ rel_query.json.results[0].id }}"
+
+    - name: "Fetch relationship associations"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/extras/relationship-associations/?limit=0"
+        method: GET
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+        validate_certs: false
+      register: rel_assoc_query
+
+    - name: "Find matching relationship association"
+      ansible.builtin.set_fact:
+        rel_assoc_match: >-
+          {{
+            rel_assoc_query.json.results
+            | selectattr('relationship.id', 'equalto', nb_rel_id)
+            | selectattr('source_id', 'equalto', nb_iface_id)
+            | selectattr('destination_id', 'equalto', nb_ip_id)
+            | list
+          }}
+
+    - name: "Create relationship association (VM interface -> IP)"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/extras/relationship-associations/"
+        method: POST
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          relationship: "{{ nb_rel_id }}"
+          source_type: "virtualization.vminterface"
+          source_id: "{{ nb_iface_id }}"
+          destination_type: "ipam.ipaddress"
+          destination_id: "{{ nb_ip_id }}"
+        status_code: [200, 201]
+        validate_certs: false
+      when: rel_assoc_match | length == 0
+
+    - name: "Set VM primary IP"
+      ansible.builtin.uri:
+        url: "{{ nautobot_url }}/api/virtualization/virtual-machines/{{ nb_vm_id }}/"
+        method: PATCH
+        headers:
+          Authorization: "Token {{ nautobot_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          primary_ip4: "{{ nb_ip_id }}"
+        validate_certs: false
+
+    - name: "Summary"
+      ansible.builtin.debug:
+        msg:
+          - "VM: {{ vm_name }} (id={{ nb_vm_id }})"
+          - "IP: {{ vm_ip4 }} (id={{ nb_ip_id }})"
+          - "Cluster: {{ vm_cluster }}, Platform: {{ vm_platform }}"
+          - "Sizing: {{ vm_vcpus }} vCPU / {{ vm_memory }}MB / {{ vm_disk }}GB"
+          - "Network profile: {{ vm_network_profile }}"
