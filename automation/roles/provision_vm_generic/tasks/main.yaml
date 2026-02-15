@@ -9,14 +9,31 @@
       - vm_tshirt_sizes is defined
     fail_msg: "Standard definitions (all.yml) not found!"
 
+- name: Normalize Proxmox node
+  ansible.builtin.set_fact:
+    proxmox_node_effective: >-
+      {{
+        (proxmox_node if (proxmox_node in hostvars or proxmox_node in proxmox_storage_backends)
+         else (proxmox_default_node | default(proxmox_storage_backends.keys() | list | first)))
+      }}
+
 - name: Set facts from Nautobot metadata
   ansible.builtin.set_fact:
     template_vmid: "{{ vm_templates[os_type].vmid }}"
     vm_cores: "{{ vm_tshirt_sizes[tshirt_size].cores }}"
     vm_memory: "{{ vm_tshirt_sizes[tshirt_size].memory }}"
     vm_disk_size: "{{ (vm_disk | default(vm_tshirt_sizes[tshirt_size].disk, true)) | int }}"
-    proxmox_api_host: "{{ hostvars[proxmox_node].ansible_host }}"
-    vm_storage_backend: "{{ vm_storage | default(proxmox_storage_backends[proxmox_node].vm_storage) }}"
+    proxmox_api_host: >-
+      {{
+        (hostvars.get(proxmox_node_effective, {}).ansible_host | default(''))
+        | default(
+            (lookup('env', 'PROXMOX_URL') | default('')
+            | regex_replace('https?://','')
+            | regex_replace(':.*','')),
+            true
+          )
+      }}
+    vm_storage_backend: "{{ vm_storage | default(proxmox_storage_backends[proxmox_node_effective].vm_storage) }}"
     network_config: "{{ network_profiles[network_profile | default('apps')] }}"
 
 - name: Construct net0 string
@@ -25,7 +42,7 @@
 
 - name: Check if VM exists
   ansible.builtin.uri:
-    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node }}/qemu/{{ vmid }}/status/current"
+    url: "https://{{ proxmox_api_host }}:8006/api2/json/nodes/{{ proxmox_node_effective }}/qemu/{{ vmid }}/status/current"
     method: GET
     headers:
       Authorization: "PVEAPIToken={{ pve_api_user }}!{{ pve_api_token_id }}={{ pve_api_token_secret }}"
@@ -40,7 +57,7 @@
     api_user: "{{ pve_api_user }}"
     api_token_id: "{{ pve_api_token_id }}"
     api_token_secret: "{{ pve_api_token_secret }}"
-    node: "{{ proxmox_node }}"
+    node: "{{ proxmox_node_effective }}"
     vmid: "{{ template_vmid }}"
     newid: "{{ vmid }}"
     name: "{{ inventory_hostname }}"
@@ -115,7 +132,7 @@
     api_user: "{{ pve_api_user }}"
     api_token_id: "{{ pve_api_token_id }}"
     api_token_secret: "{{ pve_api_token_secret }}"
-    node: "{{ proxmox_node }}"
+    node: "{{ proxmox_node_effective }}"
     vmid: "{{ vmid }}"
     validate_certs: no
     state: started

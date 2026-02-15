@@ -11,6 +11,7 @@ global_ssh_keys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRFptKwqZg4xn2/xoq4JWe8QAUrBzxMUt+m07Lmprv6 sigtom@vuff.sigtom.io"
 
 # Proxmox Storage Backends - Per-node storage configuration
+proxmox_default_node: "wow-prox1"
 proxmox_storage_backends:
   wow-prox1:
     vm_storage: "TSVMDS01"
