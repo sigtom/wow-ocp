@@ -13,14 +13,14 @@
 - name: "Determine IdM host IP for /etc/hosts"
   ansible.builtin.set_fact:
     idm_host_ip: "{{ ansible_host | default(ansible_default_ipv4.address) }}"
-  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+  when: not idm_default_conf.stat.exists
 
 - name: "Remove localhost mapping for IdM hostname"
   ansible.builtin.lineinfile:
     path: /etc/hosts
     regexp: '^(127\.0\.0\.1|::1)\s+.*\b({{ idm_fqdn_effective | regex_escape }}|{{ idm_hostname_effective | regex_escape }})\b.*$'
     state: absent
-  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+  when: not idm_default_conf.stat.exists
 
 - name: "Ensure IdM hostname resolves to its IP"
   ansible.builtin.lineinfile:
@@ -28,7 +28,7 @@
     line: "{{ idm_host_ip }} {{ idm_fqdn_effective }} {{ idm_hostname_effective }}"
     state: present
     create: true
-  when: idm_role == 'primary' and not idm_default_conf.stat.exists
+  when: not idm_default_conf.stat.exists
 
 - name: "Validate required IdM variables (primary)"
   ansible.builtin.assert:
