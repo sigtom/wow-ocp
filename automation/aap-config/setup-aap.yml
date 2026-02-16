@@ -411,6 +411,25 @@
         project: "HomeLab Ops"
         wait: yes
 
+    - name: Create IdM Config Project
+      awx.awx.project:
+        name: "IdM Config"
+        organization: "{{ aap_organization }}"
+        scm_type: git
+        scm_url: "ssh://git@ssh.github.com:443/sigtom/IDM-Config-WoW-Homelab-Feb-2026.git"
+        scm_branch: "main"
+        scm_clean: true
+        scm_delete_on_update: true
+        credential: "Git Read-Only"
+        default_environment: "HomeLab EE"
+        wait: yes
+        state: present
+
+    - name: Force IdM Config Project Sync
+      awx.awx.project_update:
+        project: "IdM Config"
+        wait: yes
+
     # -------------------------------------------------------
     # 5. Inventory
     # -------------------------------------------------------
@@ -466,6 +485,20 @@
           - "Media Arr API Keys"
           - "GitHub Token"
           - "RHSM Activation"
+        state: present
+
+    - name: Create IdM DNS Apply Job Template
+      awx.awx.job_template:
+        name: "IdM - Apply DNS"
+        job_type: run
+        organization: "{{ aap_organization }}"
+        inventory: "HomeLab Inventory"
+        project: "IdM Config"
+        playbook: "apply_dns.yml"
+        execution_environment: "HomeLab EE"
+        credentials:
+          - "AAP Executor SSH"
+          - "IdM Secrets"
         state: present
 
     - name: Create Sync DNS Job Template
