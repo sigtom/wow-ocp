@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"postgres-db","namespace":"keycloak"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"postgres"}},"template":{"metadata":{"labels":{"app":"postgres"}},"spec":{"containers":[{"env":[{"name":"POSTGRESQL_DATABASE","value":"keycloak"},{"name":"POSTGRESQL_USER","valueFrom":{"secretKeyRef":{"key":"username","name":"keycloak-db-secret"}}},{"name":"POSTGRESQL_PASSWORD","valueFrom":{"secretKeyRef":{"key":"password","name":"keycloak-db-secret"}}}],"image":"registry.redhat.io/rhel9/postgresql-15","name":"postgres","ports":[{"containerPort":5432}],"volumeMounts":[{"mountPath":"/var/lib/pgsql/data","name":"postgres-storage"}]}],"volumes":[{"name":"postgres-storage","persistentVolumeClaim":{"claimName":"postgres-pvc"}}]}}}}
+  creationTimestamp: "2026-02-17T01:01:48Z"
+  generation: 2
+  name: postgres-db
+  namespace: keycloak
+  resourceVersion: "113957269"
+  uid: 602296c3-55bd-42e6-b64f-4add4f591b3d
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - env:
+        - name: POSTGRESQL_DATABASE
+          value: keycloak
+        - name: POSTGRESQL_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: keycloak-db-secret
+        - name: POSTGRESQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: keycloak-db-secret
+        image: registry.redhat.io/rhel9/postgresql-15
+        imagePullPolicy: IfNotPresent
+        name: postgres
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/pgsql/data
+          name: postgres-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-02-17T01:01:48Z"
+    lastUpdateTime: "2026-02-17T01:08:59Z"
+    message: ReplicaSet "postgres-db-869ffd548c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2026-02-17T08:03:19Z"
+    lastUpdateTime: "2026-02-17T08:03:19Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 2
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

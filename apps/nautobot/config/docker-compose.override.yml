@@ -1,0 +1,10 @@
+services:
+  nautobot:
+    extra_hosts:
+      - "keycloak.sigtom.dev:172.16.100.106"
+  nautobot-worker:
+    extra_hosts:
+      - "keycloak.sigtom.dev:172.16.100.106"
+  nautobot-scheduler:
+    extra_hosts:
+      - "keycloak.sigtom.dev:172.16.100.106"

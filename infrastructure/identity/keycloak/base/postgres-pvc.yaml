@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{},"name":"postgres-pvc","namespace":"keycloak"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"10Gi"}}}}
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: truenas-nfs
+    volume.kubernetes.io/storage-provisioner: truenas-nfs
+  creationTimestamp: "2026-02-17T01:01:47Z"
+  finalizers:
+  - kubernetes.io/pvc-protection
+  name: postgres-pvc
+  namespace: keycloak
+  resourceVersion: "113397877"
+  uid: 7de2f94c-d465-4151-a41f-7dc86e7a5644
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: truenas-nfs
+  volumeMode: Filesystem
+  volumeName: pvc-7de2f94c-d465-4151-a41f-7dc86e7a5644
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  phase: Bound

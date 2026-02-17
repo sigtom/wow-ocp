@@ -1,0 +1,62 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"k8s.keycloak.org/v2alpha1","kind":"Keycloak","metadata":{"annotations":{},"name":"keycloak","namespace":"keycloak"},"spec":{"hostname":{"hostname":"keycloak.sigtom.dev"},"http":{"httpEnabled":true,"tlsSecret":"keycloak-tls"},"instances":1,"proxy":{"headers":"xforwarded"}}}
+  creationTimestamp: "2026-02-16T21:58:55Z"
+  generation: 3
+  name: keycloak
+  namespace: keycloak
+  resourceVersion: "113430894"
+  uid: 0ca061e3-ec02-4a53-a3c9-f9c6be4db761
+spec:
+  db:
+    database: keycloak
+    host: postgres-db
+    passwordSecret:
+      key: password
+      name: keycloak-db-secret
+    port: 5432
+    usernameSecret:
+      key: username
+      name: keycloak-db-secret
+    vendor: postgres
+  hostname:
+    hostname: keycloak.sigtom.dev
+  http:
+    httpEnabled: true
+    tlsSecret: keycloak-tls
+  instances: 1
+  proxy:
+    headers: xforwarded
+  truststores:
+    idm-ca:
+      secret:
+        name: idm-ca-cert
+status:
+  conditions:
+  - lastTransitionTime: "2026-02-17T01:26:50.938407955Z"
+    message: ""
+    observedGeneration: 3
+    status: "True"
+    type: Ready
+  - lastTransitionTime: "2026-02-16T21:58:56.650318298Z"
+    message: 'warning: A ServiceMonitor will not be created because `metrics-enabled`
+      is not true.'
+    observedGeneration: 3
+    status: "False"
+    type: HasErrors
+  - lastTransitionTime: "2026-02-17T01:26:50.938407955Z"
+    message: ""
+    observedGeneration: 3
+    status: "False"
+    type: RollingUpdate
+  - lastTransitionTime: "2026-02-17T01:25:38.449535367Z"
+    message: Image unchanged.
+    observedGeneration: 3
+    status: "False"
+    type: RecreateUpdateUsed
+  instances: 1
+  observedGeneration: 3
+  selector: app=keycloak,app.kubernetes.io/managed-by=keycloak-operator,app.kubernetes.io/instance=keycloak
