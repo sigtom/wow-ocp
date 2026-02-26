@@ -15,11 +15,11 @@ group_by:
 
 # Compose variables from custom fields and properties
 compose:
-  ansible_host: primary_ip4.address | default('') | split('/') | first
+  ansible_host: custom_fields.ansible_host | default(primary_ip4.address | default('') | split('/') | first, true)
   vmid: custom_fields.proxmox_vmid | default(omit)
   proxmox_vmid: custom_fields.proxmox_vmid | default(omit)
   proxmox_node: custom_fields.proxmox_node | default('wow-prox1')
-  proxmox_vmtype: "'qemu' if object_type == 'virtualization.virtualmachine' else 'lxc'"
+  proxmox_vmtype: custom_fields.proxmox_vmtype | default('qemu')
   os_type: "platform.name | lower | replace(' ', '') | replace('.', '') | replace('04', '') | truncate(8, True, '')"
   ansible_user: "'root'"
   tshirt_size: custom_fields.t_shirt_size | default('medium')
