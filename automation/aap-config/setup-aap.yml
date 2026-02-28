@@ -400,7 +400,7 @@
         scm_url: "ssh://git@ssh.github.com:443/sigtom/wow-ocp.git"
         scm_branch: "main"
         scm_clean: true
-        scm_delete_on_update: true
+        scm_delete_on_update: false
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
         wait: yes
@@ -419,7 +419,7 @@
         scm_url: "ssh://git@ssh.github.com:443/sigtom/IDM-Config-WoW-Homelab-Feb-2026.git"
         scm_branch: "main"
         scm_clean: true
-        scm_delete_on_update: true
+        scm_delete_on_update: false
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
         wait: yes
