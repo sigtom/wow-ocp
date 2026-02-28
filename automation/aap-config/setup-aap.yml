@@ -414,7 +414,7 @@
         scm_url: "ssh://git@ssh.github.com:443/sigtom/IDM-Config-WoW-Homelab-Feb-2026.git"
         scm_branch: "main"
         scm_clean: true
-        scm_delete_on_update: false
+        scm_delete_on_update: true
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
         wait: yes
