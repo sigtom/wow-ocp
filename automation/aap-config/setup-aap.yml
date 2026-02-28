@@ -415,6 +415,8 @@
         scm_branch: "main"
         scm_clean: true
         scm_delete_on_update: true
+        scm_update_on_launch: true
+        scm_update_cache: true
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
         wait: yes
