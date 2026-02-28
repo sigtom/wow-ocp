@@ -71,6 +71,11 @@
       retries: 60
       delay: 5
 
+    - name: Create Organization
+      awx.awx.organization:
+        name: "{{ aap_organization }}"
+        state: present
+
     # -------------------------------------------------------
     # 1. Credential Types
     # -------------------------------------------------------
