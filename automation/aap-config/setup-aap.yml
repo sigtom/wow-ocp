@@ -413,6 +413,7 @@
         scm_clean: true
         scm_delete_on_update: false
         credential: "Git Read-Only"
+        organization: "{{ aap_organization }}"
         default_environment: "HomeLab Ops EE"
         wait: false
         state: present
@@ -429,6 +430,7 @@
         scm_update_on_launch: true
         update_project: true
         credential: "Git Read-Only"
+        organization: "{{ aap_organization }}"
         default_environment: "HomeLab Ops EE"
         wait: false
         state: present
