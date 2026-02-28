@@ -13,7 +13,7 @@
     controller_password: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
 
     # Configuration Data
-    aap_organization: "Default"
+    aap_organization: "HomeLab Ops"
 
     # Secrets injected from K8s Secret
     proxmox_url: "https://172.16.110.101:8006"
