@@ -273,9 +273,9 @@
     # -------------------------------------------------------
     # 2. Execution Environments
     # -------------------------------------------------------
-    - name: Create Custom HomeLab EE
+    - name: Create Custom HomeLab Ops EE
       awx.awx.execution_environment:
-        name: "HomeLab EE"
+        name: "HomeLab Ops EE"
         image: "{{ ee_image }}"
         pull: always
         organization: "{{ aap_organization }}"
@@ -284,7 +284,7 @@
     - name: Set Organization Default EE
       awx.awx.organization:
         name: "{{ aap_organization }}"
-        default_environment: "HomeLab EE"
+        default_environment: "HomeLab Ops EE"
         state: present
 
     # -------------------------------------------------------
@@ -413,7 +413,7 @@
         scm_clean: true
         scm_delete_on_update: false
         credential: "Git Read-Only"
-        default_environment: "HomeLab EE"
+        default_environment: "HomeLab Ops EE"
         wait: false
         state: present
 
@@ -429,7 +429,7 @@
         scm_update_on_launch: true
         update_project: true
         credential: "Git Read-Only"
-        default_environment: "HomeLab EE"
+        default_environment: "HomeLab Ops EE"
         wait: false
         state: present
 
@@ -457,7 +457,7 @@
         credential: "Nautobot API"
         overwrite: true
         update_on_launch: true
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         state: present
 
     - name: Create Local IdM Inventory Source
@@ -469,7 +469,7 @@
         source_path: "automation/inventory/local-idm.yml"
         overwrite: false
         update_on_launch: true
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         state: present
 
     # -------------------------------------------------------
@@ -484,7 +484,7 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/master-deploy.yaml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         credentials:
           - "Proxmox Production"
           - "AAP Executor SSH"
@@ -503,7 +503,7 @@
         inventory: "HomeLab Inventory"
         project: "IdM Config"
         playbook: "apply_dns.yml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         credentials:
           - "AAP Executor SSH"
           - "IdM Secrets"
@@ -521,7 +521,7 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/sync-pihole-dns.yaml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         credentials:
           - "Pi-hole API Keys"
         state: present
@@ -534,7 +534,7 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/setup-proxmox-nfs.yaml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         credentials: ["AAP Executor SSH"]
         state: present
 
@@ -546,7 +546,7 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/util-ssh-bootstrap.yaml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         credentials: ["AAP Executor SSH", "Proxmox Production"]
         survey_enabled: true
         survey_spec:
@@ -575,7 +575,7 @@
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/identity/deploy-idm.yaml"
-        execution_environment: "HomeLab EE"
+        execution_environment: "HomeLab Ops EE"
         ask_limit_on_launch: true
         ask_variables_on_launch: true
         credentials:
