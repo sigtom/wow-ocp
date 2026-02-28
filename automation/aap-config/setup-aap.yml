@@ -406,11 +406,6 @@
         wait: yes
         state: present
 
-    - name: Force Project Sync
-      awx.awx.project_update:
-        project: "HomeLab Ops"
-        wait: yes
-
     - name: Create IdM Config Project
       awx.awx.project:
         name: "IdM Config"
@@ -424,11 +419,6 @@
         default_environment: "HomeLab EE"
         wait: yes
         state: present
-
-    - name: Force IdM Config Project Sync
-      awx.awx.project_update:
-        project: "IdM Config"
-        wait: yes
 
     # -------------------------------------------------------
     # 5. Inventory
