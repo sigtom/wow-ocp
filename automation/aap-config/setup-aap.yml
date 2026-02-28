@@ -276,6 +276,12 @@
         organization: "{{ aap_organization }}"
         state: present
 
+    - name: Set Organization Default EE
+      awx.awx.organization:
+        name: "{{ aap_organization }}"
+        default_environment: "HomeLab EE"
+        state: present
+
     # -------------------------------------------------------
     # 3. Credentials
     # -------------------------------------------------------
