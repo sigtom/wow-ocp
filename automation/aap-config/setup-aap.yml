@@ -409,7 +409,7 @@
         scm_delete_on_update: false
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
-        wait: yes
+        wait: false
         state: present
 
     - name: Create IdM Config Project
@@ -425,7 +425,7 @@
         update_project: true
         credential: "Git Read-Only"
         default_environment: "HomeLab EE"
-        wait: yes
+        wait: false
         state: present
 
     - name: Force IdM Config Project Sync
@@ -503,6 +503,10 @@
           - "AAP Executor SSH"
           - "IdM Secrets"
         state: present
+      register: idm_dns_template
+      until: idm_dns_template is not failed
+      retries: 30
+      delay: 10
 
     - name: Create Sync DNS Job Template
       awx.awx.job_template:
