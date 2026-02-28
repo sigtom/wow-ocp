@@ -8,3 +8,4 @@ collections:
   - name: networktocode.nautobot
   - name: community.proxmox
   - name: awx.awx
+  - name: infra.aap_configuration

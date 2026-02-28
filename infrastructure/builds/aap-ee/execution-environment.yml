@@ -12,6 +12,7 @@ dependencies:
       - kubernetes.core
       - ansible.posix
       - infra.controller_configuration
+      - infra.aap_configuration
       - containers.podman
       - networktocode.nautobot
       - community.proxmox

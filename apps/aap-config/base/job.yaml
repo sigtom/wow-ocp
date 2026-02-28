@@ -44,13 +44,10 @@ spec:
               # Verify connectivity first
               ssh -p 443 -i /tmp/.ssh/id_rsa -o UserKnownHostsFile=/tmp/.ssh/known_hosts -T git@ssh.github.com || true
 
-              git clone ssh://git@ssh.github.com:443/sigtom/wow-ocp.git /tmp/repo
+              git clone --depth 1 ssh://git@ssh.github.com:443/sigtom/wow-ocp.git /tmp/repo
 
-              echo "3. Installing Required Collections..."
+              echo "3. Running Configuration Playbook..."
               cd /tmp/repo
-              ansible-galaxy collection install -r collections/requirements.yml --force --ignore-errors
-
-              echo "4. Running Configuration Playbook..."
               ansible-playbook automation/aap-config/setup-aap.yml -v
           env:
             - name: CONTROLLER_PASSWORD
