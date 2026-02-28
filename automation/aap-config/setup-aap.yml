@@ -402,7 +402,12 @@
     - name: Force IdM Config Project Sync
       awx.awx.project_update:
         project: "IdM Config"
+        organization: "{{ aap_organization }}"
         wait: yes
+      register: idm_sync_result
+      until: idm_sync_result is not failed
+      retries: 10
+      delay: 20
     # -------------------------------------------------------
     # 5. Inventory
     # -------------------------------------------------------
