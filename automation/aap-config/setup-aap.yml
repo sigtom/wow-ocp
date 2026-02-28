@@ -368,6 +368,50 @@
       when: rhsm_activation_key != '' and rhsm_org_id != ''
     # -------------------------------------------------------
     # 4. Project
+    - name: Create IdM Config Project
+      awx.awx.project:
+        name: "IdM Config"
+        organization: "{{ aap_organization }}"
+        scm_type: git
+        scm_url: "ssh://git@ssh.github.com:443/sigtom/IDM-Config-WoW-Homelab-Feb-2026.git"
+        scm_branch: "main"
+        scm_clean: true
+        scm_delete_on_update: true
+        scm_update_on_launch: true
+        update_project: false
+        credential: "Git Read-Only"
+        default_environment: "HomeLab Ops EE"
+        wait: false
+        state: present
+      register: idm_project
+
+    - name: Force IdM Config Project Sync via API
+      ansible.builtin.uri:
+        url: "{{ controller_host }}/api/v2/projects/{{ idm_project.id }}/update/"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        method: POST
+        force_basic_auth: yes
+        body_format: json
+        body:
+          execution_environment: 5
+        status_code: [201, 202]
+        validate_certs: no
+      register: idm_sync_api
+
+    - name: Wait for IdM Config Sync to finish
+      ansible.builtin.uri:
+        url: "{{ controller_host }}{{ idm_sync_api.json.url }}"
+        user: "{{ controller_username }}"
+        password: "{{ controller_password }}"
+        method: GET
+        force_basic_auth: yes
+        validate_certs: no
+      register: idm_sync_status
+      until: idm_sync_status.json.status == "successful"
+      retries: 30
+      delay: 10
+      failed_when: idm_sync_status.json.status == "failed"
     # -------------------------------------------------------
     - name: Create HomeLab Project
       awx.awx.project:
@@ -383,31 +427,6 @@
         default_environment: "HomeLab Ops EE"
         wait: false
         state: present
-    - name: Create IdM Config Project
-      awx.awx.project:
-        name: "IdM Config"
-        organization: "{{ aap_organization }}"
-        scm_type: git
-        scm_url: "ssh://git@ssh.github.com:443/sigtom/IDM-Config-WoW-Homelab-Feb-2026.git"
-        scm_branch: "main"
-        scm_clean: true
-        scm_delete_on_update: true
-        scm_update_on_launch: true
-        update_project: true
-        credential: "Git Read-Only"
-        organization: "{{ aap_organization }}"
-        default_environment: "HomeLab Ops EE"
-        wait: false
-        state: present
-    - name: Force IdM Config Project Sync
-      awx.awx.project_update:
-        project: "IdM Config"
-        organization: "{{ aap_organization }}"
-        wait: yes
-      register: idm_sync_result
-      until: idm_sync_result is not failed
-      retries: 10
-      delay: 20
     # -------------------------------------------------------
     # 5. Inventory
     # -------------------------------------------------------
