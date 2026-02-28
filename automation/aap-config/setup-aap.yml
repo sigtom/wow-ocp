@@ -420,6 +420,11 @@
         wait: yes
         state: present
 
+    - name: Force IdM Config Project Sync
+      awx.awx.project_update:
+        project: "IdM Config"
+        wait: yes
+
     # -------------------------------------------------------
     # 5. Inventory
     # -------------------------------------------------------
