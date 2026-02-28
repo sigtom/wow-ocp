@@ -110,6 +110,7 @@
     - name: Create Nautobot Credential Type
       awx.awx.credential_type:
         name: "Nautobot API"
+        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -159,6 +160,7 @@
     - name: Create DUMB Secrets Credential Type
       awx.awx.credential_type:
         name: "DUMB Debrid Secrets"
+        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -205,6 +207,7 @@
     - name: Create IdM Secrets Credential Type
       awx.awx.credential_type:
         name: "IdM Secrets"
+        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -226,6 +229,7 @@
     - name: Create RHSM Activation Credential Type
       awx.awx.credential_type:
         name: "RHSM Activation"
+        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -247,6 +251,7 @@
     - name: Create Media Arr Secrets Credential Type
       awx.awx.credential_type:
         name: "Media Arr API Keys"
+        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -278,7 +283,6 @@
         name: "HomeLab Ops EE"
         image: "{{ ee_image }}"
         pull: always
-        organization: "{{ aap_organization }}"
         state: present
 
     - name: Set Organization Default EE
@@ -478,9 +482,9 @@
     - name: Create Master Deploy Job Template
       awx.awx.job_template:
         name: "Master Deploy"
+        organization: "{{ aap_organization }}"
         description: "Deploy/Reconcile Host and Applications from Nautobot metadata"
         job_type: run
-        organization: "{{ aap_organization }}"
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/master-deploy.yaml"
@@ -498,8 +502,8 @@
     - name: Create IdM DNS Apply Job Template
       awx.awx.job_template:
         name: "IdM - Apply DNS"
-        job_type: run
         organization: "{{ aap_organization }}"
+        job_type: run
         inventory: "HomeLab Inventory"
         project: "IdM Config"
         playbook: "apply_dns.yml"
@@ -516,8 +520,8 @@
     - name: Create Sync DNS Job Template
       awx.awx.job_template:
         name: "Maintenance - Sync DNS"
-        job_type: run
         organization: "{{ aap_organization }}"
+        job_type: run
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/sync-pihole-dns.yaml"
@@ -529,8 +533,8 @@
     - name: Create Setup Proxmox NFS Job Template
       awx.awx.job_template:
         name: "Infra - Setup Proxmox NFS"
-        job_type: run
         organization: "{{ aap_organization }}"
+        job_type: run
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/setup-proxmox-nfs.yaml"
@@ -541,8 +545,8 @@
     - name: Create SSH Bootstrap Job Template
       awx.awx.job_template:
         name: "Util - SSH Bootstrap"
-        job_type: run
         organization: "{{ aap_organization }}"
+        job_type: run
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/util-ssh-bootstrap.yaml"
@@ -569,9 +573,9 @@
     - name: Create Deploy Red Hat IdM Job Template
       awx.awx.job_template:
         name: "Deploy Red Hat IdM"
+        organization: "{{ aap_organization }}"
         description: "Provision and configure the IdM VM"
         job_type: run
-        organization: "{{ aap_organization }}"
         inventory: "HomeLab Inventory"
         project: "HomeLab Ops"
         playbook: "automation/playbooks/identity/deploy-idm.yaml"
