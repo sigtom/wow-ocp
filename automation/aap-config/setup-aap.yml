@@ -6,26 +6,21 @@
   collections:
     - awx.awx
     - infra.controller_configuration
-
   vars:
     controller_host: "http://aap-controller-service.ansible-automation-platform.svc.cluster.local"
     controller_username: "admin"
     controller_password: "{{ lookup('env', 'CONTROLLER_PASSWORD') }}"
-
     # Configuration Data
     aap_organization: "HomeLab Ops"
-
     # Secrets injected from K8s Secret
     proxmox_url: "https://172.16.110.101:8006"
     proxmox_user: "{{ lookup('env', 'PROXMOX_USER') | default('sre-bot@pve') }}"
     proxmox_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') | default('sre-token') }}"
     proxmox_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
-
     cloudflare_token: "{{ lookup('env', 'CLOUDFLARE_TOKEN') }}"
     nautobot_token: "{{ lookup('env', 'NAUTOBOT_API_TOKEN') }}"
     ssh_private_key: "{{ lookup('env', 'SSH_PRIVATE_KEY') }}"
     github_pat: "{{ lookup('env', 'GITHUB_PAT') }}"
-
     # DUMB Debrid secrets
     realdebrid_api_key: "{{ lookup('env', 'REALDEBRID_API_KEY') }}"
     torbox_api_key: "{{ lookup('env', 'TORBOX_API_KEY') }}"
@@ -34,29 +29,23 @@
     overseerr_api_key: "{{ lookup('env', 'OVERSEERR_API_KEY') }}"
     dumb_postgres_password: "{{ lookup('env', 'DUMB_POSTGRES_PASSWORD') }}"
     dumb_pgadmin_password: "{{ lookup('env', 'DUMB_PGADMIN_PASSWORD') }}"
-
     # IdM secrets
     idm_admin_password: "{{ lookup('env', 'IDM_ADMIN_PASSWORD') }}"
     idm_dm_password: "{{ lookup('env', 'IDM_DM_PASSWORD') }}"
-
     # RHSM activation
     rhsm_activation_key: "{{ lookup('env', 'RHSM_ACTIVATION_KEY') }}"
     rhsm_org_id: "{{ lookup('env', 'RHSM_ORG_ID') }}"
-
     # Arr API keys
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
     radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
     prowlarr_api_key: "{{ lookup('env', 'PROWLARR_API_KEY') }}"
-
     # Execution Environment
     ee_image: "image-registry.openshift-image-registry.svc:5000/ansible-automation-platform/custom-homelab-ee:latest"
-
   environment:
     CONTROLLER_HOST: "{{ controller_host }}"
     CONTROLLER_USERNAME: "{{ controller_username }}"
     CONTROLLER_PASSWORD: "{{ controller_password }}"
     CONTROLLER_VERIFY_SSL: "false"
-
   tasks:
     - name: Wait for AAP to be ready
       uri:
@@ -70,12 +59,10 @@
       until: result.status == 200
       retries: 60
       delay: 5
-
     - name: Create Organization
       awx.awx.organization:
         name: "{{ aap_organization }}"
         state: present
-
     # -------------------------------------------------------
     # 1. Credential Types
     # -------------------------------------------------------
@@ -106,11 +93,9 @@
             PROXMOX_TOKEN_ID: "{% raw %}{{ token_id }}{% endraw %}"
             PROXMOX_SRE_BOT_API_TOKEN: "{% raw %}{{ token_secret }}{% endraw %}"
         state: present
-
     - name: Create Nautobot Credential Type
       awx.awx.credential_type:
         name: "Nautobot API"
-        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -124,7 +109,6 @@
             NAUTOBOT_API_TOKEN: "{% raw %}{{ token }}{% endraw %}"
             NAUTOBOT_TOKEN: "{% raw %}{{ token }}{% endraw %}"
         state: present
-
     - name: Create Cloudflare Credential Type
       awx.awx.credential_type:
         name: "Cloudflare API"
@@ -140,7 +124,6 @@
           env:
             CF_DNS_API_TOKEN: "{% raw %}{{ api_token }}{% endraw %}"
         state: present
-
     - name: Create GitHub Credential Type
       awx.awx.credential_type:
         name: "GitHub PAT"
@@ -156,11 +139,9 @@
           env:
             GITHUB_PAT: "{% raw %}{{ pat }}{% endraw %}"
         state: present
-
     - name: Create DUMB Secrets Credential Type
       awx.awx.credential_type:
         name: "DUMB Debrid Secrets"
-        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -203,11 +184,9 @@
             dumb_postgres_password: "{% raw %}{{ dumb_postgres_password }}{% endraw %}"
             dumb_pgadmin_password: "{% raw %}{{ dumb_pgadmin_password }}{% endraw %}"
         state: present
-
     - name: Create IdM Secrets Credential Type
       awx.awx.credential_type:
         name: "IdM Secrets"
-        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -225,11 +204,9 @@
             idm_admin_password: "{% raw %}{{ idm_admin_password }}{% endraw %}"
             idm_dm_password: "{% raw %}{{ idm_dm_password }}{% endraw %}"
         state: present
-
     - name: Create RHSM Activation Credential Type
       awx.awx.credential_type:
         name: "RHSM Activation"
-        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -247,11 +224,9 @@
             RHSM_ACTIVATION_KEY: "{% raw %}{{ activation_key }}{% endraw %}"
             RHSM_ORG_ID: "{% raw %}{{ org_id }}{% endraw %}"
         state: present
-
     - name: Create Media Arr Secrets Credential Type
       awx.awx.credential_type:
         name: "Media Arr API Keys"
-        organization: "{{ aap_organization }}"
         kind: cloud
         inputs:
           fields:
@@ -274,7 +249,6 @@
             radarr_api_key: "{% raw %}{{ radarr_api_key }}{% endraw %}"
             prowlarr_api_key: "{% raw %}{{ prowlarr_api_key }}{% endraw %}"
         state: present
-
     # -------------------------------------------------------
     # 2. Execution Environments
     # -------------------------------------------------------
@@ -284,13 +258,11 @@
         image: "{{ ee_image }}"
         pull: always
         state: present
-
     - name: Set Organization Default EE
       awx.awx.organization:
         name: "{{ aap_organization }}"
         default_environment: "HomeLab Ops EE"
         state: present
-
     # -------------------------------------------------------
     # 3. Credentials
     # -------------------------------------------------------
@@ -305,7 +277,6 @@
           token_id: "{{ proxmox_token_id }}"
           token_secret: "{{ proxmox_token_secret }}"
         state: present
-
     - name: Create Nautobot Credential
       awx.awx.credential:
         name: "Nautobot API"
@@ -314,7 +285,6 @@
         inputs:
           token: "{{ nautobot_token }}"
         state: present
-
     - name: Create Cloudflare Credential
       awx.awx.credential:
         name: "Cloudflare DNS"
@@ -323,7 +293,6 @@
         inputs:
           api_token: "{{ cloudflare_token }}"
         state: present
-
     - name: Create GitHub Credential
       awx.awx.credential:
         name: "GitHub Token"
@@ -333,7 +302,6 @@
           pat: "{{ github_pat }}"
         state: present
       when: github_pat != ''
-
     - name: Create AAP SSH Key
       awx.awx.credential:
         name: "AAP Executor SSH"
@@ -343,7 +311,6 @@
           username: "root"
           ssh_key_data: "{{ ssh_private_key }}"
         state: present
-
     - name: Create Git Read-Only Credential
       awx.awx.credential:
         name: "Git Read-Only"
@@ -353,7 +320,6 @@
           ssh_key_data: "{{ ssh_private_key }}"
           username: "git"
         state: present
-
     - name: Create DUMB Secrets Credential
       awx.awx.credential:
         name: "DUMB Debrid Secrets"
@@ -369,7 +335,6 @@
           dumb_pgadmin_password: "{{ dumb_pgadmin_password }}"
         state: present
       when: realdebrid_api_key != ''
-
     - name: Create Media Arr Secrets Credential
       awx.awx.credential:
         name: "Media Arr API Keys"
@@ -381,7 +346,6 @@
           prowlarr_api_key: "{{ prowlarr_api_key }}"
         state: present
       when: sonarr_api_key != ''
-
     - name: Create IdM Secrets Credential
       awx.awx.credential:
         name: "IdM Secrets"
@@ -392,7 +356,6 @@
           idm_dm_password: "{{ idm_dm_password }}"
         state: present
       when: idm_admin_password != '' and idm_dm_password != ''
-
     - name: Create RHSM Activation Credential
       awx.awx.credential:
         name: "RHSM Activation"
@@ -403,7 +366,6 @@
           org_id: "{{ rhsm_org_id }}"
         state: present
       when: rhsm_activation_key != '' and rhsm_org_id != ''
-
     # -------------------------------------------------------
     # 4. Project
     # -------------------------------------------------------
@@ -420,7 +382,6 @@
         default_environment: "HomeLab Ops EE"
         wait: false
         state: present
-
     - name: Create IdM Config Project
       awx.awx.project:
         name: "IdM Config"
@@ -436,12 +397,10 @@
         default_environment: "HomeLab Ops EE"
         wait: false
         state: present
-
     - name: Force IdM Config Project Sync
       awx.awx.project_update:
         project: "IdM Config"
         wait: yes
-
     # -------------------------------------------------------
     # 5. Inventory
     # -------------------------------------------------------
@@ -450,7 +409,6 @@
         name: "HomeLab Inventory"
         organization: "{{ aap_organization }}"
         state: present
-
     - name: Create Nautobot Inventory Source
       awx.awx.inventory_source:
         name: "Nautobot Dynamic Sync"
@@ -463,7 +421,6 @@
         update_on_launch: true
         execution_environment: "HomeLab Ops EE"
         state: present
-
     - name: Create Local IdM Inventory Source
       awx.awx.inventory_source:
         name: "Local IdM Inventory"
@@ -475,7 +432,6 @@
         update_on_launch: true
         execution_environment: "HomeLab Ops EE"
         state: present
-
     # -------------------------------------------------------
     # 6. Job Templates
     # -------------------------------------------------------
@@ -498,7 +454,6 @@
           - "GitHub Token"
           - "RHSM Activation"
         state: present
-
     - name: Create IdM DNS Apply Job Template
       awx.awx.job_template:
         name: "IdM - Apply DNS"
@@ -516,7 +471,6 @@
       until: idm_dns_template is not failed
       retries: 30
       delay: 10
-
     - name: Create Sync DNS Job Template
       awx.awx.job_template:
         name: "Maintenance - Sync DNS"
@@ -529,7 +483,6 @@
         credentials:
           - "Pi-hole API Keys"
         state: present
-
     - name: Create Setup Proxmox NFS Job Template
       awx.awx.job_template:
         name: "Infra - Setup Proxmox NFS"
@@ -541,7 +494,6 @@
         execution_environment: "HomeLab Ops EE"
         credentials: ["AAP Executor SSH"]
         state: present
-
     - name: Create SSH Bootstrap Job Template
       awx.awx.job_template:
         name: "Util - SSH Bootstrap"
@@ -569,7 +521,6 @@
               default: "false"
               required: true
         state: present
-
     - name: Create Deploy Red Hat IdM Job Template
       awx.awx.job_template:
         name: "Deploy Red Hat IdM"
@@ -590,7 +541,6 @@
           - "Nautobot API"
           - "Cloudflare DNS"
         state: present
-
     # -------------------------------------------------------
     # 7. Cleanup Redundant Templates
     # -------------------------------------------------------
@@ -608,12 +558,10 @@
         - "Debug Traefik"
         - "Test AAP Flow"
         - "Validate IP"
-
     - name: Delete redundant Workflow Templates
       awx.awx.workflow_job_template:
         name: "Provision Media Docker LXC"
         state: absent
-
     - name: Delete redundant Inventory Sources
       awx.awx.inventory_source:
         name: "Proxmox Dynamic Sync"
