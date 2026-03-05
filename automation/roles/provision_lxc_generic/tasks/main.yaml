@@ -92,6 +92,8 @@
     cat > /tmp/lxc_keys_{{ vmid }}.pub << 'EOF'
     {{ global_ssh_keys | join('\n') }}
     EOF
+    # Fix literal \n if they exist
+    sed -i 's/\\n/\n/g' /tmp/lxc_keys_{{ vmid }}.pub
     
     pct create {{ vmid }} {{ lxc_storage_backend }}:vztmpl/{{ template_filename }} \
       --hostname {{ inventory_hostname }} \
