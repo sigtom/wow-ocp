@@ -1,0 +1,13 @@
+services:
+  unpoller:
+    container_name: unpoller
+    image: ghcr.io/unpoller/unpoller:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "9130:9130"
+    volumes:
+      - ./config:/etc/unpoller
+    labels:
+      - "traefik.enable=false" # Usually scraped by Prometheus directly

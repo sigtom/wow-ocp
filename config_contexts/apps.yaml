@@ -67,8 +67,16 @@ app_registry:
     compose_template: "templates/homepage/docker-compose.yml"
 
   whoami:
-    category: "Test"
+    category: \"Test\"
     ports: [80]
-    install_dir: "/opt/whoami"
+    install_dir: \"/opt/whoami\"
     data_dirs: []
-    compose_template: "templates/whoami/docker-compose.yml"
+    compose_template: \"templates/whoami/docker-compose.yml\"
+
+  unpoller:
+    category: \"Monitoring\"
+    ports: [9130]
+    install_dir: \"/opt/unpoller\"
+    data_dirs: [\"config\"]
+    compose_template: \"templates/unpoller/docker-compose.yml.j2\"
+    env_template: \"templates/unpoller/unpoller.env.j2\"
