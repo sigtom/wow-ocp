@@ -129,6 +129,7 @@
       retries: 10
       delay: 5
       check_mode: no
+      ignore_errors: yes
 
     - name: Get LXC IP address (DHCP mode)
       ansible.builtin.shell: |
