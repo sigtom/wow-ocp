@@ -7,14 +7,24 @@ services:
       - .env
     environment:
       - TZ=America/New_York
+      - UP_CONFIG_FILE=/dev/null
+      - UP_UNIFI_DEFAULT_URL={{ unifi_controller_url | default('https://10.0.0.1/') }}
+      - UP_UNIFI_DEFAULT_USER={{ unifi_controller_user | default('tecro') }}
+      - UP_UNIFI_DEFAULT_PASS={{ unifi_controller_pass | default('SigmaTheta76') }}
+      - UP_UNIFI_DEFAULT_VERIFY_SSL={{ unifi_verify_ssl | default('false') }}
+      - UP_INFLUXDB_DISABLE=false
+      - UP_INFLUXDB_URL=http://influxdb:8086
+      - UP_INFLUXDB_DB={{ influxdb_db | default('unpoller') }}
+      - UP_INFLUXDB_USER={{ influxdb_user | default('unpoller') }}
+      - UP_INFLUXDB_PASS={{ influxdb_pass | default('unpoller') }}
+      - UP_PROMETHEUS_HTTP_LISTEN=0.0.0.0:9130
+      - UP_PROMETHEUS_NAMESPACE=unpoller
     depends_on:
       - influxdb
-      - grafana
     ports:
       - "9130:9130"
       - "37288:37288"
     volumes:
-      - ./config:/etc/unpoller
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     labels:
@@ -35,6 +45,7 @@ services:
     container_name: grafana
     image: grafana/grafana:latest
     restart: unless-stopped
+    user: "472:472"
     env_file:
       - .env
     environment:

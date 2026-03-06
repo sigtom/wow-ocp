@@ -110,6 +110,9 @@
     
     # Set system timezone
     pct exec {{ vmid }} -- timedatectl set-timezone America/New_York
+    
+    # Fix Grafana directory permissions (UID 472)
+    pct exec {{ vmid }} -- chown -R 472:472 /opt/unpoller/grafana || true
     REMOTE
   delegate_to: localhost
   register: lxc_provision_result
