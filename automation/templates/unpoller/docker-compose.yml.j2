@@ -5,9 +5,13 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      - TZ=America/New_York
     ports:
       - "9130:9130"
     volumes:
       - ./config:/etc/unpoller
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     labels:
       - "traefik.enable=false" # Usually scraped by Prometheus directly
