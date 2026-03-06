@@ -12,6 +12,7 @@ services:
       - UP_UNIFI_DEFAULT_USER={{ unifi_controller_user | default('tecro') }}
       - UP_UNIFI_DEFAULT_PASS={{ unifi_controller_pass | default('SigmaTheta76') }}
       - UP_UNIFI_DEFAULT_VERIFY_SSL={{ unifi_verify_ssl | default('false') }}
+      - UP_UNIFI_DEFAULT_SAVE_DPI=true
       - UP_INFLUXDB_DISABLE=false
       - UP_INFLUXDB_URL=http://influxdb:8086
       - UP_INFLUXDB_DB={{ influxdb_db | default('unpoller') }}
