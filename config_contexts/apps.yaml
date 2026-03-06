@@ -75,8 +75,8 @@ app_registry:
 
   unpoller:
     category: "Monitoring"
-    ports: [9130]
+    ports: [9130, 8086, 3000]
     install_dir: "/opt/unpoller"
-    data_dirs: ["config"]
+    data_dirs: ["config", "influxdb", "grafana"]
     compose_template: "templates/unpoller/docker-compose.yml.j2"
     env_template: "templates/unpoller/unpoller.env.j2"
