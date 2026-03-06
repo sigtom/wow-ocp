@@ -107,6 +107,9 @@
       {% if start_lxc %}--start 1{% endif %}
     
     rm /tmp/lxc_keys_{{ vmid }}.pub
+    
+    # Set system timezone
+    pct exec {{ vmid }} -- timedatectl set-timezone America/New_York
     REMOTE
   delegate_to: localhost
   register: lxc_provision_result

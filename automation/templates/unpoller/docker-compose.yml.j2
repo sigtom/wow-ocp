@@ -3,15 +3,22 @@ services:
     container_name: unpoller
     image: ghcr.io/unpoller/unpoller:latest
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       - TZ=America/New_York
+      - UP_CONFIG_FILE=/dev/null
+      - UP_UNIFI_DEFAULT_URL={{ unifi_controller_url | default('https://10.0.0.1/') }}
+      - UP_UNIFI_DEFAULT_USER={{ unifi_controller_user | default('tecro') }}
+      - UP_UNIFI_DEFAULT_PASS={{ unifi_controller_pass | default('SigmaTheta76') }}
+      - UP_UNIFI_DEFAULT_VERIFY_SSL={{ unifi_verify_ssl | default('false') }}
+      - UP_PROMETHEUS_HTTP_LISTEN=0.0.0.0:9130
+      - UP_PROMETHEUS_NAMESPACE=unpoller
+      - UP_INFLUXDB_DISABLE=true
+      - UP_DEBUG=false
+      - UP_QUIET=false
     ports:
       - "9130:9130"
     volumes:
-      - ./config:/etc/unpoller
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     labels:
-      - "traefik.enable=false" # Usually scraped by Prometheus directly
+      - "traefik.enable=false"
