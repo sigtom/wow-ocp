@@ -8,11 +8,19 @@ services:
     environment:
       - TZ=America/New_York
       - UP_CONFIG_FILE=/dev/null
-      - UP_UNIFI_DEFAULT_URL={{ unifi_controller_url | default('https://10.0.0.1/') }}
-      - UP_UNIFI_DEFAULT_USER={{ unifi_controller_user | default('tecro') }}
-      - UP_UNIFI_DEFAULT_PASS={{ unifi_controller_pass | default('SigmaTheta76') }}
-      - UP_UNIFI_DEFAULT_VERIFY_SSL={{ unifi_verify_ssl | default('false') }}
+      # Controller 0
+      - UP_UNIFI_0_URL={{ unifi_controller_url | default('https://10.0.0.1/') }}
+      - UP_UNIFI_0_USER={{ unifi_controller_user | default('tecro') }}
+      - UP_UNIFI_0_PASS={{ unifi_controller_pass | default('SigmaTheta76') }}
+      - UP_UNIFI_0_VERIFY_SSL=false
+      # Controller 1
+      - UP_UNIFI_1_URL={{ unifi_controller_1_url | default('https://10.1.1.1/') }}
+      - UP_UNIFI_1_USER={{ unifi_controller_1_user | default('wowro') }}
+      - UP_UNIFI_1_PASS={{ unifi_controller_1_pass | default('D@yl1ghtSh@rp3n#') }}
+      - UP_UNIFI_1_VERIFY_SSL=false
+      # Global Settings
       - UP_UNIFI_DEFAULT_SAVE_DPI=true
+      - UP_UNIFI_DEFAULT_SAVE_TRAFFIC=true
       - UP_INFLUXDB_DISABLE=false
       - UP_INFLUXDB_URL=http://influxdb:8086
       - UP_INFLUXDB_DB={{ influxdb_db | default('unpoller') }}
