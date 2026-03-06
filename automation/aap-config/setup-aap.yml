@@ -35,6 +35,10 @@
     # RHSM activation
     rhsm_activation_key: "{{ lookup('env', 'RHSM_ACTIVATION_KEY') }}"
     rhsm_org_id: "{{ lookup('env', 'RHSM_ORG_ID') }}"
+    # Unpoller secrets
+    unifi_controller_url: "{{ lookup('env', 'UNIFI_CONTROLLER_URL') }}"
+    unifi_controller_user: "{{ lookup('env', 'UNIFI_CONTROLLER_USER') }}"
+    unifi_controller_pass: "{{ lookup('env', 'UNIFI_CONTROLLER_PASS') }}"
     # Arr API keys
     sonarr_api_key: "{{ lookup('env', 'SONARR_API_KEY') }}"
     radarr_api_key: "{{ lookup('env', 'RADARR_API_KEY') }}"
@@ -249,6 +253,29 @@
             radarr_api_key: "{% raw %}{{ radarr_api_key }}{% endraw %}"
             prowlarr_api_key: "{% raw %}{{ prowlarr_api_key }}{% endraw %}"
         state: present
+    - name: Create Unpoller Secrets Credential Type
+      awx.awx.credential_type:
+        name: "Unpoller Secrets"
+        kind: cloud
+        inputs:
+          fields:
+            - id: unifi_url
+              label: UniFi Controller URL
+              type: string
+            - id: unifi_user
+              label: UniFi Controller User
+              type: string
+            - id: unifi_pass
+              label: UniFi Controller Password
+              type: string
+              secret: true
+          required: [unifi_url, unifi_user, unifi_pass]
+        injectors:
+          extra_vars:
+            unifi_controller_url: "{% raw %}{{ unifi_url }}{% endraw %}"
+            unifi_controller_user: "{% raw %}{{ unifi_user }}{% endraw %}"
+            unifi_controller_pass: "{% raw %}{{ unifi_pass }}{% endraw %}"
+        state: present
     # -------------------------------------------------------
     # 2. Execution Environments
     # -------------------------------------------------------
@@ -366,6 +393,17 @@
           org_id: "{{ rhsm_org_id }}"
         state: present
       when: rhsm_activation_key != '' and rhsm_org_id != ''
+    - name: Create Unpoller Secrets Credential
+      awx.awx.credential:
+        name: "Unpoller Secrets"
+        organization: "{{ aap_organization }}"
+        credential_type: "Unpoller Secrets"
+        inputs:
+          unifi_url: "{{ unifi_controller_url }}"
+          unifi_user: "{{ unifi_controller_user }}"
+          unifi_pass: "{{ unifi_controller_pass }}"
+        state: present
+      when: unifi_controller_url != ''
     # -------------------------------------------------------
     # 4. Project
     - name: Create IdM Config Project
@@ -479,6 +517,7 @@
           - "Media Arr API Keys"
           - "GitHub Token"
           - "RHSM Activation"
+          - "Unpoller Secrets"
         state: present
     - name: Create IdM DNS Apply Job Template
       awx.awx.job_template:

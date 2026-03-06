@@ -183,3 +183,21 @@ spec:
                   name: pihole-secrets
                   key: PIHOLE_KEY_110_100
                   optional: true
+            - name: UNIFI_CONTROLLER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: unpoller-secrets
+                  key: unifi_controller_url
+                  optional: true
+            - name: UNIFI_CONTROLLER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: unpoller-secrets
+                  key: unifi_controller_user
+                  optional: true
+            - name: UNIFI_CONTROLLER_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: unpoller-secrets
+                  key: unifi_controller_pass
+                  optional: true
