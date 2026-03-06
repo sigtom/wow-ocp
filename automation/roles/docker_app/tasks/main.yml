@@ -9,7 +9,6 @@
       - "Registry keys: {{ app_registry.keys() | list if app_registry is defined else 'UNDEFINED' }}"
 
 - name: "Check if application metadata exists for {{ current_app }}"
-
   ansible.builtin.assert:
     that:
       - app_registry[current_app] is defined
@@ -23,26 +22,25 @@
   ansible.builtin.file:
     path: "{{ app_meta.install_dir }}"
     state: directory
-    owner: "1000"
-    group: "1000"
+    owner: "{{ app_meta.owner | default('1000') }}"
+    group: "{{ app_meta.group | default('1000') }}"
     mode: '0755'
 
 - name: "Ensure data directories exist for {{ current_app }}"
   ansible.builtin.file:
     path: "{{ app_meta.install_dir }}/{{ item }}"
     state: directory
-    owner: "1000"
-    group: "1000"
-    mode: '0755'
+    owner: "{{ (app_meta.data_dir_perms | default({}))[item].owner | default(app_meta.owner | default('1000')) }}"
+    group: "{{ (app_meta.data_dir_perms | default({}))[item].group | default(app_meta.group | default('1000')) }}"
+    mode: "{{ (app_meta.data_dir_perms | default({}))[item].mode | default('0755') }}"
   loop: "{{ app_meta.data_dirs | default([]) }}"
 
 - name: "Render environment file for {{ current_app }}"
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/{{ current_app }}/{{ app_meta.env_template | basename }}"
     dest: "{{ app_meta.install_dir }}/.env"
-
-    owner: "1000"
-    group: "1000"
+    owner: "{{ app_meta.owner | default('1000') }}"
+    group: "{{ app_meta.group | default('1000') }}"
     mode: '0600'
   when: app_meta.env_template is defined
 
@@ -50,9 +48,8 @@
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/{{ current_app }}/{{ item.src | basename }}"
     dest: "{{ app_meta.install_dir }}/{{ item.dest }}"
-
-    owner: "1000"
-    group: "1000"
+    owner: "{{ app_meta.owner | default('1000') }}"
+    group: "{{ app_meta.group | default('1000') }}"
     mode: '0644'
   loop: "{{ app_meta.static_configs | default([]) }}"
 
@@ -60,9 +57,8 @@
   ansible.builtin.template:
     src: "{{ playbook_dir }}/../templates/{{ current_app }}/{{ app_meta.compose_template | basename }}"
     dest: "{{ app_meta.install_dir }}/docker-compose.yml"
-
-    owner: "1000"
-    group: "1000"
+    owner: "{{ app_meta.owner | default('1000') }}"
+    group: "{{ app_meta.group | default('1000') }}"
     mode: '0644'
 
 - name: "Ensure Python Docker dependencies are present"

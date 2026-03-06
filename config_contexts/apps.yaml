@@ -78,6 +78,10 @@ app_registry:
     ports: [9130, 8086, 3000]
     install_dir: "/opt/unpoller"
     data_dirs: ["config", "influxdb", "grafana"]
+    data_dir_perms:
+      grafana:
+        owner: "472"
+        group: "472"
     compose_template: "templates/unpoller/docker-compose.yml.j2"
     env_template: "templates/unpoller/unpoller.env.j2"
     static_configs:
