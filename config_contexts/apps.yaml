@@ -80,3 +80,5 @@ app_registry:
     data_dirs: ["config", "influxdb", "grafana"]
     compose_template: "templates/unpoller/docker-compose.yml.j2"
     env_template: "templates/unpoller/unpoller.env.j2"
+    static_configs:
+      - { src: "templates/unpoller/up.conf.j2", dest: "config/up.conf" }

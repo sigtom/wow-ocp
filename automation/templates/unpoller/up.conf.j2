@@ -1,0 +1,27 @@
+[unifi.defaults]
+  url = "https://10.0.0.1/"
+  user = "tecro"
+  pass = "SigmaTheta76"
+  verify_ssl = false
+  save_dpi = true
+  save_traffic = true
+
+[unifi.controller.1]
+  url = "https://10.1.1.1/"
+  user = "wowro"
+  pass = "D@yl1ghtSh@rp3n#"
+  verify_ssl = false
+  save_dpi = true
+  save_traffic = true
+
+[influxdb]
+  disable = false
+  url  = "http://influxdb:8086"
+  user = "unpoller"
+  pass = "unpoller"
+  db   = "unpoller"
+
+[prometheus]
+  disable = false
+  http_listen = "0.0.0.0:9130"
+  namespace = "unpoller"
